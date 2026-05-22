@@ -10,3 +10,11 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+
+# terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
