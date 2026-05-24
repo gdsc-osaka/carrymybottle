@@ -3,7 +3,9 @@ key    = "dev/terraform.tfstate"
 region = "auto"
 
 # R2 S3-compatible endpoint: https://<ACCOUNT_ID>.r2.cloudflarestorage.com
-endpoint = "https://your-account-id.r2.cloudflarestorage.com"
+endpoints = {
+  s3 = "https://your-account-id.r2.cloudflarestorage.com"
+}
 
 # R2 API token (S3 互換) から生成した Access Key ID / Secret Access Key
 access_key = "your-r2-access-key-id"
@@ -12,4 +14,5 @@ secret_key = "your-r2-secret-access-key"
 skip_credentials_validation = true
 skip_metadata_api_check     = true
 skip_region_validation      = true
-force_path_style            = true
+skip_requesting_account_id  = true
+use_path_style              = true

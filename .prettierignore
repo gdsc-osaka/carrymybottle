@@ -1,7 +1,0 @@
-.next
-node_modules
-apps/node_modules
-pnpm-lock.yaml
-apps/pnpm-lock.yaml
-public
-terraform

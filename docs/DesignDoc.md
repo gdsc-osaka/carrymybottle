@@ -142,8 +142,10 @@ Decision:
 - 共通処理は `src/lib/*` に置く。
 - 汎用 UI は `src/components/*` に置く。
 - 入力検証は Zod に統一する。
+- feature ごとの Zod schema は `src/features/*/validation.ts` に置く。
 - DB アクセスは Drizzle ORM に統一する。
 - Drizzle schema と migrations は `src/lib/db` に集約する。
+- 複数 feature で共有する enum 値、表示ラベル、選択肢定義は `src/lib/constants/*` に置く。
 - D1 binding から Drizzle client を生成する `getDb(d1: D1Database)` を `src/lib/db/client.ts` に用意する。
 - repository 層は厚く作らず、機能ごとの `queries.ts` で Drizzle query を実行する。
 - Server Actions は基本的に `src/features/*/actions.ts` に置く。
@@ -173,43 +175,56 @@ src/
       MapCanvas.tsx
       actions.ts
       queries.ts
-      schema.ts
+      validation.ts
     stations/
       StationDetailPage.tsx
       actions.ts
       queries.ts
-      schema.ts
+      validation.ts
     requests/
       RequestsPage.tsx
       actions.ts
       queries.ts
-      schema.ts
+      validation.ts
     contact/
       ContactPage.tsx
       actions.ts
       queries.ts
-      schema.ts
+      validation.ts
     admin/
       AdminDashboardPage.tsx
       actions.ts
       queries.ts
-      schema.ts
+      validation.ts
   components/
     ui/
+    layout/
   lib/
     db/
       client.ts
       schema.ts
       types.ts
       migrations/
-      seed.ts
+      seed/
     auth/
     mail/
+    analytics/
+      events.ts
     rate-limit/
+    constants/
+      campuses.ts
+      stations.ts
+      requests.ts
     utils/
 ```
 
 `src/app` の `page.tsx` は、該当する `features` の Page コンポーネントを呼び出す薄いファイルにする。
+
+`schema.ts` という名前は Drizzle schema と混同しやすいため、feature 配下では使わない。feature 配下で入力検証が必要な場合は `validation.ts` に Zod schema と関連する入力型を置く。Drizzle の table definitions は `src/lib/db/schema.ts` に一本化し、migration 生成と DB 由来型の基準にする。
+
+`queries.ts` は、原則としてデータの所有 feature に置く。例えば給水機情報の読み取りは `src/features/stations/queries.ts` を所有元とし、地図や緊急連絡で同じ給水機情報が必要な場合も重複実装せず、所有元の query を参照する。どの feature にも自然な所有元がない純粋な横断処理だけを `src/lib/*` に切り出す。
+
+`src/lib/constants/*` には、複数 feature で共有する enum 値、表示ラベル、選択肢、軽量な定数を置く。ここには DB アクセス、Server Actions、UI コンポーネントは置かない。
 
 例:
 
@@ -1109,6 +1124,26 @@ MVP で追跡したい指標:
 - 緊急連絡送信数。
 - QR コード経由アクセス数。
 
+### 12.1.1 Event Recording Timing
+
+Decision:
+
+- analytics event の保存処理は `src/lib/analytics/events.ts` に集約する。
+- 各 feature は `analytics_events` table へ直接 insert せず、共通の `trackEvent()` を呼ぶ。
+- `trackEvent()` は `event_name`, `station_id`, `campus_id`, `building_id`, `source`, `metadata_json`, `environment` を受け取り、D1 に保存する。
+- 入力失敗やバリデーションエラーは原則として MVP の分析イベント対象外とし、保存成功または表示成功した主要操作だけを記録する。
+- 分析イベントにはメールアドレス、問い合わせ本文、Cookie 生値などの個人識別情報を含めない。
+
+イベントごとの記録タイミング:
+
+- `app_opened`: `/` またはアプリ入口の Server Component で記録する。過剰な重複記録を避けるため、MVP では必要に応じて LP 表示時のみに限定してよい。
+- `map_viewed`: `/map` の Server Component で、キャンパス選択の初期表示または query parameter から表示対象キャンパスが決まった時点で記録する。
+- `water_station_detail_viewed`: `/stations/[stationId]` の Server Component で、対象給水機が公開状態で取得できた後に記録する。
+- `qr_code_scanned`: `/stations/[stationId]` で `source=qr` を検出し、対象給水機が公開状態で取得できた後に記録する。
+- `installation_request_voted`: 投票 Server Action で投票保存と `vote_count` 更新に成功した後に記録する。
+- `installation_request_commented`: コメント保存に成功した後に記録する。
+- `emergency_form_submitted`: 緊急連絡を D1 に保存できた後に記録する。メール送信に失敗しても、連絡データが保存されていればイベント保存対象とする。
+
 ### 12.2 Privacy Policy
 
 MVP で扱う個人情報・準個人情報:
@@ -1205,6 +1240,43 @@ Decision:
 - 本番 migration 前に development で適用確認する。
 - seed scripts は冪等性を意識し、同じ seed を複数回実行しても重複が発生しない設計にする。
 - migration 生成・適用コマンドは実装時に `drizzle-kit` と Cloudflare D1 の運用に合わせて定義する。
+
+### 13.2.2 Infrastructure and Worker Configuration
+
+Decision:
+
+- Cloudflare リソースのライフサイクル管理は Terraform を基本とする。
+- OpenNext for Cloudflare の Worker 実行設定と bindings は `wrangler.jsonc` または `wrangler.toml` をソースオブトゥルースとする。
+- secret 値は Terraform state に載せず、`wrangler secret` または Cloudflare Secrets で環境ごとに登録する。
+- Terraform state は R2 backend に保存する。
+- Terraform state 用 R2 bucket は bootstrap 手順で初回のみ作成し、その後は remote state で運用する。
+
+Terraform で管理するもの:
+
+- development / production の D1 database。
+- Terraform state 用 R2 bucket。
+- 公開ドメイン確定後の Cloudflare DNS / custom domain。
+- Post-MVP で導入する Cloudflare Turnstile や追加 R2 bucket など、アプリ外部の Cloudflare リソース。
+
+`wrangler.jsonc` / `wrangler.toml` で管理するもの:
+
+- Worker name。
+- OpenNext for Cloudflare の `main`。例: `.open-next/worker.js`
+- OpenNext の static assets 設定。
+- `compatibility_date` と `compatibility_flags`。
+- D1 binding `DB` と environment ごとの `database_id`。
+- OpenNext が必要とする service binding や assets binding。
+- secret ではない runtime variables。例: `APP_ENV`, `APP_BASE_URL`, `EMERGENCY_CONTACT_TO`, `EMERGENCY_CONTACT_FROM`
+
+Secrets として登録するもの:
+
+- `ADMIN_PASSWORD_HASH`
+- `ADMIN_PASSWORD_SALT`
+- `SESSION_SECRET`
+- `RESEND_API_KEY`
+- `VOTE_TOKEN_SECRET`
+
+D1 database 自体は Terraform で作成するが、Worker から D1 を参照する binding は `wrangler` 設定に記述する。Terraform と `wrangler` の両方で同じ Worker 設定を管理しない。
 
 ### 13.3 Domain
 

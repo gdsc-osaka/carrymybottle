@@ -2,6 +2,6 @@
 # terraform init -backend-config=backend.hcl を実行する。
 # ローカル state が R2 に移行される。
 #
-# terraform {
-#   backend "s3" {}
-# }
+terraform {
+  backend "s3" {}
+}
