@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+    - name: Design Doc
+      url: https://github.com/gdsc-osaka/carrymybottle/blob/main/docs/DesignDoc.md
+      about: プロジェクトの設計ドキュメントを確認する
+    - name: Discussions
+      url: https://github.com/gdsc-osaka/carrymybottle/discussions
+      about: 質問やアイデアをチームで議論する
