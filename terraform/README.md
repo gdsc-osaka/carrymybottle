@@ -2,6 +2,37 @@
 
 Cloudflare リソースを Terraform で管理する。
 
+## 管理方針
+
+Terraform は Cloudflare リソースのライフサイクル管理を担当する。OpenNext for Cloudflare の Worker 実行設定や bindings は `wrangler.jsonc` / `wrangler.toml` をソースオブトゥルースとし、Terraform と Wrangler で同じ Worker 設定を二重管理しない。
+
+Terraform で管理するもの:
+
+- development / production の Cloudflare D1 database
+- Terraform state 保存用の R2 bucket
+- 公開ドメイン確定後の Cloudflare DNS / custom domain
+- Post-MVP で導入する Cloudflare Turnstile や追加 R2 bucket などの Cloudflare リソース
+
+Wrangler で管理するもの:
+
+- Worker name
+- OpenNext for Cloudflare の `main`。例: `.open-next/worker.js`
+- OpenNext の static assets 設定
+- `compatibility_date` と `compatibility_flags`
+- D1 binding `DB` と environment ごとの `database_id`
+- OpenNext が必要とする service binding や assets binding
+- secret ではない runtime variables。例: `APP_ENV`, `APP_BASE_URL`, `EMERGENCY_CONTACT_TO`, `EMERGENCY_CONTACT_FROM`
+
+Secrets として登録するもの:
+
+- `ADMIN_PASSWORD_HASH`
+- `ADMIN_PASSWORD_SALT`
+- `SESSION_SECRET`
+- `RESEND_API_KEY`
+- `VOTE_TOKEN_SECRET`
+
+secret 値は Terraform state に残る可能性があるため、Terraform では管理しない。環境ごとに `wrangler secret` または Cloudflare Secrets で登録する。
+
 ## ディレクトリ構成
 
 ```
@@ -53,6 +84,8 @@ GitHub Actions が terraform apply を自動実行
 ## 初回セットアップ（一度だけ手動実行が必要）
 
 R2 state バケットが存在しないため、最初の 1 回だけ手動で実行する。
+
+Terraform state 用 R2 bucket は bootstrap 対象である。初回だけ local state で R2 bucket と development 用 D1 を作成し、その後 `backend.tf` を有効化して state を R2 backend に移行する。以降は remote state を前提に PR → plan → merge → apply のフローで運用する。
 
 ### 1. 前提条件
 
