@@ -17,4 +17,5 @@ yarn-error.log*
 *.tfstate.*
 *.tfvars
 !*.tfvars.example
+backend.hcl
 crash.log
