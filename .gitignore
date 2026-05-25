@@ -24,6 +24,6 @@ backend.hcl
 crash.log
 
 #yuya
-docs/admin_design.md
+docs/admin-design.md
 CLAUDE.md
 */CLAUDE.md
