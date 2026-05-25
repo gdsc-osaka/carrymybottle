@@ -5,6 +5,7 @@ import {
   integer,
   unique,
   index,
+  real,
 } from 'drizzle-orm/sqlite-core';
 
 export const campuses = sqliteTable('campuses', {
@@ -42,3 +43,37 @@ export const buildings = sqliteTable(
     index('buildings_campus_sort_idx').on(table.campusId, table.sortOrder),
   ]
 );
+
+export const stations = sqliteTable('stations', {
+  id: text('id').primaryKey(),
+  campusId: text('campus_id')
+    .notNull()
+    .references(() => campuses.id),
+  buildingId: text('building_id')
+    .notNull()
+    .references(() => buildings.id),
+  name: text('name').notNull(),
+  description: text('description'),
+  relativeX: real('relative_x').notNull(),
+  relativeY: real('relative_y').notNull(),
+  status: text('status').notNull(), // 'available', 'stopped', 'broken'
+  shortLinkId: text('short_link_id'),
+  shortLinkUrl: text('short_link_url'),
+  isPublic: integer('is_public').notNull().default(1),
+  createdAt: text('created_at')
+    .notNull()
+    .default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at')
+    .notNull()
+    .default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const stationTemperatures = sqliteTable('station_temperatures', {
+  stationId: text('station_id')
+    .notNull()
+    .references(() => stations.id),
+  temperatureType: text('temperature_type').notNull(), // 'cold', 'normal', 'hot'
+  createdAt: text('created_at')
+    .notNull()
+    .default(sql`CURRENT_TIMESTAMP`),
+});
