@@ -1,114 +1,133 @@
-import { sql } from 'drizzle-orm';
-import {
-  sqliteTable,
-  text,
-  integer,
-  unique,
-  index,
-  real,
-  check,
-} from 'drizzle-orm/sqlite-core';
+import { integer, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
-export const campuses = sqliteTable('campuses', {
-  id: text('id').primaryKey(),
-  name: text('name').notNull(),
-  mapImagePath: text('map_image_path').notNull(),
-  mapWidth: integer('map_width'),
-  mapHeight: integer('map_height'),
-  createdAt: text('created_at')
-    .notNull()
-    .default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: text('updated_at')
-    .notNull()
-    .default(sql`CURRENT_TIMESTAMP`),
+export const campuses = sqliteTable("campuses", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  mapImagePath: text("map_image_path").notNull(),
+  mapWidth: integer("map_width"),
+  mapHeight: integer("map_height"),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 });
 
 export const buildings = sqliteTable(
-  'buildings',
+  "buildings",
   {
-    id: text('id').primaryKey(),
-    campusId: text('campus_id')
+    id: text("id").primaryKey(),
+    campusId: text("campus_id")
       .notNull()
       .references(() => campuses.id),
-    name: text('name').notNull(),
-    sortOrder: integer('sort_order').notNull().default(0),
-    createdAt: text('created_at')
-      .notNull()
-      .default(sql`CURRENT_TIMESTAMP`),
-    updatedAt: text('updated_at')
-      .notNull()
-      .default(sql`CURRENT_TIMESTAMP`),
+    name: text("name").notNull(),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
   },
-  (table) => [
-    unique('buildings_campus_name_idx').on(table.campusId, table.name),
-    index('buildings_campus_sort_idx').on(table.campusId, table.sortOrder),
-  ]
+  (t) => [uniqueIndex("buildings_campus_name_idx").on(t.campusId, t.name)],
 );
 
-export const stations = sqliteTable(
-  'stations',
-  {
-    id: text('id').primaryKey(),
-    campusId: text('campus_id')
-      .notNull()
-      .references(() => campuses.id),
-    buildingId: text('building_id')
-      .notNull()
-      .references(() => buildings.id),
-    name: text('name').notNull(),
-    description: text('description'),
-    relativeX: real('relative_x').notNull(),
-    relativeY: real('relative_y').notNull(),
-    status: text('status').notNull(), // 'available', 'stopped', 'broken'
-    shortLinkId: text('short_link_id'),
-    shortLinkUrl: text('short_link_url').unique(),
-    isPublic: integer('is_public').notNull().default(1),
-    createdAt: text('created_at')
-      .notNull()
-      .default(sql`CURRENT_TIMESTAMP`),
-    updatedAt: text('updated_at')
-      .notNull()
-      .default(sql`CURRENT_TIMESTAMP`),
-  },
-  (table) => [
-    check('stations_relative_x_check', sql`relative_x BETWEEN 0 AND 1`),
-    check('stations_relative_y_check', sql`relative_y BETWEEN 0 AND 1`),
-    check(
-      'stations_status_check',
-      sql`status IN ('available', 'stopped', 'broken')`
-    ),
-  ]
-);
-
-export const stationTemperatures = sqliteTable('station_temperatures', {
-  stationId: text('station_id')
+export const stations = sqliteTable("stations", {
+  id: text("id").primaryKey(),
+  campusId: text("campus_id")
     .notNull()
-    .references(() => stations.id),
-  temperatureType: text('temperature_type').notNull(), // 'cold', 'normal', 'hot'
-  createdAt: text('created_at')
+    .references(() => campuses.id),
+  buildingId: text("building_id")
     .notNull()
-    .default(sql`CURRENT_TIMESTAMP`),
+    .references(() => buildings.id),
+  name: text("name").notNull(),
+  description: text("description"),
+  relativeX: real("relative_x").notNull().default(0.5),
+  relativeY: real("relative_y").notNull().default(0.5),
+  status: text("status", { enum: ["available", "stopped", "broken"] })
+    .notNull()
+    .default("available"),
+  shortLinkId: text("short_link_id"),
+  shortLinkUrl: text("short_link_url"),
+  isPublic: integer("is_public", { mode: "boolean" }).notNull().default(true),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 });
 
-export const analyticsEvents = sqliteTable(
-  'analytics_events',
+export const stationTemperatures = sqliteTable(
+  "station_temperatures",
   {
-    id: text('id').primaryKey(),
-    eventName: text('event_name').notNull(),
-    stationId: text('station_id'),
-    campusId: text('campus_id'),
-    buildingId: text('building_id'),
-    source: text('source'),
-    metadataJson: text('metadata_json'),
-    environment: text('environment').notNull(), // 'production' or 'development'
-    createdAt: text('created_at')
+    stationId: text("station_id")
       .notNull()
-      .default(sql`CURRENT_TIMESTAMP`),
+      .references(() => stations.id),
+    temperatureType: text("temperature_type", { enum: ["cold", "normal", "hot"] }).notNull(),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   },
-  (table) => [
-    check(
-      'analytics_events_environment_check',
-      sql`environment IN ('production', 'development')`
-    ),
-  ]
+  (t) => [uniqueIndex("station_temperatures_pk").on(t.stationId, t.temperatureType)],
 );
+
+export const installationTargets = sqliteTable(
+  "installation_targets",
+  {
+    id: text("id").primaryKey(),
+    campusId: text("campus_id")
+      .notNull()
+      .references(() => campuses.id),
+    buildingId: text("building_id")
+      .notNull()
+      .references(() => buildings.id),
+    voteCount: integer("vote_count").notNull().default(0),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+  },
+  (t) => [uniqueIndex("installation_targets_campus_building_idx").on(t.campusId, t.buildingId)],
+);
+
+export const installationVotes = sqliteTable("installation_votes", {
+  id: text("id").primaryKey(),
+  targetId: text("target_id")
+    .notNull()
+    .references(() => installationTargets.id),
+  voterTokenHash: text("voter_token_hash").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+});
+
+export const installationComments = sqliteTable("installation_comments", {
+  id: text("id").primaryKey(),
+  targetId: text("target_id")
+    .notNull()
+    .references(() => installationTargets.id),
+  comment: text("comment").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  deletedAt: integer("deleted_at", { mode: "timestamp" }),
+});
+
+export const emergencyContacts = sqliteTable("emergency_contacts", {
+  id: text("id").primaryKey(),
+  stationId: text("station_id")
+    .notNull()
+    .references(() => stations.id),
+  issueType: text("issue_type", {
+    enum: ["broken", "stopped", "no_water", "leak_or_abnormal", "other"],
+  }).notNull(),
+  message: text("message").notNull(),
+  reporterEmail: text("reporter_email").notNull(),
+  adminEmailSentAt: integer("admin_email_sent_at", { mode: "timestamp" }),
+  autoReplySentAt: integer("auto_reply_sent_at", { mode: "timestamp" }),
+  autoReplyError: text("auto_reply_error"),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  deletedAt: integer("deleted_at", { mode: "timestamp" }),
+});
+
+export const analyticsEvents = sqliteTable("analytics_events", {
+  id: text("id").primaryKey(),
+  eventName: text("event_name").notNull(),
+  stationId: text("station_id"),
+  campusId: text("campus_id"),
+  buildingId: text("building_id"),
+  source: text("source"),
+  metadataJson: text("metadata_json"),
+  environment: text("environment").notNull().default("development"),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+});
+
+export const adminAuditEvents = sqliteTable("admin_audit_events", {
+  id: text("id").primaryKey(),
+  action: text("action").notNull(),
+  targetType: text("target_type").notNull(),
+  targetId: text("target_id").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+});
