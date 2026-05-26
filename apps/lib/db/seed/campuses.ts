@@ -1,8 +1,15 @@
 import { campuses } from '../schema';
 
-// TODO: DBクライアントの型が確定次第、any を適切な型（例: D1Database / LibSQLDatabase 等）に置き換えてください
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function seedCampuses(db: any) {
+interface SeedDb {
+  insert: (table: unknown) => {
+    values: (data: unknown[]) => {
+      onConflictDoNothing: () => Promise<void>;
+    };
+  };
+}
+
+// TODO: DBクライアントの型が確定次第、より厳密な型（例: D1Database / LibSQLDatabase 等）に置き換えてください
+export async function seedCampuses(db: SeedDb) {
   await db
     .insert(campuses)
     .values([
