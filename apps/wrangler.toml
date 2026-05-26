@@ -19,6 +19,10 @@ database_id = "cfc6f905-bbd8-4879-842a-bacf7559ecc4"
 [env.production]
 [env.production.vars]
 APP_ENV = "production"
+# TODO: replace with actual production URL
+APP_BASE_URL = "https://example.com"
+EMERGENCY_CONTACT_TO = "carry.my.bottle@gmail.com"
+EMERGENCY_CONTACT_FROM = "noreply@example.com"
 
 [[env.production.d1_databases]]
 binding = "DB"
