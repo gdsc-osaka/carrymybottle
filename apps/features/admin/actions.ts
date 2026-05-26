@@ -88,30 +88,30 @@ export async function createStationAction(
   const id = `station_${crypto.randomUUID().replace(/-/g, '').slice(0, 8)}`;
   const now = new Date();
 
-  await db.insert(stations).values({
-    id,
-    campusId: input.campusId,
-    buildingId: input.buildingId,
-    name: input.name,
-    description: input.description,
-    relativeX: input.relativeX,
-    relativeY: input.relativeY,
-    status: input.status,
-    isPublic: input.isPublic,
-    shortLinkId: input.shortLinkId,
-    shortLinkUrl: input.shortLinkUrl || null,
-    createdAt: now,
-    updatedAt: now,
-  });
-
-  await db.insert(stationTemperatures).values(
-    input.temperatures.map((t) => ({
-      stationId: id,
-      temperatureType: t,
+  await db.transaction(async (tx) => {
+    await tx.insert(stations).values({
+      id,
+      campusId: input.campusId,
+      buildingId: input.buildingId,
+      name: input.name,
+      description: input.description,
+      relativeX: input.relativeX,
+      relativeY: input.relativeY,
+      status: input.status,
+      isPublic: input.isPublic,
+      shortLinkId: input.shortLinkId,
+      shortLinkUrl: input.shortLinkUrl || null,
       createdAt: now,
-    }))
-  );
-
+      updatedAt: now,
+    });
+    await tx.insert(stationTemperatures).values(
+      input.temperatures.map((t) => ({
+        stationId: id,
+        temperatureType: t,
+        createdAt: now,
+      }))
+    );
+  });
   await logAuditEvent(db, 'create', 'station', id);
   return { success: true, data: undefined };
 }
@@ -147,34 +147,34 @@ export async function updateStationAction(
   const db = getDb(env.DB);
   const now = new Date();
 
-  await db
-    .update(stations)
-    .set({
-      campusId: input.campusId,
-      buildingId: input.buildingId,
-      name: input.name,
-      description: input.description,
-      relativeX: input.relativeX,
-      relativeY: input.relativeY,
-      status: input.status,
-      isPublic: input.isPublic,
-      shortLinkId: input.shortLinkId,
-      shortLinkUrl: input.shortLinkUrl || null,
-      updatedAt: now,
-    })
-    .where(eq(stations.id, stationId));
-
-  await db
-    .delete(stationTemperatures)
-    .where(eq(stationTemperatures.stationId, stationId));
-  await db.insert(stationTemperatures).values(
-    input.temperatures.map((t) => ({
-      stationId,
-      temperatureType: t,
-      createdAt: now,
-    }))
-  );
-
+  await db.transaction(async (tx) => {
+    await tx
+      .update(stations)
+      .set({
+        campusId: input.campusId,
+        buildingId: input.buildingId,
+        name: input.name,
+        description: input.description,
+        relativeX: input.relativeX,
+        relativeY: input.relativeY,
+        status: input.status,
+        isPublic: input.isPublic,
+        shortLinkId: input.shortLinkId,
+        shortLinkUrl: input.shortLinkUrl || null,
+        updatedAt: now,
+      })
+      .where(eq(stations.id, stationId));
+    await tx
+      .delete(stationTemperatures)
+      .where(eq(stationTemperatures.stationId, stationId));
+    await tx.insert(stationTemperatures).values(
+      input.temperatures.map((t) => ({
+        stationId,
+        temperatureType: t,
+        createdAt: now,
+      }))
+    );
+  });
   await logAuditEvent(db, 'update', 'station', stationId);
   return { success: true, data: undefined };
 }
@@ -204,10 +204,12 @@ export async function deleteStationAction(
   const env = await getEnv();
   const db = getDb(env.DB);
 
-  await db
-    .delete(stationTemperatures)
-    .where(eq(stationTemperatures.stationId, stationId));
-  await db.delete(stations).where(eq(stations.id, stationId));
+  await db.transaction(async (tx) => {
+    await tx
+      .delete(stationTemperatures)
+      .where(eq(stationTemperatures.stationId, stationId));
+    await tx.delete(stations).where(eq(stations.id, stationId));
+  });
   await logAuditEvent(db, 'delete', 'station', stationId);
   return { success: true, data: undefined };
 }
