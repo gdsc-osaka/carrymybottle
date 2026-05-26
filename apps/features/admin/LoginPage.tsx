@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useActionState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { loginAction } from "./actions";
+import { useActionState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { loginAction } from './actions';
 
 export function LoginPage() {
   const [state, formAction, pending] = useActionState(
@@ -13,7 +13,7 @@ export function LoginPage() {
       if (!result.success) return { error: result.error };
       return null;
     },
-    null,
+    null
   );
 
   return (
@@ -27,7 +27,12 @@ export function LoginPage() {
         <form action={formAction} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="password">パスワード</Label>
-            <Input id="password" name="password" type="password" autoComplete="current-password" />
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              autoComplete="current-password"
+            />
           </div>
 
           {state?.error && (
@@ -35,7 +40,7 @@ export function LoginPage() {
           )}
 
           <Button type="submit" className="w-full" disabled={pending}>
-            {pending ? "確認中..." : "ログイン"}
+            {pending ? '確認中...' : 'ログイン'}
           </Button>
         </form>
       </div>

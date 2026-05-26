@@ -1,7 +1,10 @@
-import { getCloudflareContext } from "@opennextjs/cloudflare";
-import { RequestsPage } from "@/features/admin/RequestsPage";
-import { getDb } from "@/lib/db/client";
-import { getAllCampuses, getInstallationTargetsWithComments } from "@/features/admin/queries";
+import { getCloudflareContext } from '@opennextjs/cloudflare';
+import { RequestsPage } from '@/features/admin/RequestsPage';
+import { getDb } from '@/lib/db/client';
+import {
+  getAllCampuses,
+  getInstallationTargetsWithComments,
+} from '@/features/admin/queries';
 
 export default async function Page() {
   const { env } = await getCloudflareContext({ async: true });

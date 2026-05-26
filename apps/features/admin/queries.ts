@@ -1,5 +1,5 @@
-import { and, asc, desc, eq, isNull } from "drizzle-orm";
-import type { DB } from "@/lib/db/client";
+import { and, asc, desc, eq, isNull } from 'drizzle-orm';
+import type { DB } from '@/lib/db/client';
 import {
   adminAuditEvents,
   buildings,
@@ -9,7 +9,7 @@ import {
   installationTargets,
   stationTemperatures,
   stations,
-} from "@/lib/db/schema";
+} from '@/lib/db/schema';
 
 export async function getAllStations(db: DB) {
   const rows = await db
@@ -66,11 +66,19 @@ export async function getBuildingsByCampus(db: DB, campusId: string) {
 }
 
 export async function getAllBuildings(db: DB) {
-  return db.select().from(buildings).orderBy(asc(buildings.campusId), asc(buildings.sortOrder));
+  return db
+    .select()
+    .from(buildings)
+    .orderBy(asc(buildings.campusId), asc(buildings.sortOrder));
 }
 
-export async function getInstallationTargetsWithComments(db: DB, campusId?: string) {
-  const condition = campusId ? eq(installationTargets.campusId, campusId) : undefined;
+export async function getInstallationTargetsWithComments(
+  db: DB,
+  campusId?: string
+) {
+  const condition = campusId
+    ? eq(installationTargets.campusId, campusId)
+    : undefined;
 
   const rows = await db
     .select()
@@ -93,7 +101,9 @@ export async function getInstallationTargetsWithComments(db: DB, campusId?: stri
     ...row.installation_targets,
     campus: row.campuses!,
     building: row.buildings!,
-    comments: comments.filter((c) => c.targetId === row.installation_targets.id),
+    comments: comments.filter(
+      (c) => c.targetId === row.installation_targets.id
+    ),
   }));
 }
 
@@ -113,8 +123,14 @@ export async function getEmergencyContacts(db: DB) {
 
 export async function getAdminStats(db: DB) {
   const [stationCount, targetCount, contactCount] = await Promise.all([
-    db.select().from(stations).then((r) => r.length),
-    db.select().from(installationTargets).then((r) => r.length),
+    db
+      .select()
+      .from(stations)
+      .then((r) => r.length),
+    db
+      .select()
+      .from(installationTargets)
+      .then((r) => r.length),
     db
       .select()
       .from(emergencyContacts)
@@ -128,7 +144,7 @@ export async function logAuditEvent(
   db: DB,
   action: string,
   targetType: string,
-  targetId: string,
+  targetId: string
 ) {
   await db.insert(adminAuditEvents).values({
     id: crypto.randomUUID(),

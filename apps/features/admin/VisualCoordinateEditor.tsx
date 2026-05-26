@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useRef, useState } from "react";
-import type { Campus } from "@/lib/db/types";
+import { useRef, useState } from 'react';
+import type { Campus } from '@/lib/db/types';
 
 interface Props {
   campus: Campus | undefined;
@@ -10,7 +10,12 @@ interface Props {
   onCoordinateChange: (x: number, y: number) => void;
 }
 
-export function VisualCoordinateEditor({ campus, relativeX, relativeY, onCoordinateChange }: Props) {
+export function VisualCoordinateEditor({
+  campus,
+  relativeX,
+  relativeY,
+  onCoordinateChange,
+}: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [hovering, setHovering] = useState(false);
 
@@ -20,7 +25,10 @@ export function VisualCoordinateEditor({ campus, relativeX, relativeY, onCoordin
     const rect = el.getBoundingClientRect();
     const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
     const y = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
-    onCoordinateChange(Math.round(x * 1000) / 1000, Math.round(y * 1000) / 1000);
+    onCoordinateChange(
+      Math.round(x * 1000) / 1000,
+      Math.round(y * 1000) / 1000
+    );
   }
 
   if (!campus?.mapImagePath) {
@@ -39,7 +47,12 @@ export function VisualCoordinateEditor({ campus, relativeX, relativeY, onCoordin
       <div
         ref={containerRef}
         className="relative w-full cursor-crosshair border rounded overflow-hidden select-none"
-        style={{ aspectRatio: campus.mapWidth && campus.mapHeight ? `${campus.mapWidth}/${campus.mapHeight}` : "16/9" }}
+        style={{
+          aspectRatio:
+            campus.mapWidth && campus.mapHeight
+              ? `${campus.mapWidth}/${campus.mapHeight}`
+              : '16/9',
+        }}
         onClick={handleClick}
         onMouseEnter={() => setHovering(true)}
         onMouseLeave={() => setHovering(false)}
@@ -55,7 +68,11 @@ export function VisualCoordinateEditor({ campus, relativeX, relativeY, onCoordin
           className="absolute w-5 h-5 -translate-x-1/2 -translate-y-full pointer-events-none"
           style={{ left: `${relativeX * 100}%`, top: `${relativeY * 100}%` }}
         >
-          <svg viewBox="0 0 24 24" fill="currentColor" className="text-destructive drop-shadow">
+          <svg
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            className="text-destructive drop-shadow"
+          >
             <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
           </svg>
         </div>

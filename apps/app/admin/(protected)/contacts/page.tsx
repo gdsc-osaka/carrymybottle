@@ -1,7 +1,7 @@
-import { getCloudflareContext } from "@opennextjs/cloudflare";
-import { ContactsPage } from "@/features/admin/ContactsPage";
-import { getDb } from "@/lib/db/client";
-import { getEmergencyContacts } from "@/features/admin/queries";
+import { getCloudflareContext } from '@opennextjs/cloudflare';
+import { ContactsPage } from '@/features/admin/ContactsPage';
+import { getDb } from '@/lib/db/client';
+import { getEmergencyContacts } from '@/features/admin/queries';
 
 export default async function Page() {
   const { env } = await getCloudflareContext({ async: true });

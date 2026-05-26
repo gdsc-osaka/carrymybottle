@@ -1,19 +1,23 @@
-"use server";
+'use server';
 
-import { getCloudflareContext } from "@opennextjs/cloudflare";
-import { eq } from "drizzle-orm";
-import { redirect } from "next/navigation";
-import { getDb } from "@/lib/db/client";
-import { stationTemperatures, stations } from "@/lib/db/schema";
-import { verifyPassword } from "@/lib/auth/password";
-import { createSession, deleteSession, requireAdminSession } from "@/lib/auth/session";
-import { stationSchema } from "./validation";
+import { getCloudflareContext } from '@opennextjs/cloudflare';
+import { eq } from 'drizzle-orm';
+import { redirect } from 'next/navigation';
+import { getDb } from '@/lib/db/client';
+import { stationTemperatures, stations } from '@/lib/db/schema';
+import { verifyPassword } from '@/lib/auth/password';
+import {
+  createSession,
+  deleteSession,
+  requireAdminSession,
+} from '@/lib/auth/session';
+import { stationSchema } from './validation';
 import {
   getInstallationTargetsWithComments,
   getEmergencyContacts,
   logAuditEvent,
-} from "./queries";
-import { installationComments, emergencyContacts } from "@/lib/db/schema";
+} from './queries';
+import { installationComments, emergencyContacts } from '@/lib/db/schema';
 
 async function getEnv() {
   const { env } = await getCloudflareContext({ async: true });
@@ -26,49 +30,51 @@ export type ActionResult<T = void> =
 
 // #84 ログイン
 export async function loginAction(formData: FormData): Promise<ActionResult> {
-  const password = formData.get("password");
-  if (typeof password !== "string" || !password) {
-    return { success: false, error: "パスワードを入力してください" };
+  const password = formData.get('password');
+  if (typeof password !== 'string' || !password) {
+    return { success: false, error: 'パスワードを入力してください' };
   }
 
   const salt = process.env.ADMIN_PASSWORD_SALT;
   const hash = process.env.ADMIN_PASSWORD_HASH;
   if (!salt || !hash) {
-    return { success: false, error: "サーバー設定エラーが発生しました" };
+    return { success: false, error: 'サーバー設定エラーが発生しました' };
   }
 
   const valid = await verifyPassword(password, salt, hash);
   if (!valid) {
-    return { success: false, error: "パスワードが正しくありません" };
+    return { success: false, error: 'パスワードが正しくありません' };
   }
 
   await createSession();
-  redirect("/admin");
+  redirect('/admin');
 }
 
 // #94 ログアウト
 export async function logoutAction(): Promise<void> {
   await requireAdminSession();
   await deleteSession();
-  redirect("/admin/login");
+  redirect('/admin/login');
 }
 
 // #88 給水機追加
-export async function createStationAction(formData: FormData): Promise<ActionResult> {
+export async function createStationAction(
+  formData: FormData
+): Promise<ActionResult> {
   await requireAdminSession();
 
   const raw = {
-    name: formData.get("name"),
-    campusId: formData.get("campusId"),
-    buildingId: formData.get("buildingId"),
-    status: formData.get("status"),
-    temperatures: formData.getAll("temperatures"),
-    description: formData.get("description") || undefined,
-    relativeX: Number(formData.get("relativeX") ?? 0.5),
-    relativeY: Number(formData.get("relativeY") ?? 0.5),
-    isPublic: formData.get("isPublic") === "true",
-    shortLinkId: formData.get("shortLinkId") || undefined,
-    shortLinkUrl: formData.get("shortLinkUrl") || undefined,
+    name: formData.get('name'),
+    campusId: formData.get('campusId'),
+    buildingId: formData.get('buildingId'),
+    status: formData.get('status'),
+    temperatures: formData.getAll('temperatures'),
+    description: formData.get('description') || undefined,
+    relativeX: Number(formData.get('relativeX') ?? 0.5),
+    relativeY: Number(formData.get('relativeY') ?? 0.5),
+    isPublic: formData.get('isPublic') === 'true',
+    shortLinkId: formData.get('shortLinkId') || undefined,
+    shortLinkUrl: formData.get('shortLinkUrl') || undefined,
   };
 
   const result = stationSchema.safeParse(raw);
@@ -79,7 +85,7 @@ export async function createStationAction(formData: FormData): Promise<ActionRes
   const input = result.data;
   const env = await getEnv();
   const db = getDb(env.DB);
-  const id = `station_${crypto.randomUUID().replace(/-/g, "").slice(0, 8)}`;
+  const id = `station_${crypto.randomUUID().replace(/-/g, '').slice(0, 8)}`;
   const now = new Date();
 
   await db.insert(stations).values({
@@ -103,32 +109,32 @@ export async function createStationAction(formData: FormData): Promise<ActionRes
       stationId: id,
       temperatureType: t,
       createdAt: now,
-    })),
+    }))
   );
 
-  await logAuditEvent(db, "create", "station", id);
+  await logAuditEvent(db, 'create', 'station', id);
   return { success: true, data: undefined };
 }
 
 // #88 給水機更新
 export async function updateStationAction(
   stationId: string,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionResult> {
   await requireAdminSession();
 
   const raw = {
-    name: formData.get("name"),
-    campusId: formData.get("campusId"),
-    buildingId: formData.get("buildingId"),
-    status: formData.get("status"),
-    temperatures: formData.getAll("temperatures"),
-    description: formData.get("description") || undefined,
-    relativeX: Number(formData.get("relativeX") ?? 0.5),
-    relativeY: Number(formData.get("relativeY") ?? 0.5),
-    isPublic: formData.get("isPublic") === "true",
-    shortLinkId: formData.get("shortLinkId") || undefined,
-    shortLinkUrl: formData.get("shortLinkUrl") || undefined,
+    name: formData.get('name'),
+    campusId: formData.get('campusId'),
+    buildingId: formData.get('buildingId'),
+    status: formData.get('status'),
+    temperatures: formData.getAll('temperatures'),
+    description: formData.get('description') || undefined,
+    relativeX: Number(formData.get('relativeX') ?? 0.5),
+    relativeY: Number(formData.get('relativeY') ?? 0.5),
+    isPublic: formData.get('isPublic') === 'true',
+    shortLinkId: formData.get('shortLinkId') || undefined,
+    shortLinkUrl: formData.get('shortLinkUrl') || undefined,
   };
 
   const result = stationSchema.safeParse(raw);
@@ -158,21 +164,25 @@ export async function updateStationAction(
     })
     .where(eq(stations.id, stationId));
 
-  await db.delete(stationTemperatures).where(eq(stationTemperatures.stationId, stationId));
+  await db
+    .delete(stationTemperatures)
+    .where(eq(stationTemperatures.stationId, stationId));
   await db.insert(stationTemperatures).values(
     input.temperatures.map((t) => ({
       stationId,
       temperatureType: t,
       createdAt: now,
-    })),
+    }))
   );
 
-  await logAuditEvent(db, "update", "station", stationId);
+  await logAuditEvent(db, 'update', 'station', stationId);
   return { success: true, data: undefined };
 }
 
 // #90 給水機非公開化
-export async function unpublishStationAction(stationId: string): Promise<ActionResult> {
+export async function unpublishStationAction(
+  stationId: string
+): Promise<ActionResult> {
   await requireAdminSession();
   const env = await getEnv();
   const db = getDb(env.DB);
@@ -182,24 +192,30 @@ export async function unpublishStationAction(stationId: string): Promise<ActionR
     .set({ isPublic: false, updatedAt: new Date() })
     .where(eq(stations.id, stationId));
 
-  await logAuditEvent(db, "unpublish", "station", stationId);
+  await logAuditEvent(db, 'unpublish', 'station', stationId);
   return { success: true, data: undefined };
 }
 
 // #90 給水機削除
-export async function deleteStationAction(stationId: string): Promise<ActionResult> {
+export async function deleteStationAction(
+  stationId: string
+): Promise<ActionResult> {
   await requireAdminSession();
   const env = await getEnv();
   const db = getDb(env.DB);
 
-  await db.delete(stationTemperatures).where(eq(stationTemperatures.stationId, stationId));
+  await db
+    .delete(stationTemperatures)
+    .where(eq(stationTemperatures.stationId, stationId));
   await db.delete(stations).where(eq(stations.id, stationId));
-  await logAuditEvent(db, "delete", "station", stationId);
+  await logAuditEvent(db, 'delete', 'station', stationId);
   return { success: true, data: undefined };
 }
 
 // #91 コメント削除（論理削除）
-export async function deleteInstallationCommentAction(commentId: string): Promise<ActionResult> {
+export async function deleteInstallationCommentAction(
+  commentId: string
+): Promise<ActionResult> {
   await requireAdminSession();
   const env = await getEnv();
   const db = getDb(env.DB);
@@ -209,12 +225,14 @@ export async function deleteInstallationCommentAction(commentId: string): Promis
     .set({ deletedAt: new Date() })
     .where(eq(installationComments.id, commentId));
 
-  await logAuditEvent(db, "delete", "installation_comment", commentId);
+  await logAuditEvent(db, 'delete', 'installation_comment', commentId);
   return { success: true, data: undefined };
 }
 
 // #92 緊急連絡削除（論理削除）
-export async function deleteEmergencyContactAction(contactId: string): Promise<ActionResult> {
+export async function deleteEmergencyContactAction(
+  contactId: string
+): Promise<ActionResult> {
   await requireAdminSession();
   const env = await getEnv();
   const db = getDb(env.DB);
@@ -224,7 +242,7 @@ export async function deleteEmergencyContactAction(contactId: string): Promise<A
     .set({ deletedAt: new Date() })
     .where(eq(emergencyContacts.id, contactId));
 
-  await logAuditEvent(db, "delete", "emergency_contact", contactId);
+  await logAuditEvent(db, 'delete', 'emergency_contact', contactId);
   return { success: true, data: undefined };
 }
 
@@ -232,7 +250,7 @@ export async function deleteEmergencyContactAction(contactId: string): Promise<A
 export async function updateShortLinkAction(
   stationId: string,
   shortLinkId: string,
-  shortLinkUrl: string,
+  shortLinkUrl: string
 ): Promise<ActionResult> {
   await requireAdminSession();
   const env = await getEnv();
@@ -243,6 +261,6 @@ export async function updateShortLinkAction(
     .set({ shortLinkId, shortLinkUrl, updatedAt: new Date() })
     .where(eq(stations.id, stationId));
 
-  await logAuditEvent(db, "update_short_link", "station", stationId);
+  await logAuditEvent(db, 'update_short_link', 'station', stationId);
   return { success: true, data: undefined };
 }

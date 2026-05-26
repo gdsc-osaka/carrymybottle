@@ -1,7 +1,11 @@
-import { getCloudflareContext } from "@opennextjs/cloudflare";
-import { StationsPage } from "@/features/admin/StationsPage";
-import { getDb } from "@/lib/db/client";
-import { getAllBuildings, getAllCampuses, getAllStations } from "@/features/admin/queries";
+import { getCloudflareContext } from '@opennextjs/cloudflare';
+import { StationsPage } from '@/features/admin/StationsPage';
+import { getDb } from '@/lib/db/client';
+import {
+  getAllBuildings,
+  getAllCampuses,
+  getAllStations,
+} from '@/features/admin/queries';
 
 export default async function Page() {
   const { env } = await getCloudflareContext({ async: true });
@@ -11,5 +15,11 @@ export default async function Page() {
     getAllCampuses(db),
     getAllBuildings(db),
   ]);
-  return <StationsPage stations={stations} campuses={campuses} buildings={buildings} />;
+  return (
+    <StationsPage
+      stations={stations}
+      campuses={campuses}
+      buildings={buildings}
+    />
+  );
 }
