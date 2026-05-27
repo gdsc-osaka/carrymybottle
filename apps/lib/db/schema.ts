@@ -89,3 +89,26 @@ export const stationTemperatures = sqliteTable('station_temperatures', {
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
 });
+
+export const analyticsEvents = sqliteTable(
+  'analytics_events',
+  {
+    id: text('id').primaryKey(),
+    eventName: text('event_name').notNull(),
+    stationId: text('station_id'),
+    campusId: text('campus_id'),
+    buildingId: text('building_id'),
+    source: text('source'),
+    metadataJson: text('metadata_json'),
+    environment: text('environment').notNull(), // 'production' or 'development'
+    createdAt: text('created_at')
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    check(
+      'analytics_events_environment_check',
+      sql`environment IN ('production', 'development')`
+    ),
+  ]
+);
