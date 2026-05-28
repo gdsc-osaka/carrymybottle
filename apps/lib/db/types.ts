@@ -1,4 +1,4 @@
-import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
+import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import type {
   adminAuditEvents,
   analyticsEvents,
@@ -10,7 +10,7 @@ import type {
   installationVotes,
   stationTemperatures,
   stations,
-} from "./schema";
+} from './schema';
 
 export type Campus = InferSelectModel<typeof campuses>;
 export type NewCampus = InferInsertModel<typeof campuses>;
@@ -22,16 +22,22 @@ export type Station = InferSelectModel<typeof stations>;
 export type NewStation = InferInsertModel<typeof stations>;
 
 export type StationTemperature = InferSelectModel<typeof stationTemperatures>;
-export type NewStationTemperature = InferInsertModel<typeof stationTemperatures>;
+export type NewStationTemperature = InferInsertModel<
+  typeof stationTemperatures
+>;
 
 export type InstallationTarget = InferSelectModel<typeof installationTargets>;
-export type NewInstallationTarget = InferInsertModel<typeof installationTargets>;
+export type NewInstallationTarget = InferInsertModel<
+  typeof installationTargets
+>;
 
 export type InstallationVote = InferSelectModel<typeof installationVotes>;
 export type NewInstallationVote = InferInsertModel<typeof installationVotes>;
 
 export type InstallationComment = InferSelectModel<typeof installationComments>;
-export type NewInstallationComment = InferInsertModel<typeof installationComments>;
+export type NewInstallationComment = InferInsertModel<
+  typeof installationComments
+>;
 
 export type EmergencyContact = InferSelectModel<typeof emergencyContacts>;
 export type NewEmergencyContact = InferInsertModel<typeof emergencyContacts>;

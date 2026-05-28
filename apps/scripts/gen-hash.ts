@@ -4,23 +4,26 @@
  *   wrangler secret put ADMIN_PASSWORD_HASH
  *   wrangler secret put ADMIN_PASSWORD_SALT
  */
-import * as readline from "node:readline";
+import * as readline from 'node:readline';
 
 const ITERATIONS = 100_000;
 const KEY_LENGTH = 32;
 
 async function main() {
   // prompt → stderr so it always appears even when pnpm wraps stdout
-  const rl = readline.createInterface({ input: process.stdin, output: process.stderr });
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stderr,
+  });
   const password = await new Promise<string>((resolve) => {
-    rl.question("Enter admin password: ", (ans) => {
+    rl.question('Enter admin password: ', (ans) => {
       rl.close();
-      resolve(ans.trim());
+      resolve(ans);
     });
   });
 
   if (!password) {
-    process.stderr.write("Error: Password cannot be empty\n");
+    process.stderr.write('Error: Password cannot be empty\n');
     process.exit(1);
   }
 
@@ -29,25 +32,30 @@ async function main() {
   const saltBase64 = btoa(String.fromCharCode(...saltBytes));
 
   const keyMaterial = await crypto.subtle.importKey(
-    "raw",
+    'raw',
     new TextEncoder().encode(password),
-    "PBKDF2",
+    'PBKDF2',
     false,
-    ["deriveBits"],
+    ['deriveBits']
   );
   const bits = await crypto.subtle.deriveBits(
-    { name: "PBKDF2", salt: saltBytes, iterations: ITERATIONS, hash: "SHA-256" },
+    {
+      name: 'PBKDF2',
+      salt: saltBytes,
+      iterations: ITERATIONS,
+      hash: 'SHA-256',
+    },
     keyMaterial,
-    KEY_LENGTH * 8,
+    KEY_LENGTH * 8
   );
   const hashBase64 = btoa(String.fromCharCode(...new Uint8Array(bits)));
 
-  console.log("\n--- Copy the following values ---");
+  console.log('\n--- Copy the following values ---');
   console.log(`ADMIN_PASSWORD_SALT=${saltBase64}`);
   console.log(`ADMIN_PASSWORD_HASH=${hashBase64}`);
-  console.log("\nRegister via:");
-  console.log("  wrangler secret put ADMIN_PASSWORD_SALT");
-  console.log("  wrangler secret put ADMIN_PASSWORD_HASH");
+  console.log('\nRegister via:');
+  console.log('  wrangler secret put ADMIN_PASSWORD_SALT');
+  console.log('  wrangler secret put ADMIN_PASSWORD_HASH');
 }
 
 main().catch((e) => {

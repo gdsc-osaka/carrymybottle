@@ -23,4 +23,5 @@ APP_ENV = "production"
 [[env.production.d1_databases]]
 binding = "DB"
 database_name = "carrymybottle-prod"
+# TODO: replace with actual production D1 database_id before deploying
 database_id = "placeholder-replace-with-actual-id"
