@@ -50,22 +50,30 @@ Critical v16 requirements:
 
 ## 4. Cloudflare & Drizzle Rules
 
-Always verify against the **current official documentation** before using any Cloudflare or Drizzle API.
+**Before writing any Cloudflare or Drizzle code, fetch and read the current official documentation.** APIs, config formats, and recommended patterns change frequently; training-data knowledge may be outdated.
+
+- Cloudflare Workers / D1 / OpenNext: https://developers.cloudflare.com/workers/ and https://opennext.js.org/cloudflare
+- Drizzle ORM: https://orm.drizzle.team/docs/overview
+
+If official docs contradict anything in this file, **official docs win** — flag the discrepancy and update this file.
 
 ### Cloudflare
-- Target: Cloudflare Workers (via OpenNext for Cloudflare).
+- Target runtime: Cloudflare Workers via **OpenNext for Cloudflare**. Read the OpenNext Cloudflare adapter guide before touching runtime configuration.
 - Use Web-standard APIs only; avoid Node.js-only APIs.
 - No filesystem writes, no long-running processes.
 - D1 binding name is `DB` in all environments.
 - Secrets (`ADMIN_PASSWORD_HASH`, `SESSION_SECRET`, `RESEND_API_KEY`, etc.) are registered via `wrangler secret` — never hardcode or commit them.
 - Worker configuration is `wrangler.jsonc` / `wrangler.toml` (source of truth for bindings). Cloudflare resource lifecycle (D1 databases, DNS) is managed via Terraform.
+- Check the [Cloudflare D1 docs](https://developers.cloudflare.com/d1/) for current limits (row size, query timeout, batch API) before designing any query.
 
 ### Drizzle ORM
-- Drizzle schema is the **single source of truth** for DB structure.
+- Read the [Drizzle + Cloudflare D1 guide](https://orm.drizzle.team/docs/get-started/d1-new) before implementing DB access.
+- Drizzle schema (`src/lib/db/schema.ts`) is the **single source of truth** for DB structure.
 - Always generate migrations with `drizzle-kit`; never hand-edit migration files.
 - Get a Drizzle client via `getDb(d1: D1Database)` from `src/lib/db/client.ts` — do not create ad-hoc clients.
 - Apply and validate migrations on the **development** D1 before touching production.
 - Seed scripts must be **idempotent** (safe to run multiple times).
+- When Drizzle releases a new major version, re-read the migration guide before upgrading.
 
 ## 5. Error Handling — Functional Result Type
 
