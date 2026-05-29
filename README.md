@@ -1,36 +1,96 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# キャリボト Web マップ
 
-## Getting Started
+阪大キャンパスの給水機マップ Web アプリ。
 
-First, run the development server:
+- **スタック**: Next.js 16 (App Router) + Cloudflare Workers (OpenNext) + Cloudflare D1 + Drizzle ORM
+- **詳細仕様**: [`docs/DesignDoc.md`](docs/DesignDoc.md)
+- **コントリビューションガイド**: [`AGENTS.md`](AGENTS.md)
+
+---
+
+## ローカル開発環境のセットアップ
+
+### 前提条件
+
+- Node.js 20.9 以上
+- pnpm 9 以上
+- Wrangler CLI (`pnpm add -g wrangler`)
+
+### 1. 依存関係のインストール
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+以降のコマンドは `apps/` ディレクトリで実行する。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+cd apps
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 2. シークレットの設定
 
-## Learn More
+```bash
+cp .dev.vars.example .dev.vars
+```
 
-To learn more about Next.js, take a look at the following resources:
+`.dev.vars` を編集し、各シークレットを設定する。
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+`ADMIN_PASSWORD_HASH` と `ADMIN_PASSWORD_SALT` は以下で生成する。
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+pnpm gen-hash
+# プロンプトに従いパスワードを入力すると HASH と SALT が出力される
+```
 
-## Deploy on Vercel
+`SESSION_SECRET` と `VOTE_TOKEN_SECRET` は任意の 32 文字以上のランダム文字列を設定する。
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 3. データベースのセットアップ
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+# マイグレーションをローカル D1 に適用
+pnpm db:migrate:local
+```
+
+初期データ（キャンパス・建物）の seed 関数は `apps/lib/db/seed/` に定義されている。
+
+### 4. 開発サーバーの起動
+
+```bash
+pnpm dev:cf
+```
+
+`http://localhost:8787` でアプリが起動する。D1 バインディングおよびシークレットは `.dev.vars` から自動的に読み込まれる。
+
+> **注意**: `pnpm dev`（`next dev`）は Cloudflare Workers ランタイムを使わないため、
+> D1 やシークレットにアクセスする機能（管理画面ログイン等）は動作しない。
+
+---
+
+## 主要スクリプト
+
+| コマンド | 内容 |
+|---|---|
+| `pnpm dev:cf` | Cloudflare Workers ランタイムでローカル起動 |
+| `pnpm build:cf` | Cloudflare 向けビルド |
+| `pnpm typecheck` | TypeScript 型チェック |
+| `pnpm lint` | ESLint |
+| `pnpm format` | Prettier |
+| `pnpm db:generate` | Drizzle マイグレーションファイル生成 |
+| `pnpm db:migrate:local` | ローカル D1 にマイグレーション適用 |
+| `pnpm db:migrate:remote` | 本番 D1 にマイグレーション適用 |
+| `pnpm gen-hash` | 管理者パスワードハッシュ生成 |
+
+---
+
+## ディレクトリ構成
+
+```
+apps/           Next.js アプリケーション
+  app/          ルートアダプター（薄いファイルのみ）
+  features/     機能別実装
+  lib/          共通処理（DB・認証・分析等）
+  components/   汎用 UI コンポーネント
+docs/           設計ドキュメント
+terraform/      Cloudflare インフラ管理（D1・R2）
+```
