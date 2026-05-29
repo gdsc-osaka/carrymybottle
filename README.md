@@ -92,5 +92,5 @@ apps/           Next.js アプリケーション
   lib/          共通処理（DB・認証・分析等）
   components/   汎用 UI コンポーネント
 docs/           設計ドキュメント
-terraform/      Cloudflare インフラ管理（D1・DNS 等）
+terraform/      Cloudflare インフラ管理（D1・R2）
 ```
