@@ -34,16 +34,7 @@ cd apps
 cp .dev.vars.example .dev.vars
 ```
 
-`.dev.vars` を編集し、各シークレットを設定する。
-
-`ADMIN_PASSWORD_HASH` と `ADMIN_PASSWORD_SALT` は以下で生成する。
-
-```bash
-pnpm gen-hash
-# プロンプトに従いパスワードを入力すると HASH と SALT が出力される
-```
-
-`SESSION_SECRET` と `VOTE_TOKEN_SECRET` は任意の 32 文字以上のランダム文字列を設定する。
+`.dev.vars` を編集し、各シークレットをチームメンバーから受け取った値で設定する。
 
 ### 3. データベースのセットアップ
 
@@ -79,7 +70,6 @@ pnpm dev:cf
 | `pnpm db:generate` | Drizzle マイグレーションファイル生成 |
 | `pnpm db:migrate:local` | ローカル D1 にマイグレーション適用 |
 | `pnpm db:migrate:remote` | 本番 D1 にマイグレーション適用 |
-| `pnpm gen-hash` | 管理者パスワードハッシュ生成 |
 
 ---
 
