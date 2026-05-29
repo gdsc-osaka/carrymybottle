@@ -1,3 +1,9 @@
+# Worker configuration for carrymybottle.
+# Secrets (ADMIN_PASSWORD_HASH, ADMIN_PASSWORD_SALT, SESSION_SECRET,
+# RESEND_API_KEY, VOTE_TOKEN_SECRET) are registered via `wrangler secret`
+# and must NOT be committed here.
+# For local development, copy .dev.vars.example to .dev.vars.
+
 name = "carrymybottle"
 main = ".open-next/worker.js"
 compatibility_date = "2025-01-01"
@@ -19,7 +25,7 @@ database_id = "cfc6f905-bbd8-4879-842a-bacf7559ecc4"
 [env.production]
 [env.production.vars]
 APP_ENV = "production"
-# TODO: replace with actual production URL
+# TODO: update APP_BASE_URL once the production custom domain is confirmed
 APP_BASE_URL = "https://example.com"
 EMERGENCY_CONTACT_TO = "carry.my.bottle@gmail.com"
 EMERGENCY_CONTACT_FROM = "noreply@example.com"
@@ -27,5 +33,5 @@ EMERGENCY_CONTACT_FROM = "noreply@example.com"
 [[env.production.d1_databases]]
 binding = "DB"
 database_name = "carrymybottle-prod"
-# TODO: replace with actual production D1 database_id before deploying
+# TODO: replace with the production D1 database_id created via Terraform
 database_id = "placeholder-replace-with-actual-id"
