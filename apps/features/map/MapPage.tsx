@@ -31,7 +31,11 @@ function MapContent() {
       {/* Header & Tabs */}
       <header className="flex flex-col gap-3 border-b bg-card p-4 shadow-sm">
         <h1 className="text-xl font-bold">給水機マップ</h1>
-        <Tabs value={selectedCampusId} onValueChange={handleTabChange} className="w-full">
+        <Tabs
+          value={selectedCampusId}
+          onValueChange={handleTabChange}
+          className="w-full"
+        >
           <TabsList className="grid w-full grid-cols-3">
             {CAMPUSES.map((campus) => (
               <TabsTrigger key={campus.id} value={campus.id}>
@@ -53,12 +57,17 @@ function MapContent() {
               ここに MapCanvas コンポーネントが配置されます。
             </p>
             <div className="rounded-lg border bg-background p-4 shadow-sm">
-              <p className="font-medium text-foreground">現在の選択キャンパス</p>
+              <p className="font-medium text-foreground">
+                現在の選択キャンパス
+              </p>
               <p className="text-sm text-muted-foreground">
                 名前: {selectedCampus.name}
               </p>
               <p className="text-sm text-muted-foreground">
-                画像パス: <code className="bg-muted px-1 py-0.5 rounded">{selectedCampus.mapImagePath}</code>
+                画像パス:{' '}
+                <code className="bg-muted px-1 py-0.5 rounded">
+                  {selectedCampus.mapImagePath}
+                </code>
               </p>
             </div>
           </div>
@@ -70,7 +79,13 @@ function MapContent() {
 
 export function MapPage() {
   return (
-    <Suspense fallback={<div className="flex h-[100dvh] items-center justify-center">読み込み中...</div>}>
+    <Suspense
+      fallback={
+        <div className="flex h-[100dvh] items-center justify-center">
+          読み込み中...
+        </div>
+      }
+    >
       <MapContent />
     </Suspense>
   );
