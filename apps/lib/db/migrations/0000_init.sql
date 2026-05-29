@@ -29,6 +29,7 @@ CREATE TABLE `buildings` (
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `buildings_campus_name_idx` ON `buildings` (`campus_id`,`name`);--> statement-breakpoint
+CREATE UNIQUE INDEX `buildings_id_campus_idx` ON `buildings` (`id`,`campus_id`);--> statement-breakpoint
 CREATE TABLE `campuses` (
 	`id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,
@@ -69,8 +70,7 @@ CREATE TABLE `installation_targets` (
 	`vote_count` integer DEFAULT 0 NOT NULL,
 	`created_at` integer NOT NULL,
 	`updated_at` integer NOT NULL,
-	FOREIGN KEY (`campus_id`) REFERENCES `campuses`(`id`) ON UPDATE no action ON DELETE no action,
-	FOREIGN KEY (`building_id`) REFERENCES `buildings`(`id`) ON UPDATE no action ON DELETE no action
+	FOREIGN KEY (`building_id`,`campus_id`) REFERENCES `buildings`(`id`,`campus_id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `installation_targets_campus_building_idx` ON `installation_targets` (`campus_id`,`building_id`);--> statement-breakpoint
@@ -104,6 +104,5 @@ CREATE TABLE `stations` (
 	`is_public` integer DEFAULT true NOT NULL,
 	`created_at` integer NOT NULL,
 	`updated_at` integer NOT NULL,
-	FOREIGN KEY (`campus_id`) REFERENCES `campuses`(`id`) ON UPDATE no action ON DELETE no action,
-	FOREIGN KEY (`building_id`) REFERENCES `buildings`(`id`) ON UPDATE no action ON DELETE no action
+	FOREIGN KEY (`building_id`,`campus_id`) REFERENCES `buildings`(`id`,`campus_id`) ON UPDATE no action ON DELETE no action
 );
