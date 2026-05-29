@@ -13,11 +13,7 @@ import {
   requireAdminSession,
 } from '@/lib/auth/session';
 import { stationSchema } from './validation';
-import {
-  getInstallationTargetsWithComments,
-  getEmergencyContacts,
-  logAuditEvent,
-} from './queries';
+import { logAuditEvent } from './queries';
 import { installationComments, emergencyContacts } from '@/lib/db/schema';
 
 async function getEnv() {

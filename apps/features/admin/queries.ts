@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, isNull } from 'drizzle-orm';
+import { asc, count, desc, eq, isNull } from 'drizzle-orm';
 import type { DB } from '@/lib/db/client';
 import {
   adminAuditEvents,
