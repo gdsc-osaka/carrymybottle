@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, isNull } from 'drizzle-orm';
+import { and, asc, count, desc, eq, isNull } from 'drizzle-orm';
 import type { DB } from '@/lib/db/client';
 import {
   adminAuditEvents,
@@ -122,22 +122,19 @@ export async function getEmergencyContacts(db: DB) {
 }
 
 export async function getAdminStats(db: DB) {
-  const [stationCount, targetCount, contactCount] = await Promise.all([
+  const [stationRow, targetRow, contactRow] = await Promise.all([
+    db.select({ count: count() }).from(stations),
+    db.select({ count: count() }).from(installationTargets),
     db
-      .select()
-      .from(stations)
-      .then((r) => r.length),
-    db
-      .select()
-      .from(installationTargets)
-      .then((r) => r.length),
-    db
-      .select()
+      .select({ count: count() })
       .from(emergencyContacts)
-      .where(isNull(emergencyContacts.deletedAt))
-      .then((r) => r.length),
+      .where(isNull(emergencyContacts.deletedAt)),
   ]);
-  return { stationCount, targetCount, contactCount };
+  return {
+    stationCount: stationRow[0].count,
+    targetCount: targetRow[0].count,
+    contactCount: contactRow[0].count,
+  };
 }
 
 export async function logAuditEvent(

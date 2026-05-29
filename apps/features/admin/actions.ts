@@ -3,6 +3,7 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { eq } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
+import { revalidatePath } from 'next/cache';
 import { getDb } from '@/lib/db/client';
 import { stationTemperatures, stations } from '@/lib/db/schema';
 import { verifyPassword } from '@/lib/auth/password';
@@ -113,6 +114,7 @@ export async function createStationAction(
     );
   });
   await logAuditEvent(db, 'create', 'station', id);
+  revalidatePath('/admin/stations');
   return { success: true, data: undefined };
 }
 
@@ -176,6 +178,7 @@ export async function updateStationAction(
     );
   });
   await logAuditEvent(db, 'update', 'station', stationId);
+  revalidatePath('/admin/stations');
   return { success: true, data: undefined };
 }
 
@@ -193,6 +196,7 @@ export async function unpublishStationAction(
     .where(eq(stations.id, stationId));
 
   await logAuditEvent(db, 'unpublish', 'station', stationId);
+  revalidatePath('/admin/stations');
   return { success: true, data: undefined };
 }
 
@@ -204,13 +208,19 @@ export async function deleteStationAction(
   const env = await getEnv();
   const db = getDb(env.DB);
 
+  const now = new Date();
   await db.transaction(async (tx) => {
+    await tx
+      .update(emergencyContacts)
+      .set({ deletedAt: now })
+      .where(eq(emergencyContacts.stationId, stationId));
     await tx
       .delete(stationTemperatures)
       .where(eq(stationTemperatures.stationId, stationId));
     await tx.delete(stations).where(eq(stations.id, stationId));
   });
   await logAuditEvent(db, 'delete', 'station', stationId);
+  revalidatePath('/admin/stations');
   return { success: true, data: undefined };
 }
 
@@ -228,6 +238,7 @@ export async function deleteInstallationCommentAction(
     .where(eq(installationComments.id, commentId));
 
   await logAuditEvent(db, 'delete', 'installation_comment', commentId);
+  revalidatePath('/admin/requests');
   return { success: true, data: undefined };
 }
 
@@ -245,6 +256,7 @@ export async function deleteEmergencyContactAction(
     .where(eq(emergencyContacts.id, contactId));
 
   await logAuditEvent(db, 'delete', 'emergency_contact', contactId);
+  revalidatePath('/admin/contacts');
   return { success: true, data: undefined };
 }
 
@@ -264,5 +276,6 @@ export async function updateShortLinkAction(
     .where(eq(stations.id, stationId));
 
   await logAuditEvent(db, 'update_short_link', 'station', stationId);
+  revalidatePath('/admin/stations');
   return { success: true, data: undefined };
 }

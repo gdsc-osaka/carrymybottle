@@ -51,6 +51,8 @@ export function StationsPage({ stations, campuses, buildings }: Props) {
   const [editStation, setEditStation] = useState<
     StationWithRelations | undefined
   >();
+  const [processingId, setProcessingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   function openCreate() {
     setEditStation(undefined);
@@ -63,15 +65,34 @@ export function StationsPage({ stations, campuses, buildings }: Props) {
   }
 
   async function handleUnpublish(id: string) {
-    await unpublishStationAction(id);
+    if (processingId) return;
+    setError(null);
+    setProcessingId(id);
+    try {
+      await unpublishStationAction(id);
+    } catch {
+      setError('非公開化に失敗しました。再試行してください。');
+    } finally {
+      setProcessingId(null);
+    }
   }
 
   async function handleDelete(id: string) {
-    await deleteStationAction(id);
+    if (processingId) return;
+    setError(null);
+    setProcessingId(id);
+    try {
+      await deleteStationAction(id);
+    } catch {
+      setError('削除に失敗しました。再試行してください。');
+    } finally {
+      setProcessingId(null);
+    }
   }
 
   return (
     <div className="space-y-4">
+      {error && <p className="text-sm text-destructive">{error}</p>}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">給水機管理</h1>
         <Dialog open={open} onOpenChange={setOpen}>
@@ -181,9 +202,12 @@ export function StationsPage({ stations, campuses, buildings }: Props) {
                           <AlertDialogFooter>
                             <AlertDialogCancel>キャンセル</AlertDialogCancel>
                             <AlertDialogAction
+                              disabled={processingId === station.id}
                               onClick={() => handleUnpublish(station.id)}
                             >
-                              非公開にする
+                              {processingId === station.id
+                                ? '処理中...'
+                                : '非公開にする'}
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
@@ -209,9 +233,12 @@ export function StationsPage({ stations, campuses, buildings }: Props) {
                           <AlertDialogCancel>キャンセル</AlertDialogCancel>
                           <AlertDialogAction
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            disabled={processingId === station.id}
                             onClick={() => handleDelete(station.id)}
                           >
-                            削除する
+                            {processingId === station.id
+                              ? '削除中...'
+                              : '削除する'}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>

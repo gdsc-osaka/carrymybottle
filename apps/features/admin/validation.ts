@@ -11,7 +11,8 @@ export const stationSchema = z.object({
   status: z.enum(['available', 'stopped', 'broken']),
   temperatures: z
     .array(z.enum(['cold', 'normal', 'hot']))
-    .min(1, '水温種別を1つ以上選択してください'),
+    .min(1, '水温種別を1つ以上選択してください')
+    .refine((v) => new Set(v).size === v.length, '水温種別は重複できません'),
   description: z.string().optional(),
   relativeX: z.number().min(0).max(1),
   relativeY: z.number().min(0).max(1),

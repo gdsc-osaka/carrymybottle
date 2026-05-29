@@ -31,6 +31,10 @@ interface Props {
 
 export function RequestsPage({ targets, campuses }: Props) {
   const [campusFilter, setCampusFilter] = useState<string>('all');
+  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(
+    null
+  );
+  const [error, setError] = useState<string | null>(null);
 
   const filtered =
     campusFilter === 'all'
@@ -38,11 +42,21 @@ export function RequestsPage({ targets, campuses }: Props) {
       : targets.filter((t) => t.campusId === campusFilter);
 
   async function handleDeleteComment(commentId: string) {
-    await deleteInstallationCommentAction(commentId);
+    if (deletingCommentId) return;
+    setError(null);
+    setDeletingCommentId(commentId);
+    try {
+      await deleteInstallationCommentAction(commentId);
+    } catch {
+      setError('コメント削除に失敗しました。再試行してください。');
+    } finally {
+      setDeletingCommentId(null);
+    }
   }
 
   return (
     <div className="space-y-4">
+      {error && <p className="text-sm text-destructive">{error}</p>}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">設置希望管理</h1>
         <Select value={campusFilter} onValueChange={setCampusFilter}>
@@ -112,9 +126,12 @@ export function RequestsPage({ targets, campuses }: Props) {
                         <AlertDialogFooter>
                           <AlertDialogCancel>キャンセル</AlertDialogCancel>
                           <AlertDialogAction
+                            disabled={deletingCommentId === comment.id}
                             onClick={() => handleDeleteComment(comment.id)}
                           >
-                            削除する
+                            {deletingCommentId === comment.id
+                              ? '削除中...'
+                              : '削除する'}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>

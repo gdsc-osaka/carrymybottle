@@ -21,6 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { useState } from 'react';
 import { deleteEmergencyContactAction } from './actions';
 import { ISSUE_TYPE_LABELS } from './validation';
 import type { EmergencyContactWithStation } from '@/lib/db/types';
@@ -30,13 +31,26 @@ interface Props {
 }
 
 export function ContactsPage({ contacts }: Props) {
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
   async function handleDelete(id: string) {
-    await deleteEmergencyContactAction(id);
+    if (deletingId) return;
+    setError(null);
+    setDeletingId(id);
+    try {
+      await deleteEmergencyContactAction(id);
+    } catch {
+      setError('削除に失敗しました。時間をおいて再試行してください。');
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-semibold">緊急連絡管理</h1>
+      {error && <p className="text-sm text-destructive">{error}</p>}
 
       <div className="rounded-md border">
         <Table>
@@ -136,9 +150,12 @@ export function ContactsPage({ contacts }: Props) {
                         <AlertDialogFooter>
                           <AlertDialogCancel>キャンセル</AlertDialogCancel>
                           <AlertDialogAction
+                            disabled={deletingId === contact.id}
                             onClick={() => handleDelete(contact.id)}
                           >
-                            削除する
+                            {deletingId === contact.id
+                              ? '削除中...'
+                              : '削除する'}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
