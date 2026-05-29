@@ -1,6 +1,5 @@
-'use server';
-
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 
 const COOKIE_NAME = 'admin_session';
 const SESSION_MAX_AGE = 60 * 60 * 24; // 24h
@@ -102,6 +101,6 @@ export async function deleteSession(): Promise<void> {
 export async function requireAdminSession(): Promise<void> {
   const valid = await verifySession();
   if (!valid) {
-    throw new Error('Unauthorized');
+    redirect('/admin/login');
   }
 }
