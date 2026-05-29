@@ -36,8 +36,9 @@ export async function loginAction(formData: FormData): Promise<ActionResult> {
     return { success: false, error: 'パスワードを入力してください' };
   }
 
-  const salt = process.env.ADMIN_PASSWORD_SALT;
-  const hash = process.env.ADMIN_PASSWORD_HASH;
+  const env = await getEnv();
+  const salt = env.ADMIN_PASSWORD_SALT;
+  const hash = env.ADMIN_PASSWORD_HASH;
   if (!salt || !hash) {
     return { success: false, error: 'サーバー設定エラーが発生しました' };
   }
