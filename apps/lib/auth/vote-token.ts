@@ -4,11 +4,6 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 const VOTE_TOKEN_COOKIE_NAME = 'vote_token';
 const VOTE_TOKEN_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
 
-async function getCloudflareEnv() {
-  const { env } = await getCloudflareContext({ async: true });
-  return env;
-}
-
 function createRandomToken(): string {
   const bytes = new Uint8Array(32);
   crypto.getRandomValues(bytes);
@@ -24,15 +19,15 @@ export async function getVoteToken(): Promise<string | undefined> {
 }
 
 export async function getOrCreateVoteToken(): Promise<string> {
-  const existingToken = await getVoteToken();
+  const cookieStore = await cookies();
+  const existingToken = cookieStore.get(VOTE_TOKEN_COOKIE_NAME)?.value;
   if (existingToken) {
     return existingToken;
   }
 
-  const env = await getCloudflareEnv();
+  const { env } = await getCloudflareContext({ async: true });
   const token = createRandomToken();
 
-  const cookieStore = await cookies();
   cookieStore.set(VOTE_TOKEN_COOKIE_NAME, token, {
     httpOnly: true,
     secure: env.APP_ENV === 'production',
