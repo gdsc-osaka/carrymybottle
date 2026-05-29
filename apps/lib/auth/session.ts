@@ -1,11 +1,13 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 
 const COOKIE_NAME = 'admin_session';
 const SESSION_MAX_AGE = 60 * 60 * 24; // 24h
 
-function getSessionSecret(): string {
-  return process.env.SESSION_SECRET ?? '';
+async function getCloudflareEnv() {
+  const { env } = await getCloudflareContext({ async: true });
+  return env;
 }
 
 async function sign(payload: string, secret: string): Promise<string> {
@@ -46,7 +48,8 @@ async function verify(
 }
 
 export async function createSession(): Promise<void> {
-  const secret = getSessionSecret();
+  const env = await getCloudflareEnv();
+  const secret = env.SESSION_SECRET ?? '';
   if (!secret) {
     throw new Error('SESSION_SECRET is not configured');
   }
@@ -61,7 +64,7 @@ export async function createSession(): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.set(COOKIE_NAME, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: env.APP_ENV === 'production',
     sameSite: 'lax',
     maxAge: SESSION_MAX_AGE,
     path: '/',
@@ -69,7 +72,8 @@ export async function createSession(): Promise<void> {
 }
 
 export async function verifySession(): Promise<boolean> {
-  const secret = getSessionSecret();
+  const env = await getCloudflareEnv();
+  const secret = env.SESSION_SECRET ?? '';
   if (!secret) return false;
   const cookieStore = await cookies();
   const token = cookieStore.get(COOKIE_NAME)?.value;
