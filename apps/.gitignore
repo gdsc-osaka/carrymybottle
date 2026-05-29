@@ -24,3 +24,12 @@
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# cloudflare local secrets
+.dev.vars
+
+# openNext build output
+.open-next/
+
+# wrangler local state
+.wrangler/

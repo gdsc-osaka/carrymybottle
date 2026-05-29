@@ -1,0 +1,31 @@
+name = "carrymybottle"
+main = ".open-next/worker.js"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+assets = { directory = ".open-next/assets", binding = "ASSETS" }
+
+[vars]
+APP_ENV = "development"
+APP_BASE_URL = "http://localhost:3000"
+EMERGENCY_CONTACT_TO = "carry.my.bottle@gmail.com"
+EMERGENCY_CONTACT_FROM = "noreply@example.com"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "carrymybottle-dev"
+database_id = "cfc6f905-bbd8-4879-842a-bacf7559ecc4"
+
+[env.production]
+[env.production.vars]
+APP_ENV = "production"
+# TODO: replace with actual production URL
+APP_BASE_URL = "https://example.com"
+EMERGENCY_CONTACT_TO = "carry.my.bottle@gmail.com"
+EMERGENCY_CONTACT_FROM = "noreply@example.com"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "carrymybottle-prod"
+# TODO: replace with actual production D1 database_id before deploying
+database_id = "placeholder-replace-with-actual-id"
