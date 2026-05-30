@@ -143,11 +143,16 @@ export async function logAuditEvent(
   targetType: string,
   targetId: string
 ) {
-  await db.insert(adminAuditEvents).values({
-    id: crypto.randomUUID(),
-    action,
-    targetType,
-    targetId,
-    createdAt: new Date(),
-  });
+  // Audit log failure must not crash an already-successful mutation
+  try {
+    await db.insert(adminAuditEvents).values({
+      id: crypto.randomUUID(),
+      action,
+      targetType,
+      targetId,
+      createdAt: new Date(),
+    });
+  } catch {
+    // intentionally swallowed
+  }
 }
