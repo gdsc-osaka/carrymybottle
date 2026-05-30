@@ -74,9 +74,7 @@ export const stationTemperatures = sqliteTable(
     }).notNull(),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   },
-  (t) => [
-    primaryKey({ columns: [t.stationId, t.temperatureType] }),
-  ]
+  (t) => [primaryKey({ columns: [t.stationId, t.temperatureType] })]
 );
 
 export const installationTargets = sqliteTable(
