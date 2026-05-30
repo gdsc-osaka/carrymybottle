@@ -55,13 +55,8 @@ export async function logoutAction(): Promise<void> {
   redirect('/admin/login');
 }
 
-// #88 給水機追加
-export async function createStationAction(
-  formData: FormData
-): Promise<ActionResult> {
-  await requireAdminSession();
-
-  const raw = {
+function extractStationFormData(formData: FormData) {
+  return {
     name: formData.get('name'),
     campusId: formData.get('campusId'),
     buildingId: formData.get('buildingId'),
@@ -74,8 +69,15 @@ export async function createStationAction(
     shortLinkId: formData.get('shortLinkId') || undefined,
     shortLinkUrl: formData.get('shortLinkUrl') || undefined,
   };
+}
 
-  const result = stationSchema.safeParse(raw);
+// #88 給水機追加
+export async function createStationAction(
+  formData: FormData
+): Promise<ActionResult> {
+  await requireAdminSession();
+
+  const result = stationSchema.safeParse(extractStationFormData(formData));
   if (!result.success) {
     return { success: false, error: result.error.issues[0].message };
   }
@@ -122,21 +124,7 @@ export async function updateStationAction(
 ): Promise<ActionResult> {
   await requireAdminSession();
 
-  const raw = {
-    name: formData.get('name'),
-    campusId: formData.get('campusId'),
-    buildingId: formData.get('buildingId'),
-    status: formData.get('status'),
-    temperatures: formData.getAll('temperatures'),
-    description: formData.get('description') || undefined,
-    relativeX: Number(formData.get('relativeX') ?? 0.5),
-    relativeY: Number(formData.get('relativeY') ?? 0.5),
-    isPublic: formData.get('isPublic') === 'true',
-    shortLinkId: formData.get('shortLinkId') || undefined,
-    shortLinkUrl: formData.get('shortLinkUrl') || undefined,
-  };
-
-  const result = stationSchema.safeParse(raw);
+  const result = stationSchema.safeParse(extractStationFormData(formData));
   if (!result.success) {
     return { success: false, error: result.error.issues[0].message };
   }
