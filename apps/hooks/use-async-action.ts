@@ -5,7 +5,7 @@ export function useAsyncAction() {
   const [error, setError] = useState<string | null>(null);
 
   const run = useCallback(
-    async (id: string, action: () => Promise<void>, errorMsg: string) => {
+    async (id: string, action: () => Promise<unknown>, errorMsg: string) => {
       if (processingId) return;
       setError(null);
       setProcessingId(id);
