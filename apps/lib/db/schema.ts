@@ -1,6 +1,7 @@
 import {
   foreignKey,
   integer,
+  primaryKey,
   real,
   sqliteTable,
   text,
@@ -74,7 +75,7 @@ export const stationTemperatures = sqliteTable(
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   },
   (t) => [
-    uniqueIndex('station_temperatures_pk').on(t.stationId, t.temperatureType),
+    primaryKey({ columns: [t.stationId, t.temperatureType] }),
   ]
 );
 
