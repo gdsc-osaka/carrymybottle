@@ -3,7 +3,7 @@ import { stations, stationTemperatures } from '../schema';
 
 export async function seedStations(db: DB) {
   const now = new Date();
-  
+
   // 1. 給水機本体のシード
   await db
     .insert(stations)
@@ -35,7 +35,7 @@ export async function seedStations(db: DB) {
         createdAt: now,
         updatedAt: now,
       },
-      
+
       // 吹田キャンパス (suita)
       {
         id: 'suita_station_01',
@@ -86,23 +86,55 @@ export async function seedStations(db: DB) {
     .insert(stationTemperatures)
     .values([
       // toyonaka_station_01: 冷水と常温
-      { stationId: 'toyonaka_station_01', temperatureType: 'cold', createdAt: now },
-      { stationId: 'toyonaka_station_01', temperatureType: 'normal', createdAt: now },
-      
+      {
+        stationId: 'toyonaka_station_01',
+        temperatureType: 'cold',
+        createdAt: now,
+      },
+      {
+        stationId: 'toyonaka_station_01',
+        temperatureType: 'normal',
+        createdAt: now,
+      },
+
       // toyonaka_station_02: 冷水のみ
-      { stationId: 'toyonaka_station_02', temperatureType: 'cold', createdAt: now },
+      {
+        stationId: 'toyonaka_station_02',
+        temperatureType: 'cold',
+        createdAt: now,
+      },
 
       // suita_station_01: 冷水・常温・温水
-      { stationId: 'suita_station_01', temperatureType: 'cold', createdAt: now },
-      { stationId: 'suita_station_01', temperatureType: 'normal', createdAt: now },
+      {
+        stationId: 'suita_station_01',
+        temperatureType: 'cold',
+        createdAt: now,
+      },
+      {
+        stationId: 'suita_station_01',
+        temperatureType: 'normal',
+        createdAt: now,
+      },
       { stationId: 'suita_station_01', temperatureType: 'hot', createdAt: now },
 
       // suita_station_02: 冷水のみ
-      { stationId: 'suita_station_02', temperatureType: 'cold', createdAt: now },
+      {
+        stationId: 'suita_station_02',
+        temperatureType: 'cold',
+        createdAt: now,
+      },
 
       // minoh_station_01: 冷水と常温
-      { stationId: 'minoh_station_01', temperatureType: 'cold', createdAt: now },
-      { stationId: 'minoh_station_01', temperatureType: 'normal', createdAt: now },
+      {
+        stationId: 'minoh_station_01',
+        temperatureType: 'cold',
+        createdAt: now,
+      },
+      {
+        stationId: 'minoh_station_01',
+        temperatureType: 'normal',
+        createdAt: now,
+      },
     ])
     .onConflictDoNothing();
 }
