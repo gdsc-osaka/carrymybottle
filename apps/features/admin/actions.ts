@@ -244,23 +244,3 @@ export async function deleteEmergencyContactAction(
   revalidatePath('/admin/contacts');
   return { success: true, data: undefined };
 }
-
-// #93 短縮リンク更新
-export async function updateShortLinkAction(
-  stationId: string,
-  shortLinkId: string,
-  shortLinkUrl: string
-): Promise<ActionResult> {
-  await requireAdminSession();
-  const env = await getEnv();
-  const db = getDb(env.DB);
-
-  await db
-    .update(stations)
-    .set({ shortLinkId, shortLinkUrl, updatedAt: new Date() })
-    .where(eq(stations.id, stationId));
-
-  await logAuditEvent(db, 'update_short_link', 'station', stationId);
-  revalidatePath('/admin/stations');
-  return { success: true, data: undefined };
-}

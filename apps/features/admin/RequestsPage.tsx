@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useAsyncAction } from '@/hooks/use-async-action';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -31,10 +32,7 @@ interface Props {
 
 export function RequestsPage({ targets, campuses }: Props) {
   const [campusFilter, setCampusFilter] = useState<string>('all');
-  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(
-    null
-  );
-  const [error, setError] = useState<string | null>(null);
+  const { processingId: deletingCommentId, error, run } = useAsyncAction();
 
   const filtered =
     campusFilter === 'all'
@@ -42,16 +40,11 @@ export function RequestsPage({ targets, campuses }: Props) {
       : targets.filter((t) => t.campusId === campusFilter);
 
   async function handleDeleteComment(commentId: string) {
-    if (deletingCommentId) return;
-    setError(null);
-    setDeletingCommentId(commentId);
-    try {
-      await deleteInstallationCommentAction(commentId);
-    } catch {
-      setError('コメント削除に失敗しました。再試行してください。');
-    } finally {
-      setDeletingCommentId(null);
-    }
+    await run(
+      commentId,
+      () => deleteInstallationCommentAction(commentId),
+      'コメント削除に失敗しました。再試行してください。'
+    );
   }
 
   return (
