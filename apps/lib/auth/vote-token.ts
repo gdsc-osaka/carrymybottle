@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
+import { ResultAsync, errAsync } from 'neverthrow';
 
 const VOTE_TOKEN_COOKIE_NAME = 'vote_token';
 const VOTE_TOKEN_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
@@ -43,29 +44,38 @@ export async function getOrCreateVoteToken(): Promise<string> {
   return token;
 }
 
-export async function hashVoteToken(token: string): Promise<string> {
-  const { env } = await getCloudflareContext({ async: true });
-  const secret = env.VOTE_TOKEN_SECRET ?? '';
-  if (!secret) {
-    throw new Error('VOTE_TOKEN_SECRET is not configured');
-  }
+export function hashVoteToken(token: string): ResultAsync<string, Error> {
+  return ResultAsync.fromPromise(
+    getCloudflareContext({ async: true }),
+    (error) => new Error(`failed to load Cloudflare context: ${String(error)}`)
+  ).andThen(({ env }) => {
+    const secret = env.VOTE_TOKEN_SECRET;
+    if (!secret) {
+      return errAsync(new Error('VOTE_TOKEN_SECRET is not configured'));
+    }
 
-  const key = await crypto.subtle.importKey(
-    'raw',
-    new TextEncoder().encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign']
-  );
-  const signature = await crypto.subtle.sign(
-    'HMAC',
-    key,
-    new TextEncoder().encode(token)
-  );
-  return encodeBase64Url(new Uint8Array(signature));
+    const encoder = new TextEncoder();
+    return ResultAsync.fromPromise(
+      crypto.subtle.importKey(
+        'raw',
+        encoder.encode(secret),
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['sign']
+      ),
+      (error) => new Error(`failed to import HMAC key: ${String(error)}`)
+    ).andThen((key) =>
+      ResultAsync.fromPromise(
+        crypto.subtle.sign('HMAC', key, encoder.encode(token)),
+        (error) => new Error(`failed to sign vote token: ${String(error)}`)
+      ).map((signature) => encodeBase64Url(new Uint8Array(signature)))
+    );
+  });
 }
 
-export async function getOrCreateVoteTokenHash(): Promise<string> {
-  const token = await getOrCreateVoteToken();
-  return hashVoteToken(token);
+export function getOrCreateVoteTokenHash(): ResultAsync<string, Error> {
+  return ResultAsync.fromPromise(
+    getOrCreateVoteToken(),
+    (error) => new Error(`failed to get or create vote token: ${String(error)}`)
+  ).andThen((token) => hashVoteToken(token));
 }
