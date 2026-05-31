@@ -1,4 +1,4 @@
-import { asc, count, desc, eq, isNull } from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray, isNull } from 'drizzle-orm';
 import type { DB } from '@/lib/db/client';
 import {
   adminAuditEvents,
@@ -19,7 +19,13 @@ export async function getAllStations(db: DB) {
     .leftJoin(buildings, eq(stations.buildingId, buildings.id))
     .orderBy(asc(stations.campusId), asc(stations.name));
 
-  const temps = await db.select().from(stationTemperatures);
+  if (rows.length === 0) return [];
+
+  const stationIds = rows.map((r) => r.stations.id);
+  const temps = await db
+    .select()
+    .from(stationTemperatures)
+    .where(inArray(stationTemperatures.stationId, stationIds));
 
   return rows.map((row) => ({
     ...row.stations,
@@ -94,7 +100,12 @@ export async function getInstallationTargetsWithComments(
   const comments = await db
     .select()
     .from(installationComments)
-    .where(isNull(installationComments.deletedAt))
+    .where(
+      and(
+        isNull(installationComments.deletedAt),
+        inArray(installationComments.targetId, targetIds)
+      )
+    )
     .orderBy(asc(installationComments.createdAt));
 
   return rows.map((row) => ({
