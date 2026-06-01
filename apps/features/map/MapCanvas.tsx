@@ -34,7 +34,7 @@ export function MapCanvas({
             station.status === 'broken'
               ? 'text-destructive'
               : station.status === 'stopped'
-                ? 'text-warning text-yellow-500'
+                ? 'text-yellow-500'
                 : 'text-primary';
 
           return (

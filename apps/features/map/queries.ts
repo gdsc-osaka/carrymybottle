@@ -1,4 +1,4 @@
-import { asc, eq, inArray } from 'drizzle-orm';
+import { and, asc, eq, inArray } from 'drizzle-orm';
 import type { DB } from '@/lib/db/client';
 import {
   buildings,
@@ -13,7 +13,7 @@ export async function getStationsByCampus(db: DB, campusId: string) {
     .from(stations)
     .leftJoin(campuses, eq(stations.campusId, campuses.id))
     .leftJoin(buildings, eq(stations.buildingId, buildings.id))
-    .where(eq(stations.campusId, campusId))
+    .where(and(eq(stations.campusId, campusId), eq(stations.isPublic, true)))
     .orderBy(asc(stations.name));
 
   if (rows.length === 0) return [];
