@@ -21,7 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useState } from 'react';
+import { useAsyncAction } from '@/hooks/use-async-action';
 import { deleteEmergencyContactAction } from './actions';
 import { ISSUE_TYPE_LABELS } from './validation';
 import type { EmergencyContactWithStation } from '@/lib/db/types';
@@ -31,20 +31,14 @@ interface Props {
 }
 
 export function ContactsPage({ contacts }: Props) {
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { processingId: deletingId, error, run } = useAsyncAction();
 
   async function handleDelete(id: string) {
-    if (deletingId) return;
-    setError(null);
-    setDeletingId(id);
-    try {
-      await deleteEmergencyContactAction(id);
-    } catch {
-      setError('削除に失敗しました。時間をおいて再試行してください。');
-    } finally {
-      setDeletingId(null);
-    }
+    await run(
+      id,
+      () => deleteEmergencyContactAction(id),
+      '削除に失敗しました。時間をおいて再試行してください。'
+    );
   }
 
   return (
