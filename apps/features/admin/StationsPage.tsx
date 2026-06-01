@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useAsyncAction } from '@/hooks/use-async-action';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -51,8 +52,7 @@ export function StationsPage({ stations, campuses, buildings }: Props) {
   const [editStation, setEditStation] = useState<
     StationWithRelations | undefined
   >();
-  const [processingId, setProcessingId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { processingId, error, run } = useAsyncAction();
 
   function openCreate() {
     setEditStation(undefined);
@@ -65,29 +65,19 @@ export function StationsPage({ stations, campuses, buildings }: Props) {
   }
 
   async function handleUnpublish(id: string) {
-    if (processingId) return;
-    setError(null);
-    setProcessingId(id);
-    try {
-      await unpublishStationAction(id);
-    } catch {
-      setError('非公開化に失敗しました。再試行してください。');
-    } finally {
-      setProcessingId(null);
-    }
+    await run(
+      id,
+      () => unpublishStationAction(id),
+      '非公開化に失敗しました。再試行してください。'
+    );
   }
 
   async function handleDelete(id: string) {
-    if (processingId) return;
-    setError(null);
-    setProcessingId(id);
-    try {
-      await deleteStationAction(id);
-    } catch {
-      setError('削除に失敗しました。再試行してください。');
-    } finally {
-      setProcessingId(null);
-    }
+    await run(
+      id,
+      () => deleteStationAction(id),
+      '削除に失敗しました。再試行してください。'
+    );
   }
 
   return (
