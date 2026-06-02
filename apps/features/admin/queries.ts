@@ -163,7 +163,14 @@ export async function logAuditEvent(
       targetId,
       createdAt: new Date(),
     });
-  } catch {
-    // intentionally swallowed
+  } catch (error) {
+    // Audit log is best-effort: never crash a successful mutation,
+    // but surface the failure so a missing record is observable.
+    console.error('logAuditEvent failed', {
+      action,
+      targetType,
+      targetId,
+      error,
+    });
   }
 }
