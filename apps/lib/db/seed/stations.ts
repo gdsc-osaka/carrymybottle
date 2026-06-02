@@ -120,7 +120,11 @@ export function seedStations(db: DB): ResultAsync<void, SeedError> {
             temperatureType: 'normal',
             createdAt: now,
           },
-          { stationId: 'suita_station_01', temperatureType: 'hot', createdAt: now },
+          {
+            stationId: 'suita_station_01',
+            temperatureType: 'hot',
+            createdAt: now,
+          },
 
           // suita_station_02: 冷水のみ
           {
@@ -142,7 +146,10 @@ export function seedStations(db: DB): ResultAsync<void, SeedError> {
           },
         ])
         .onConflictDoNothing({
-          target: [stationTemperatures.stationId, stationTemperatures.temperatureType],
+          target: [
+            stationTemperatures.stationId,
+            stationTemperatures.temperatureType,
+          ],
         });
     }),
     (error) => {
