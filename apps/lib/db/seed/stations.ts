@@ -2,7 +2,9 @@ import { ResultAsync } from 'neverthrow';
 import type { DB } from '@/lib/db/client';
 import { stations, stationTemperatures } from '../schema';
 
-export function seedStations(db: DB): ResultAsync<void, Error> {
+export type SeedError = 'DB_ERROR';
+
+export function seedStations(db: DB): ResultAsync<void, SeedError> {
   const now = new Date();
 
   return ResultAsync.fromPromise(
@@ -143,6 +145,9 @@ export function seedStations(db: DB): ResultAsync<void, Error> {
           target: [stationTemperatures.stationId, stationTemperatures.temperatureType],
         });
     }),
-    (error) => error as Error
+    (error) => {
+      console.error(error);
+      return 'DB_ERROR' as const;
+    }
   ).map(() => undefined);
 }
