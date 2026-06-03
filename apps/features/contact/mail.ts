@@ -47,3 +47,42 @@ export async function sendAdminNotificationEmail(
     ].join('\n'),
   });
 }
+
+type AutoReplyParams = {
+  stationName: string;
+  issueType: IssueType;
+  message: string;
+  reporterEmail: string;
+  subject: string;
+};
+
+export async function sendAutoReplyEmail(
+  params: AutoReplyParams
+): Promise<void> {
+  const { env } = await getCloudflareContext({ async: true });
+  const from = env.EMERGENCY_CONTACT_FROM;
+  if (!from) {
+    throw new Error('EMERGENCY_CONTACT_FROM is not configured');
+  }
+
+  const resend = await getMailClient();
+
+  await resend.emails.send({
+    from,
+    to: params.reporterEmail,
+    subject: params.subject,
+    text: [
+      'このたびはご連絡いただきありがとうございます。',
+      '以下の内容で受け付けました。確認次第、対応いたします。',
+      '',
+      `給水機: ${params.stationName}`,
+      `不具合の種類: ${ISSUE_TYPE_LABELS[params.issueType]}`,
+      '',
+      '【お問い合わせ内容】',
+      params.message,
+      '',
+      '※ 状況によってはキャリボトよりご連絡する場合があります。',
+      '※ このメールは自動送信です。返信はできません。',
+    ].join('\n'),
+  });
+}

@@ -4,7 +4,7 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { getDb } from '@/lib/db/client';
 import { contactSchema } from './validation';
 import { insertEmergencyContact, getStationWithRelations } from './queries';
-import { sendAdminNotificationEmail } from './mail';
+import { sendAdminNotificationEmail, sendAutoReplyEmail } from './mail';
 
 export type ContactActionResult =
   | { success: true }
@@ -46,7 +46,14 @@ export async function submitContactAction(
     subject,
   });
 
-  // #76 自動返信メール送信予定
+  await sendAutoReplyEmail({
+    stationName: station?.name ?? parsed.data.stationId,
+    issueType: parsed.data.issueType,
+    message: parsed.data.message,
+    reporterEmail: parsed.data.reporterEmail,
+    subject: `【受付完了】${subject}`,
+  });
+
   // #78 analytics イベント記録予定
 
   return { success: true };
