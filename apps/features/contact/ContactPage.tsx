@@ -2,8 +2,10 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Textarea } from '@/components/ui/textarea';
 import {
   ISSUE_TYPES,
   ISSUE_TYPE_LABELS,
@@ -16,6 +18,8 @@ type Props = {
 
 export function ContactPage({ stationId }: Props) {
   const [issueType, setIssueType] = useState<IssueType | ''>('');
+  const [message, setMessage] = useState('');
+  const [reporterEmail, setReporterEmail] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   // #74 で Server Action を呼び出す予定
@@ -67,12 +71,35 @@ export function ContactPage({ stationId }: Props) {
             </RadioGroup>
           </section>
 
-          {/* Issue #73 で実装予定: メッセージ本文・連絡者メールアドレス入力 */}
           <section className="flex flex-col gap-2">
-            <p className="text-sm font-medium">詳細・連絡先</p>
-            <div className="rounded-lg border border-dashed bg-muted p-4 text-center text-sm text-muted-foreground">
-              【Issue #73 実装予定】メッセージ本文・連絡者メールアドレス入力
-            </div>
+            <Label htmlFor="message" className="text-sm font-medium">
+              詳細内容
+            </Label>
+            <Textarea
+              id="message"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="状況を詳しく教えてください"
+              required
+              rows={4}
+            />
+          </section>
+
+          <section className="flex flex-col gap-2">
+            <Label htmlFor="reporter-email" className="text-sm font-medium">
+              連絡先メールアドレス
+            </Label>
+            <Input
+              id="reporter-email"
+              type="email"
+              value={reporterEmail}
+              onChange={(e) => setReporterEmail(e.target.value)}
+              placeholder="your@email.com"
+              required
+            />
+            <p className="text-xs text-muted-foreground">
+              受付完了メールをお送りします
+            </p>
           </section>
 
           <Button type="submit" className="w-full" size="lg">
