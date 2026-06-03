@@ -11,6 +11,7 @@ import {
   ISSUE_TYPE_LABELS,
   type IssueType,
 } from '@/lib/constants/contacts';
+import { submitContactAction } from './actions';
 
 type Props = {
   stationId: string;
@@ -21,11 +22,27 @@ export function ContactPage({ stationId }: Props) {
   const [message, setMessage] = useState('');
   const [reporterEmail, setReporterEmail] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  // #74 で Server Action を呼び出す予定
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsSubmitted(true);
+    setIsSubmitting(true);
+    setErrorMessage('');
+
+    const formData = new FormData();
+    formData.set('stationId', stationId);
+    formData.set('issueType', issueType);
+    formData.set('message', message);
+    formData.set('reporterEmail', reporterEmail);
+
+    const result = await submitContactAction(formData);
+    if (result.success) {
+      setIsSubmitted(true);
+    } else {
+      setErrorMessage(result.error);
+    }
+    setIsSubmitting(false);
   };
 
   if (isSubmitted) {
@@ -102,8 +119,17 @@ export function ContactPage({ stationId }: Props) {
             </p>
           </section>
 
-          <Button type="submit" className="w-full" size="lg">
-            送信する
+          {errorMessage && (
+            <p className="text-sm text-destructive">{errorMessage}</p>
+          )}
+
+          <Button
+            type="submit"
+            className="w-full"
+            size="lg"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? '送信中...' : '送信する'}
           </Button>
         </form>
       </main>
