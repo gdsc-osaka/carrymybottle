@@ -34,7 +34,9 @@ export async function submitContactAction(
   await insertEmergencyContact(db, id, parsed.data);
 
   const station = await getStationWithRelations(db, parsed.data.stationId);
-  const subject = `緊急連絡: ${station?.name ?? parsed.data.stationId}`;
+  const baseSubject = `緊急連絡: ${station?.name ?? parsed.data.stationId}`;
+  const subjectPrefix = env.APP_ENV === 'development' ? '[DEV] ' : '';
+  const subject = `${subjectPrefix}${baseSubject}`;
 
   await sendAdminNotificationEmail({
     stationName: station?.name ?? parsed.data.stationId,
