@@ -5,6 +5,7 @@ import { getDb } from '@/lib/db/client';
 import { contactSchema } from './validation';
 import { insertEmergencyContact, getStationWithRelations } from './queries';
 import { sendAdminNotificationEmail, sendAutoReplyEmail } from './mail';
+import { trackEvent } from '@/lib/analytics/events';
 
 export type ContactActionResult =
   | { success: true }
@@ -56,7 +57,10 @@ export async function submitContactAction(
     subject: `【受付完了】${subject}`,
   });
 
-  // #78 analytics イベント記録予定
+  await trackEvent({
+    eventName: 'emergency_form_submitted',
+    stationId: parsed.data.stationId,
+  });
 
   return { success: true };
 }
