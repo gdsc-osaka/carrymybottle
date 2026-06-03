@@ -3,7 +3,8 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { getDb } from '@/lib/db/client';
 import { contactSchema } from './validation';
-import { insertEmergencyContact } from './queries';
+import { insertEmergencyContact, getStationWithRelations } from './queries';
+import { sendAdminNotificationEmail } from './mail';
 
 export type ContactActionResult =
   | { success: true }
@@ -32,7 +33,19 @@ export async function submitContactAction(
 
   await insertEmergencyContact(db, id, parsed.data);
 
-  // #75 管理者通知メール送信予定
+  const station = await getStationWithRelations(db, parsed.data.stationId);
+  const subject = `緊急連絡: ${station?.name ?? parsed.data.stationId}`;
+
+  await sendAdminNotificationEmail({
+    stationName: station?.name ?? parsed.data.stationId,
+    campusName: station?.campus?.name ?? '',
+    buildingName: station?.building?.name ?? '',
+    issueType: parsed.data.issueType,
+    message: parsed.data.message,
+    reporterEmail: parsed.data.reporterEmail,
+    subject,
+  });
+
   // #76 自動返信メール送信予定
   // #78 analytics イベント記録予定
 
