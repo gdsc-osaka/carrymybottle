@@ -3,7 +3,11 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { getDb } from '@/lib/db/client';
 import { contactSchema } from './validation';
-import { insertEmergencyContact, getStationWithRelations } from './queries';
+import {
+  insertEmergencyContact,
+  getStationWithRelations,
+  updateAutoReplyError,
+} from './queries';
 import { sendAdminNotificationEmail, sendAutoReplyEmail } from './mail';
 import { trackEvent } from '@/lib/analytics/events';
 
@@ -49,13 +53,19 @@ export async function submitContactAction(
     subject,
   });
 
-  await sendAutoReplyEmail({
-    stationName: station?.name ?? parsed.data.stationId,
-    issueType: parsed.data.issueType,
-    message: parsed.data.message,
-    reporterEmail: parsed.data.reporterEmail,
-    subject: `【受付完了】${subject}`,
-  });
+  try {
+    await sendAutoReplyEmail({
+      stationName: station?.name ?? parsed.data.stationId,
+      issueType: parsed.data.issueType,
+      message: parsed.data.message,
+      reporterEmail: parsed.data.reporterEmail,
+      subject: `【受付完了】${subject}`,
+    });
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    console.error('[contact] auto-reply failed:', errorMessage);
+    await updateAutoReplyError(db, id, errorMessage).catch(() => {});
+  }
 
   await trackEvent({
     eventName: 'emergency_form_submitted',

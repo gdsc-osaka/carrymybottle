@@ -26,6 +26,17 @@ export async function getStationWithRelations(db: DB, stationId: string) {
   };
 }
 
+export async function updateAutoReplyError(
+  db: DB,
+  id: string,
+  error: string
+): Promise<void> {
+  await db
+    .update(emergencyContacts)
+    .set({ autoReplyError: error })
+    .where(eq(emergencyContacts.id, id));
+}
+
 export async function insertEmergencyContact(
   db: DB,
   id: string,
