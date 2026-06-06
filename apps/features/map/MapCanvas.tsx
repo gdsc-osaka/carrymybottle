@@ -36,12 +36,14 @@ export function MapCanvas({
               : station.status === 'stopped'
                 ? 'text-yellow-500'
                 : 'text-primary';
+          const statusText = station.status === 'broken' ? '故障中' : station.status === 'stopped' ? '停止中' : '稼働中';
+          const ariaLabel = isAvailable ? station.name : `${station.name} (${statusText})`;
 
           return (
             <button
               key={station.id}
               className={cn(
-                'absolute flex flex-col items-center justify-center transform -translate-x-1/2 -translate-y-full hover:scale-110 transition-transform cursor-pointer group',
+                'absolute flex flex-col items-center justify-center transform -translate-x-1/2 -translate-y-full hover:scale-110 focus-visible:scale-110 transition-transform cursor-pointer group',
                 pinColorClass
               )}
               style={{
@@ -49,14 +51,14 @@ export function MapCanvas({
                 top: `${station.relativeY * 100}%`,
               }}
               onClick={() => onStationClick?.(station)}
-              aria-label={station.name}
+              aria-label={ariaLabel}
             >
               <MapPin className="h-8 w-8 drop-shadow-md fill-background" />
-              <div className="absolute top-full mt-1 px-2 py-1 bg-popover text-popover-foreground text-xs font-medium rounded shadow-md opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-opacity z-10">
+              <div className="absolute top-full mt-1 px-2 py-1 bg-popover text-popover-foreground text-xs font-medium rounded shadow-md opacity-0 group-hover:opacity-100 group-focus:opacity-100 whitespace-nowrap pointer-events-none transition-opacity z-10">
                 {station.name}
                 {!isAvailable && (
                   <span className="ml-1 text-muted-foreground">
-                    ({station.status})
+                    ({statusText})
                   </span>
                 )}
               </div>

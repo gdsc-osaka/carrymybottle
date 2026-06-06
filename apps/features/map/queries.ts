@@ -11,8 +11,8 @@ export async function getStationsByCampus(db: DB, campusId: string) {
   const rows = await db
     .select()
     .from(stations)
-    .leftJoin(campuses, eq(stations.campusId, campuses.id))
-    .leftJoin(buildings, eq(stations.buildingId, buildings.id))
+    .innerJoin(campuses, eq(stations.campusId, campuses.id))
+    .innerJoin(buildings, eq(stations.buildingId, buildings.id))
     .where(and(eq(stations.campusId, campusId), eq(stations.isPublic, true)))
     .orderBy(asc(stations.name));
 
@@ -26,8 +26,8 @@ export async function getStationsByCampus(db: DB, campusId: string) {
 
   return rows.map((row) => ({
     ...row.stations,
-    campus: row.campuses!,
-    building: row.buildings!,
+    campus: row.campuses,
+    building: row.buildings,
     temperatures: temps.filter((t) => t.stationId === row.stations.id),
   }));
 }

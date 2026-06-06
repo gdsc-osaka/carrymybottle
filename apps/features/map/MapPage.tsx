@@ -54,7 +54,7 @@ function MapContent({ stations }: { stations: StationWithRelations[] }) {
           stations={stations}
           onStationClick={(station) => {
             // TODO: #40 給水機ピンタップ → 給水機詳細ナビゲーション
-            console.log('Clicked station:', station.name);
+            router.push(`/stations/${station.id}`);
           }}
         />
       </main>

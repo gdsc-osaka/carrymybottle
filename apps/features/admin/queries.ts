@@ -15,8 +15,8 @@ export async function getAllStations(db: DB) {
   const rows = await db
     .select()
     .from(stations)
-    .leftJoin(campuses, eq(stations.campusId, campuses.id))
-    .leftJoin(buildings, eq(stations.buildingId, buildings.id))
+    .innerJoin(campuses, eq(stations.campusId, campuses.id))
+    .innerJoin(buildings, eq(stations.buildingId, buildings.id))
     .orderBy(asc(stations.campusId), asc(stations.name));
 
   if (rows.length === 0) return [];
@@ -29,8 +29,8 @@ export async function getAllStations(db: DB) {
 
   return rows.map((row) => ({
     ...row.stations,
-    campus: row.campuses!,
-    building: row.buildings!,
+    campus: row.campuses,
+    building: row.buildings,
     temperatures: temps.filter((t) => t.stationId === row.stations.id),
   }));
 }
@@ -39,8 +39,8 @@ export async function getStationById(db: DB, id: string) {
   const [row] = await db
     .select()
     .from(stations)
-    .leftJoin(campuses, eq(stations.campusId, campuses.id))
-    .leftJoin(buildings, eq(stations.buildingId, buildings.id))
+    .innerJoin(campuses, eq(stations.campusId, campuses.id))
+    .innerJoin(buildings, eq(stations.buildingId, buildings.id))
     .where(eq(stations.id, id))
     .limit(1);
 
@@ -53,8 +53,8 @@ export async function getStationById(db: DB, id: string) {
 
   return {
     ...row.stations,
-    campus: row.campuses!,
-    building: row.buildings!,
+    campus: row.campuses,
+    building: row.buildings,
     temperatures: temps,
   };
 }
