@@ -166,11 +166,15 @@ export async function logAuditEvent(
   } catch (error) {
     // Audit log is best-effort: never crash a successful mutation,
     // but surface the failure so a missing record is observable.
-    console.error('logAuditEvent failed', {
-      action,
-      targetType,
-      targetId,
-      error,
-    });
+    const env = process.env.APP_ENV;
+    const base = { action, targetType, targetId };
+    if (env === 'development') {
+      console.error('logAuditEvent failed', { ...base, error });
+    } else {
+      console.error('logAuditEvent failed', {
+        ...base,
+        errorMessage: error instanceof Error ? error.message : 'unknown',
+      });
+    }
   }
 }
