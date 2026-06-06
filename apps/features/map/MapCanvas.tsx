@@ -36,8 +36,15 @@ export function MapCanvas({
               : station.status === 'stopped'
                 ? 'text-yellow-500'
                 : 'text-primary';
-          const statusText = station.status === 'broken' ? '故障中' : station.status === 'stopped' ? '停止中' : '稼働中';
-          const ariaLabel = isAvailable ? station.name : `${station.name} (${statusText})`;
+          const statusText =
+            station.status === 'broken'
+              ? '故障中'
+              : station.status === 'stopped'
+                ? '停止中'
+                : '稼働中';
+          const ariaLabel = isAvailable
+            ? station.name
+            : `${station.name} (${statusText})`;
 
           return (
             <button
