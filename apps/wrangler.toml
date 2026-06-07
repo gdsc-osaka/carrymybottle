@@ -20,7 +20,7 @@ EMERGENCY_CONTACT_FROM = "noreply@example.com"
 [[d1_databases]]
 binding = "DB"
 database_name = "carrymybottle-dev"
-database_id = "cfc6f905-bbd8-4879-842a-bacf7559ecc4"
+database_id = "e0af63ef-25c0-48b3-8459-9875e1d87814"
 
 [env.production]
 [env.production.vars]
