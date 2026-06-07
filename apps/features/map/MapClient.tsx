@@ -6,7 +6,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CAMPUSES, type CampusId } from '@/lib/constants/campuses';
 import { MapCanvas, type StationWithRelations } from './MapCanvas';
 
-export function MapContent({ stations }: { stations: StationWithRelations[] }) {
+function MapContent({ stations }: { stations: StationWithRelations[] }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();

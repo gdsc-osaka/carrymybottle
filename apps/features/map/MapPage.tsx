@@ -1,8 +1,8 @@
 import React from 'react';
-import { headers } from 'next/headers';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { getDb } from '@/lib/db/client';
 import { trackEvent } from '@/lib/analytics/events';
+import { isPrefetchRequest } from '@/lib/analytics/isPrefetchRequest';
 import { getStationsByCampus } from './queries';
 import { MapClient } from './MapClient';
 
@@ -10,10 +10,7 @@ export async function MapPage({ campusId }: { campusId: string }) {
   const { env } = await getCloudflareContext({ async: true });
   const db = getDb(env.DB);
 
-  const headersList = await headers();
-  const isPrefetch =
-    headersList.get('next-router-prefetch') === '1' ||
-    headersList.get('sec-purpose') === 'prefetch';
+  const isPrefetch = await isPrefetchRequest();
 
   // prefetch 以外のリクエストでのみ map_viewed イベントを記録する
   const trackPromise = isPrefetch
