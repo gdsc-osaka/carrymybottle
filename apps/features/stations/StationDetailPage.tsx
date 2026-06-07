@@ -1,6 +1,11 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { notFound } from 'next/navigation';
+import { Badge } from '@/components/ui/badge';
 import { getDb } from '@/lib/db/client';
+import {
+  STATION_STATUS_BADGE_VARIANT,
+  STATION_STATUS_LABELS,
+} from '@/lib/constants/stations';
 import { getPublicStationDetail } from './queries';
 
 interface StationDetailPageProps {
@@ -35,9 +40,11 @@ export async function StationDetailPage({ stationId }: StationDetailPageProps) {
         ) : null}
       </header>
 
-      {/* #49: ステータスバッジ / #50: 水温種別バッジ */}
+      {/* #50: 水温種別バッジは後続 Issue で追加 */}
       <section aria-label="給水機の状態" className="flex flex-wrap gap-2">
-        {/* 後続 Issue でバッジを表示 */}
+        <Badge variant={STATION_STATUS_BADGE_VARIANT[station.status]}>
+          {STATION_STATUS_LABELS[station.status]}
+        </Badge>
       </section>
 
       {/* #54: 緊急連絡フォーム / #55: 設置希望画面 への導線 */}
