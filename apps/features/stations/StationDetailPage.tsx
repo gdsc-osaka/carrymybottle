@@ -12,16 +12,21 @@ import { getPublicStationDetail } from './queries';
 
 interface StationDetailPageProps {
   stationId: string;
+  /** アクセス経路。QR コード経由の場合は `'qr'`（`?source=qr`）。 */
+  source?: string;
 }
 
 /**
  * 給水機詳細ページ（Server Component）。
  *
- * 公開状態の給水機を取得し、給水機名・キャンパス・建物・説明を表示する。
- * ステータス／水温種別バッジ（#49・#50）、緊急連絡・設置希望への導線（#54・#55）は
- * 後続 Issue で各セクションを埋める。
+ * 公開状態の給水機を取得し、給水機名・キャンパス・建物・説明・各バッジを表示する。
+ * `source=qr` で QR コード経由アクセスを検出する（DesignDoc §3.4 / §11.3）。
+ * 緊急連絡・設置希望への導線（#54・#55）は後続 Issue で追加する。
  */
-export async function StationDetailPage({ stationId }: StationDetailPageProps) {
+export async function StationDetailPage({
+  stationId,
+  source,
+}: StationDetailPageProps) {
   const { env } = await getCloudflareContext({ async: true });
   const db = getDb(env.DB);
   const station = await getPublicStationDetail(db, stationId);
@@ -30,13 +35,19 @@ export async function StationDetailPage({ stationId }: StationDetailPageProps) {
     notFound();
   }
 
+  // QR コード経由アクセスの検出。イベント記録は #53 で行う。
+  const isQrAccess = source === 'qr';
+
   // 複数の水温種別に対応するため、対応種別を冷水 → 常温水 → 温水の順に並べる。
   const temperatureTypes = STATION_TEMPERATURE_ORDER.filter((type) =>
     station.temperatures.some((t) => t.temperatureType === type)
   );
 
   return (
-    <main className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col gap-6 p-4">
+    <main
+      className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col gap-6 p-4"
+      data-qr-access={isQrAccess ? 'true' : undefined}
+    >
       <header className="flex flex-col gap-2">
         <h1 className="text-xl font-bold">{station.name}</h1>
         <p className="text-sm text-muted-foreground">
