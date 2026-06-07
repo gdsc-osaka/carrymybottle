@@ -3,9 +3,10 @@
 import React, { Suspense } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CAMPUSES, CampusId } from '@/lib/constants/campuses';
+import { CAMPUSES, type CampusId } from '@/lib/constants/campuses';
+import { MapCanvas, type StationWithRelations } from './MapCanvas';
 
-function MapContent() {
+function MapContent({ stations }: { stations: StationWithRelations[] }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -48,36 +49,20 @@ function MapContent() {
 
       {/* Map Content Area */}
       <main className="relative flex-1 overflow-hidden bg-muted">
-        {/* Placeholder for MapCanvas */}
-        <div className="flex h-full w-full items-center justify-center p-4">
-          <div className="flex flex-col items-center gap-4 text-center">
-            <p className="text-muted-foreground">
-              【Issue #38 実装予定】
-              <br />
-              ここに MapCanvas コンポーネントが配置されます。
-            </p>
-            <div className="rounded-lg border bg-background p-4 shadow-sm">
-              <p className="font-medium text-foreground">
-                現在の選択キャンパス
-              </p>
-              <p className="text-sm text-muted-foreground">
-                名前: {selectedCampus.name}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                画像パス:{' '}
-                <code className="bg-muted px-1 py-0.5 rounded">
-                  {selectedCampus.mapImagePath}
-                </code>
-              </p>
-            </div>
-          </div>
-        </div>
+        <MapCanvas
+          mapImagePath={selectedCampus.mapImagePath}
+          stations={stations}
+          onStationClick={(station) => {
+            // TODO: #40 給水機ピンタップ → 給水機詳細ナビゲーション
+            router.push(`/stations/${station.id}`);
+          }}
+        />
       </main>
     </div>
   );
 }
 
-export function MapPage() {
+export function MapPage({ stations }: { stations: StationWithRelations[] }) {
   return (
     <Suspense
       fallback={
@@ -86,7 +71,7 @@ export function MapPage() {
         </div>
       }
     >
-      <MapContent />
+      <MapContent stations={stations} />
     </Suspense>
   );
 }
