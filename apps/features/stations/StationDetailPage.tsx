@@ -5,6 +5,8 @@ import { getDb } from '@/lib/db/client';
 import {
   STATION_STATUS_BADGE_VARIANT,
   STATION_STATUS_LABELS,
+  STATION_TEMPERATURE_LABELS,
+  STATION_TEMPERATURE_ORDER,
 } from '@/lib/constants/stations';
 import { getPublicStationDetail } from './queries';
 
@@ -28,6 +30,11 @@ export async function StationDetailPage({ stationId }: StationDetailPageProps) {
     notFound();
   }
 
+  // 複数の水温種別に対応するため、対応種別を冷水 → 常温水 → 温水の順に並べる。
+  const temperatureTypes = STATION_TEMPERATURE_ORDER.filter((type) =>
+    station.temperatures.some((t) => t.temperatureType === type)
+  );
+
   return (
     <main className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col gap-6 p-4">
       <header className="flex flex-col gap-2">
@@ -40,11 +47,15 @@ export async function StationDetailPage({ stationId }: StationDetailPageProps) {
         ) : null}
       </header>
 
-      {/* #50: 水温種別バッジは後続 Issue で追加 */}
       <section aria-label="給水機の状態" className="flex flex-wrap gap-2">
         <Badge variant={STATION_STATUS_BADGE_VARIANT[station.status]}>
           {STATION_STATUS_LABELS[station.status]}
         </Badge>
+        {temperatureTypes.map((type) => (
+          <Badge key={type} variant="outline">
+            {STATION_TEMPERATURE_LABELS[type]}
+          </Badge>
+        ))}
       </section>
 
       {/* #54: 緊急連絡フォーム / #55: 設置希望画面 への導線 */}
