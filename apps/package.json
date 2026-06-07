@@ -7,6 +7,7 @@
     "dev:cf": "opennextjs-cloudflare preview",
     "build": "next build",
     "build:cf": "opennextjs-cloudflare build",
+    "deploy:cf": "opennextjs-cloudflare deploy",
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write .",
