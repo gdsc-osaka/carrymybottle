@@ -15,8 +15,8 @@ export async function getAllStations(db: DB) {
   const rows = await db
     .select()
     .from(stations)
-    .innerJoin(campuses, eq(stations.campusId, campuses.id))
-    .innerJoin(buildings, eq(stations.buildingId, buildings.id))
+    .leftJoin(campuses, eq(stations.campusId, campuses.id))
+    .leftJoin(buildings, eq(stations.buildingId, buildings.id))
     .orderBy(asc(stations.campusId), asc(stations.name));
 
   if (rows.length === 0) return [];
@@ -29,8 +29,8 @@ export async function getAllStations(db: DB) {
 
   return rows.map((row) => ({
     ...row.stations,
-    campus: row.campuses,
-    building: row.buildings,
+    campus: row.campuses!,
+    building: row.buildings!,
     temperatures: temps.filter((t) => t.stationId === row.stations.id),
   }));
 }
@@ -39,8 +39,8 @@ export async function getStationById(db: DB, id: string) {
   const [row] = await db
     .select()
     .from(stations)
-    .innerJoin(campuses, eq(stations.campusId, campuses.id))
-    .innerJoin(buildings, eq(stations.buildingId, buildings.id))
+    .leftJoin(campuses, eq(stations.campusId, campuses.id))
+    .leftJoin(buildings, eq(stations.buildingId, buildings.id))
     .where(eq(stations.id, id))
     .limit(1);
 
@@ -53,8 +53,8 @@ export async function getStationById(db: DB, id: string) {
 
   return {
     ...row.stations,
-    campus: row.campuses,
-    building: row.buildings,
+    campus: row.campuses!,
+    building: row.buildings!,
     temperatures: temps,
   };
 }
@@ -166,15 +166,11 @@ export async function logAuditEvent(
   } catch (error) {
     // Audit log is best-effort: never crash a successful mutation,
     // but surface the failure so a missing record is observable.
-    const env = process.env.APP_ENV;
-    const base = { action, targetType, targetId };
-    if (env === 'development') {
-      console.error('logAuditEvent failed', { ...base, error });
-    } else {
-      console.error('logAuditEvent failed', {
-        ...base,
-        errorMessage: error instanceof Error ? error.message : 'unknown',
-      });
-    }
+    console.error('logAuditEvent failed', {
+      action,
+      targetType,
+      targetId,
+      error,
+    });
   }
 }
