@@ -1,6 +1,7 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
+import { trackEvent } from '@/lib/analytics/events';
 import { getDb } from '@/lib/db/client';
 import {
   STATION_STATUS_BADGE_VARIANT,
@@ -37,6 +38,15 @@ export async function StationDetailPage({
 
   // QR コード経由アクセスの検出。イベント記録は #53 で行う。
   const isQrAccess = source === 'qr';
+
+  // 公開状態の給水機を取得できた後に詳細閲覧イベントを記録する（DesignDoc §12.1.1）。
+  await trackEvent({
+    eventName: 'water_station_detail_viewed',
+    stationId: station.id,
+    campusId: station.campusId,
+    buildingId: station.buildingId,
+    source,
+  });
 
   // 複数の水温種別に対応するため、対応種別を冷水 → 常温水 → 温水の順に並べる。
   const temperatureTypes = STATION_TEMPERATURE_ORDER.filter((type) =>
