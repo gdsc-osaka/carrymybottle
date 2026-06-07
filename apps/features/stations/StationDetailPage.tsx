@@ -1,4 +1,5 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare';
+import { headers } from 'next/headers';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
@@ -41,24 +42,31 @@ export async function StationDetailPage({
   // QR コード経由アクセスの検出（DesignDoc §3.4 / §11.3）。
   const isQrAccess = source === 'qr';
 
-  // 公開状態の給水機を取得できた後に詳細閲覧イベントを記録する（DesignDoc §12.1.1）。
-  await trackEvent({
-    eventName: 'water_station_detail_viewed',
-    stationId: station.id,
-    campusId: station.campusId,
-    buildingId: station.buildingId,
-    source,
-  });
+  const headersList = await headers();
+  const isPrefetch =
+    headersList.get('next-router-prefetch') === '1' ||
+    headersList.get('sec-purpose') === 'prefetch';
 
-  // QR 経由アクセス時のみ、公開状態取得後に QR スキャンイベントを記録する（DesignDoc §12.1.1）。
-  if (isQrAccess) {
+  if (!isPrefetch) {
+    // 公開状態の給水機を取得できた後に詳細閲覧イベントを記録する（DesignDoc §12.1.1）。
     await trackEvent({
-      eventName: 'qr_code_scanned',
+      eventName: 'water_station_detail_viewed',
       stationId: station.id,
       campusId: station.campusId,
       buildingId: station.buildingId,
       source,
     });
+
+    // QR 経由アクセス時のみ、公開状態取得後に QR スキャンイベントを記録する（DesignDoc §12.1.1）。
+    if (isQrAccess) {
+      await trackEvent({
+        eventName: 'qr_code_scanned',
+        stationId: station.id,
+        campusId: station.campusId,
+        buildingId: station.buildingId,
+        source,
+      });
+    }
   }
 
   // 複数の水温種別に対応するため、対応種別を冷水 → 常温水 → 温水の順に並べる。
