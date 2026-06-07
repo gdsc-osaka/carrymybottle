@@ -3,6 +3,7 @@ import { MapPage } from '@/features/map/MapPage';
 import { getStationsByCampus } from '@/features/map/queries';
 import { getDb } from '@/lib/db/client';
 import { CAMPUSES } from '@/lib/constants/campuses';
+import { trackEvent } from '@/lib/analytics/events';
 
 export default async function Page({
   searchParams,
@@ -20,6 +21,11 @@ export default async function Page({
     : 'toyonaka';
 
   const stations = await getStationsByCampus(db, selectedCampusId);
+
+  await trackEvent({
+    eventName: 'map_viewed',
+    campusId: selectedCampusId,
+  });
 
   return <MapPage stations={stations} />;
 }
