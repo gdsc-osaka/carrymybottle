@@ -92,10 +92,12 @@ export async function StationDetailPage({
         ))}
       </section>
 
-      {/* #55: 設置希望画面 への導線は後続 Issue で追加 */}
       <section aria-label="アクション" className="mt-auto flex flex-col gap-3">
         <Button asChild variant="destructive" size="lg">
           <Link href={`/contact/${station.id}`}>緊急連絡フォーム</Link>
+        </Button>
+        <Button asChild variant="outline" size="lg">
+          <Link href="/requests">設置希望を見る・投票する</Link>
         </Button>
       </section>
     </main>
