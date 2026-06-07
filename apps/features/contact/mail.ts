@@ -67,7 +67,7 @@ export async function sendAutoReplyEmail(
 
   const resend = await getMailClient();
 
-  await resend.emails.send({
+  const { error } = await resend.emails.send({
     from,
     to: params.reporterEmail,
     subject: params.subject,
@@ -85,4 +85,10 @@ export async function sendAutoReplyEmail(
       '※ このメールは自動送信です。返信はできません。',
     ].join('\n'),
   });
+
+  // Resend は API エラー時に throw せず { error } を返すため、
+  // ここで明示的に throw して呼び出し側のフォールバック(#79)で記録できるようにする
+  if (error) {
+    throw new Error(`${error.name}: ${error.message}`);
+  }
 }
