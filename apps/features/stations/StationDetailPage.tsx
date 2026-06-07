@@ -36,7 +36,7 @@ export async function StationDetailPage({
     notFound();
   }
 
-  // QR コード経由アクセスの検出。イベント記録は #53 で行う。
+  // QR コード経由アクセスの検出（DesignDoc §3.4 / §11.3）。
   const isQrAccess = source === 'qr';
 
   // 公開状態の給水機を取得できた後に詳細閲覧イベントを記録する（DesignDoc §12.1.1）。
@@ -47,6 +47,17 @@ export async function StationDetailPage({
     buildingId: station.buildingId,
     source,
   });
+
+  // QR 経由アクセス時のみ、公開状態取得後に QR スキャンイベントを記録する（DesignDoc §12.1.1）。
+  if (isQrAccess) {
+    await trackEvent({
+      eventName: 'qr_code_scanned',
+      stationId: station.id,
+      campusId: station.campusId,
+      buildingId: station.buildingId,
+      source,
+    });
+  }
 
   // 複数の水温種別に対応するため、対応種別を冷水 → 常温水 → 温水の順に並べる。
   const temperatureTypes = STATION_TEMPERATURE_ORDER.filter((type) =>
