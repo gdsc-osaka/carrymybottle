@@ -1,21 +1,38 @@
+import { getCloudflareContext } from '@opennextjs/cloudflare';
+import { notFound } from 'next/navigation';
+import { getDb } from '@/lib/db/client';
+import { getPublicStationDetail } from './queries';
+
 interface StationDetailPageProps {
   stationId: string;
 }
 
 /**
- * 給水機詳細ページ（Server Component）の骨格。
+ * 給水機詳細ページ（Server Component）。
  *
- * データ取得（#47）、給水機名・キャンパス・建物・説明の表示（#48）、
+ * 公開状態の給水機を取得し、給水機名・キャンパス・建物・説明を表示する。
  * ステータス／水温種別バッジ（#49・#50）、緊急連絡・設置希望への導線（#54・#55）は
- * 後続 Issue で各セクションを埋める形で実装する。
+ * 後続 Issue で各セクションを埋める。
  */
-export function StationDetailPage({ stationId }: StationDetailPageProps) {
+export async function StationDetailPage({ stationId }: StationDetailPageProps) {
+  const { env } = await getCloudflareContext({ async: true });
+  const db = getDb(env.DB);
+  const station = await getPublicStationDetail(db, stationId);
+
+  if (!station) {
+    notFound();
+  }
+
   return (
     <main className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col gap-6 p-4">
       <header className="flex flex-col gap-2">
-        <h1 className="text-xl font-bold">給水機詳細</h1>
-        {/* #48: 給水機名・キャンパス・建物・説明 */}
-        <p className="text-sm text-muted-foreground">Station ID: {stationId}</p>
+        <h1 className="text-xl font-bold">{station.name}</h1>
+        <p className="text-sm text-muted-foreground">
+          {station.campus.name} ・ {station.building.name}
+        </p>
+        {station.description ? (
+          <p className="whitespace-pre-wrap text-sm">{station.description}</p>
+        ) : null}
       </header>
 
       {/* #49: ステータスバッジ / #50: 水温種別バッジ */}
