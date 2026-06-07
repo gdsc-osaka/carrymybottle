@@ -1,6 +1,8 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { trackEvent } from '@/lib/analytics/events';
 import { getDb } from '@/lib/db/client';
 import {
@@ -90,9 +92,11 @@ export async function StationDetailPage({
         ))}
       </section>
 
-      {/* #54: 緊急連絡フォーム / #55: 設置希望画面 への導線 */}
+      {/* #55: 設置希望画面 への導線は後続 Issue で追加 */}
       <section aria-label="アクション" className="mt-auto flex flex-col gap-3">
-        {/* 後続 Issue で導線ボタンを表示 */}
+        <Button asChild variant="destructive" size="lg">
+          <Link href={`/contact/${station.id}`}>緊急連絡フォーム</Link>
+        </Button>
       </section>
     </main>
   );
