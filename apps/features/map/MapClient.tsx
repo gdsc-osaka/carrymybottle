@@ -6,17 +6,20 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CAMPUSES, type CampusId } from '@/lib/constants/campuses';
 import { MapCanvas, type StationWithRelations } from './MapCanvas';
 
+function isCampusId(value: string | null): value is CampusId {
+  return value !== null && CAMPUSES.some((c) => c.id === value);
+}
+
 function MapContent({ stations }: { stations: StationWithRelations[] }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   // URLからcampusパラメータを取得。デフォルトは 'toyonaka'
-  const campusParam = searchParams.get('campus') as CampusId | null;
-  const selectedCampusId: CampusId =
-    campusParam && CAMPUSES.some((c) => c.id === campusParam)
-      ? campusParam
-      : 'toyonaka';
+  const campusParam = searchParams.get('campus');
+  const selectedCampusId: CampusId = isCampusId(campusParam)
+    ? campusParam
+    : 'toyonaka';
 
   const handleTabChange = (value: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -25,7 +28,10 @@ function MapContent({ stations }: { stations: StationWithRelations[] }) {
     router.replace(`${pathname}?${params.toString()}`);
   };
 
-  const selectedCampus = CAMPUSES.find((c) => c.id === selectedCampusId)!;
+  const selectedCampus = CAMPUSES.find((c) => c.id === selectedCampusId);
+  if (!selectedCampus) {
+    return null;
+  }
 
   return (
     <div className="flex h-[100dvh] flex-col bg-background">
