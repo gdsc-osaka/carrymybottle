@@ -3,10 +3,14 @@ import { err, ok, ResultAsync, type Result } from 'neverthrow';
 import type { DB } from '@/lib/db/client';
 import {
   buildings,
+  installationComments,
   installationTargets,
   installationVotes,
 } from '@/lib/db/schema';
-import type { VoteInstallationRequestInput } from './validation';
+import type {
+  SaveInstallationCommentInput,
+  VoteInstallationRequestInput,
+} from './validation';
 
 const VOTE_COOLDOWN_MS = 1000 * 60 * 60 * 24 * 7;
 
@@ -15,11 +19,22 @@ export type VoteInstallationRequestError =
   | { type: 'ALREADY_VOTED' }
   | { type: 'DB_ERROR'; message: string };
 
+export type SaveInstallationCommentError =
+  | { type: 'BUILDING_NOT_FOUND' }
+  | { type: 'DB_ERROR'; message: string };
+
 export interface VoteInstallationRequestResult {
   targetId: string;
   campusId: string;
   buildingId: string;
   voteCount: number;
+}
+
+export interface SaveInstallationCommentResult {
+  commentId: string;
+  targetId: string;
+  campusId: string;
+  buildingId: string;
 }
 
 export function voteForInstallationTarget(
@@ -118,9 +133,71 @@ export function voteForInstallationTarget(
   ).andThen((result) => result);
 }
 
+export function saveInstallationComment(
+  db: DB,
+  input: SaveInstallationCommentInput,
+  now = new Date()
+): ResultAsync<SaveInstallationCommentResult, SaveInstallationCommentError> {
+  return ResultAsync.fromPromise(
+    db.transaction(
+      async (
+        tx
+      ): Promise<
+        Result<SaveInstallationCommentResult, SaveInstallationCommentError>
+      > => {
+        const [building] = await tx
+          .select({ id: buildings.id })
+          .from(buildings)
+          .where(
+            and(
+              eq(buildings.id, input.buildingId),
+              eq(buildings.campusId, input.campusId)
+            )
+          )
+          .limit(1);
+
+        if (!building) {
+          return err({ type: 'BUILDING_NOT_FOUND' });
+        }
+
+        const target = await getOrCreateTarget(tx, input, now);
+        if (!target) {
+          return err({
+            type: 'DB_ERROR',
+            message: 'failed to create installation target',
+          });
+        }
+
+        const commentId = `comment_${crypto
+          .randomUUID()
+          .replaceAll('-', '')
+          .slice(0, 12)}`;
+
+        await tx.insert(installationComments).values({
+          id: commentId,
+          targetId: target.id,
+          comment: input.comment,
+          createdAt: now,
+        });
+
+        return ok({
+          commentId,
+          targetId: target.id,
+          campusId: target.campusId,
+          buildingId: target.buildingId,
+        });
+      }
+    ),
+    (error): SaveInstallationCommentError => ({
+      type: 'DB_ERROR',
+      message: error instanceof Error ? error.message : String(error),
+    })
+  ).andThen((result) => result);
+}
+
 async function getOrCreateTarget(
   tx: Parameters<Parameters<DB['transaction']>[0]>[0],
-  input: VoteInstallationRequestInput,
+  input: Pick<VoteInstallationRequestInput, 'campusId' | 'buildingId'>,
   now: Date
 ) {
   const [existingTarget] = await tx

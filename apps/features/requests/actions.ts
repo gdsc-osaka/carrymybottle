@@ -4,9 +4,15 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { revalidatePath } from 'next/cache';
 import { getDb } from '@/lib/db/client';
 import { getOrCreateVoteTokenHash } from '@/lib/auth/vote-token';
-import { voteForInstallationTarget } from './queries';
-import { voteInstallationRequestSchema } from './validation';
-import type { VoteInstallationRequestError } from './queries';
+import { saveInstallationComment, voteForInstallationTarget } from './queries';
+import {
+  saveInstallationCommentSchema,
+  voteInstallationRequestSchema,
+} from './validation';
+import type {
+  SaveInstallationCommentError,
+  VoteInstallationRequestError,
+} from './queries';
 
 export type RequestActionResult<T = void> =
   | { success: true; data: T }
@@ -16,6 +22,14 @@ function extractVoteFormData(formData: FormData) {
   return {
     campusId: formData.get('campusId'),
     buildingId: formData.get('buildingId'),
+  };
+}
+
+function extractCommentFormData(formData: FormData) {
+  return {
+    campusId: formData.get('campusId'),
+    buildingId: formData.get('buildingId'),
+    comment: formData.get('comment'),
   };
 }
 
@@ -70,6 +84,43 @@ export async function voteInstallationRequestAction(
   };
 }
 
+export async function saveInstallationCommentAction(
+  formData: FormData
+): Promise<
+  RequestActionResult<{
+    commentId: string;
+    targetId: string;
+    campusId: string;
+    buildingId: string;
+  }>
+> {
+  const parsed = saveInstallationCommentSchema.safeParse(
+    extractCommentFormData(formData)
+  );
+
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0].message };
+  }
+
+  const { env } = await getCloudflareContext({ async: true });
+  const db = getDb(env.DB);
+  const commentResult = await saveInstallationComment(db, parsed.data);
+
+  if (commentResult.isErr()) {
+    return {
+      success: false,
+      error: toCommentErrorMessage(commentResult.error),
+    };
+  }
+
+  revalidatePath('/admin/requests');
+
+  return {
+    success: true,
+    data: commentResult.value,
+  };
+}
+
 function toVoteErrorMessage(error: VoteInstallationRequestError): string {
   switch (error.type) {
     case 'BUILDING_NOT_FOUND':
@@ -78,5 +129,14 @@ function toVoteErrorMessage(error: VoteInstallationRequestError): string {
       return 'この建物にはすでに投票済みです。7日後に再投票できます。';
     case 'DB_ERROR':
       return '投票の保存に失敗しました。時間をおいて再試行してください。';
+  }
+}
+
+function toCommentErrorMessage(error: SaveInstallationCommentError): string {
+  switch (error.type) {
+    case 'BUILDING_NOT_FOUND':
+      return '選択した建物が見つかりません。再度選択してください。';
+    case 'DB_ERROR':
+      return 'コメントの保存に失敗しました。時間をおいて再試行してください。';
   }
 }
