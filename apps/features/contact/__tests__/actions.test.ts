@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { submitContactAction } from '../actions'
-import { insertEmergencyContact } from '../queries'
-import { sendAdminNotificationEmail } from '../mail'
+import { insertEmergencyContact, updateAutoReplyError } from '../queries'
+import { sendAdminNotificationEmail, sendAutoReplyEmail } from '../mail'
 
 vi.mock('@opennextjs/cloudflare', () => ({
   getCloudflareContext: vi.fn().mockResolvedValue({
@@ -36,5 +36,24 @@ describe('submitContactAction', () => {
     expect(result).toMatchObject({ success: false, error: expect.any(String) })
     expect(vi.mocked(insertEmergencyContact)).not.toHaveBeenCalled()
     expect(vi.mocked(sendAdminNotificationEmail)).not.toHaveBeenCalled()
+  })
+
+  it('自動返信失敗時も success:true を返し updateAutoReplyError を記録する', async () => {
+    vi.mocked(sendAutoReplyEmail).mockRejectedValue(new Error('Resend timeout'))
+
+    const formData = new FormData()
+    formData.set('stationId', 'station_abc123')
+    formData.set('issueType', 'broken')
+    formData.set('message', '故障しています')
+    formData.set('reporterEmail', 'reporter@example.com')
+
+    const result = await submitContactAction(formData)
+
+    expect(result).toEqual({ success: true })
+    expect(vi.mocked(updateAutoReplyError)).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.any(String),
+      expect.stringContaining('Resend timeout')
+    )
   })
 })
