@@ -1,23 +1,31 @@
 'use server';
 
 import { getCloudflareContext } from '@opennextjs/cloudflare';
-import { ResultAsync } from 'neverthrow';
+import { err, ok, ResultAsync, type Result } from 'neverthrow';
 import { revalidatePath } from 'next/cache';
 import { getDb } from '@/lib/db/client';
 import { getOrCreateVoteTokenHash } from '@/lib/auth/vote-token';
 import { saveInstallationComment, voteForInstallationTarget } from './queries';
 import {
+  type SaveInstallationCommentInput,
   saveInstallationCommentSchema,
   voteInstallationRequestSchema,
 } from './validation';
 import type {
   SaveInstallationCommentError,
+  SaveInstallationCommentResult,
   VoteInstallationRequestError,
 } from './queries';
 
 export type RequestActionResult<T = void> =
   | { success: true; data: T }
   | { success: false; error: string };
+
+type SaveInstallationCommentActionError =
+  | SaveInstallationCommentError
+  | { type: 'VALIDATION_ERROR'; message: string }
+  | { type: 'TOKEN_ERROR' }
+  | { type: 'CONTEXT_ERROR' };
 
 function extractVoteFormData(formData: FormData) {
   return {
@@ -87,60 +95,38 @@ export async function voteInstallationRequestAction(
 
 export async function saveInstallationCommentAction(
   formData: FormData
-): Promise<
-  RequestActionResult<{
-    commentId: string;
-    targetId: string;
-    campusId: string;
-    buildingId: string;
-  }>
-> {
-  const parsed = saveInstallationCommentSchema.safeParse(
-    extractCommentFormData(formData)
+): Promise<RequestActionResult<SaveInstallationCommentResult>> {
+  const result = await parseInstallationCommentFormData(formData)
+    .asyncAndThen((input) =>
+      getOrCreateVoteTokenHash()
+        .mapErr(
+          (): SaveInstallationCommentActionError => ({ type: 'TOKEN_ERROR' })
+        )
+        .andThen((voterTokenHash) =>
+          getCloudflareContextResult()
+            .mapErr(
+              (): SaveInstallationCommentActionError => ({
+                type: 'CONTEXT_ERROR',
+              })
+            )
+            .andThen(({ env }) =>
+              saveInstallationComment(
+                getDb(env.DB),
+                input,
+                voterTokenHash
+              ).mapErr((error): SaveInstallationCommentActionError => error)
+            )
+        )
+    )
+    .map((data) => {
+      revalidatePath('/admin/requests');
+      return data;
+    });
+
+  return result.match(
+    (data) => ({ success: true, data }),
+    (error) => ({ success: false, error: toCommentActionErrorMessage(error) })
   );
-
-  if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0].message };
-  }
-
-  const tokenHashResult = await getOrCreateVoteTokenHash();
-  if (tokenHashResult.isErr()) {
-    return {
-      success: false,
-      error:
-        'コメントの識別情報を作成できませんでした。時間をおいて再試行してください。',
-    };
-  }
-
-  const contextResult = await getCloudflareContextResult();
-  if (contextResult.isErr()) {
-    return {
-      success: false,
-      error:
-        'サーバー設定の取得に失敗しました。時間をおいて再試行してください。',
-    };
-  }
-
-  const db = getDb(contextResult.value.env.DB);
-  const commentResult = await saveInstallationComment(
-    db,
-    parsed.data,
-    tokenHashResult.value
-  );
-
-  if (commentResult.isErr()) {
-    return {
-      success: false,
-      error: toCommentErrorMessage(commentResult.error),
-    };
-  }
-
-  revalidatePath('/admin/requests');
-
-  return {
-    success: true,
-    data: commentResult.value,
-  };
 }
 
 function toVoteErrorMessage(error: VoteInstallationRequestError): string {
@@ -163,6 +149,38 @@ function toCommentErrorMessage(error: SaveInstallationCommentError): string {
     case 'DB_ERROR':
       return 'コメントの保存に失敗しました。時間をおいて再試行してください。';
   }
+}
+
+function toCommentActionErrorMessage(
+  error: SaveInstallationCommentActionError
+): string {
+  switch (error.type) {
+    case 'VALIDATION_ERROR':
+      return error.message;
+    case 'TOKEN_ERROR':
+      return 'コメントの識別情報を作成できませんでした。時間をおいて再試行してください。';
+    case 'CONTEXT_ERROR':
+      return 'サーバー設定の取得に失敗しました。時間をおいて再試行してください。';
+    default:
+      return toCommentErrorMessage(error);
+  }
+}
+
+function parseInstallationCommentFormData(
+  formData: FormData
+): Result<SaveInstallationCommentInput, SaveInstallationCommentActionError> {
+  const parsed = saveInstallationCommentSchema.safeParse(
+    extractCommentFormData(formData)
+  );
+
+  if (!parsed.success) {
+    return err({
+      type: 'VALIDATION_ERROR',
+      message: parsed.error.issues[0].message,
+    });
+  }
+
+  return ok(parsed.data);
 }
 
 function getCloudflareContextResult() {
