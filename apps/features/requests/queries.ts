@@ -15,6 +15,11 @@ export type VoteInstallationRequestError =
   | { type: 'ALREADY_VOTED' }
   | { type: 'DB_ERROR'; message: string };
 
+export type GetInstallationRequestBuildingsError = {
+  type: 'DB_ERROR';
+  message: string;
+};
+
 export interface VoteInstallationRequestResult {
   targetId: string;
   campusId: string;
@@ -30,33 +35,42 @@ export interface InstallationRequestBuilding {
   voteCount: number;
 }
 
-export async function getInstallationRequestBuildings(
+export function getInstallationRequestBuildings(
   db: DB,
   campusId: string
-): Promise<InstallationRequestBuilding[]> {
-  const rows = await db
-    .select({
-      campusId: buildings.campusId,
-      buildingId: buildings.id,
-      buildingName: buildings.name,
-      targetId: installationTargets.id,
-      voteCount: installationTargets.voteCount,
-    })
-    .from(buildings)
-    .leftJoin(
-      installationTargets,
-      and(
-        eq(installationTargets.buildingId, buildings.id),
-        eq(installationTargets.campusId, buildings.campusId)
+): ResultAsync<
+  InstallationRequestBuilding[],
+  GetInstallationRequestBuildingsError
+> {
+  return ResultAsync.fromPromise(
+    db
+      .select({
+        campusId: buildings.campusId,
+        buildingId: buildings.id,
+        buildingName: buildings.name,
+        targetId: installationTargets.id,
+        voteCount: installationTargets.voteCount,
+      })
+      .from(buildings)
+      .leftJoin(
+        installationTargets,
+        and(
+          eq(installationTargets.buildingId, buildings.id),
+          eq(installationTargets.campusId, buildings.campusId)
+        )
       )
-    )
-    .where(eq(buildings.campusId, campusId))
-    .orderBy(asc(buildings.sortOrder), asc(buildings.name));
-
-  return rows.map((row) => ({
-    ...row,
-    voteCount: row.voteCount ?? 0,
-  }));
+      .where(eq(buildings.campusId, campusId))
+      .orderBy(asc(buildings.sortOrder), asc(buildings.name)),
+    (error): GetInstallationRequestBuildingsError => ({
+      type: 'DB_ERROR',
+      message: error instanceof Error ? error.message : String(error),
+    })
+  ).map((rows) =>
+    rows.map((row) => ({
+      ...row,
+      voteCount: row.voteCount ?? 0,
+    }))
+  );
 }
 
 export function voteForInstallationTarget(

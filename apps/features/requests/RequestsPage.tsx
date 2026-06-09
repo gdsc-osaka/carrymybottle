@@ -16,12 +16,14 @@ interface RequestsPageProps {
   campuses: readonly CampusOption[];
   selectedCampusId: CampusId;
   buildings: InstallationRequestBuilding[];
+  loadError?: string;
 }
 
 export function RequestsPage({
   campuses,
   selectedCampusId,
   buildings,
+  loadError,
 }: RequestsPageProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -67,22 +69,28 @@ export function RequestsPage({
 
     setIsVoting(true);
     setMessage(null);
+    const formData = new FormData(event.currentTarget);
 
-    const result = await voteInstallationRequestAction(
-      new FormData(event.currentTarget)
-    );
+    try {
+      const result = await voteInstallationRequestAction(formData);
+      if (!result.success) {
+        setMessage({ type: 'error', text: result.error });
+        return;
+      }
 
-    if (result.success) {
       setMessage({
         type: 'success',
         text: `${selectedBuilding.buildingName} に投票しました`,
       });
       router.refresh();
-    } else {
-      setMessage({ type: 'error', text: result.error });
+    } catch {
+      setMessage({
+        type: 'error',
+        text: '投票に失敗しました。時間をおいて再試行してください。',
+      });
+    } finally {
+      setIsVoting(false);
     }
-
-    setIsVoting(false);
   }
 
   return (
@@ -122,6 +130,15 @@ export function RequestsPage({
             </TabsList>
           </Tabs>
         </header>
+
+        {loadError ? (
+          <p
+            role="alert"
+            className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          >
+            {loadError}
+          </p>
+        ) : null}
 
         <section className="rounded-lg border bg-white p-3 shadow-sm">
           <div className="mb-3 flex items-center justify-between gap-3">
