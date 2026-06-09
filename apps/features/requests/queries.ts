@@ -13,6 +13,7 @@ import type {
 } from './validation';
 
 const VOTE_COOLDOWN_MS = 1000 * 60 * 60 * 24 * 7;
+const COMMENT_COOLDOWN_MS = VOTE_COOLDOWN_MS;
 
 export type VoteInstallationRequestError =
   | { type: 'BUILDING_NOT_FOUND' }
@@ -21,6 +22,7 @@ export type VoteInstallationRequestError =
 
 export type SaveInstallationCommentError =
   | { type: 'BUILDING_NOT_FOUND' }
+  | { type: 'ALREADY_COMMENTED' }
   | { type: 'DB_ERROR'; message: string };
 
 export interface VoteInstallationRequestResult {
@@ -136,6 +138,7 @@ export function voteForInstallationTarget(
 export function saveInstallationComment(
   db: DB,
   input: SaveInstallationCommentInput,
+  voterTokenHash: string,
   now = new Date()
 ): ResultAsync<SaveInstallationCommentResult, SaveInstallationCommentError> {
   return ResultAsync.fromPromise(
@@ -168,6 +171,23 @@ export function saveInstallationComment(
           });
         }
 
+        const cooldownStartedAt = new Date(now.getTime() - COMMENT_COOLDOWN_MS);
+        const [recentComment] = await tx
+          .select({ id: installationComments.id })
+          .from(installationComments)
+          .where(
+            and(
+              eq(installationComments.targetId, target.id),
+              eq(installationComments.voterTokenHash, voterTokenHash),
+              gte(installationComments.createdAt, cooldownStartedAt)
+            )
+          )
+          .limit(1);
+
+        if (recentComment) {
+          return err({ type: 'ALREADY_COMMENTED' });
+        }
+
         const commentId = `comment_${crypto
           .randomUUID()
           .replaceAll('-', '')
@@ -177,6 +197,7 @@ export function saveInstallationComment(
           id: commentId,
           targetId: target.id,
           comment: input.comment,
+          voterTokenHash,
           createdAt: now,
         });
 

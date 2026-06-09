@@ -1,6 +1,7 @@
 'use server';
 
 import { getCloudflareContext } from '@opennextjs/cloudflare';
+import { ResultAsync } from 'neverthrow';
 import { revalidatePath } from 'next/cache';
 import { getDb } from '@/lib/db/client';
 import { getOrCreateVoteTokenHash } from '@/lib/auth/vote-token';
@@ -102,9 +103,30 @@ export async function saveInstallationCommentAction(
     return { success: false, error: parsed.error.issues[0].message };
   }
 
-  const { env } = await getCloudflareContext({ async: true });
-  const db = getDb(env.DB);
-  const commentResult = await saveInstallationComment(db, parsed.data);
+  const tokenHashResult = await getOrCreateVoteTokenHash();
+  if (tokenHashResult.isErr()) {
+    return {
+      success: false,
+      error:
+        'コメントの識別情報を作成できませんでした。時間をおいて再試行してください。',
+    };
+  }
+
+  const contextResult = await getCloudflareContextResult();
+  if (contextResult.isErr()) {
+    return {
+      success: false,
+      error:
+        'サーバー設定の取得に失敗しました。時間をおいて再試行してください。',
+    };
+  }
+
+  const db = getDb(contextResult.value.env.DB);
+  const commentResult = await saveInstallationComment(
+    db,
+    parsed.data,
+    tokenHashResult.value
+  );
 
   if (commentResult.isErr()) {
     return {
@@ -134,9 +156,18 @@ function toVoteErrorMessage(error: VoteInstallationRequestError): string {
 
 function toCommentErrorMessage(error: SaveInstallationCommentError): string {
   switch (error.type) {
+    case 'ALREADY_COMMENTED':
+      return 'この建物には最近コメント済みです。時間をおいて再度投稿してください。';
     case 'BUILDING_NOT_FOUND':
       return '選択した建物が見つかりません。再度選択してください。';
     case 'DB_ERROR':
       return 'コメントの保存に失敗しました。時間をおいて再試行してください。';
   }
+}
+
+function getCloudflareContextResult() {
+  return ResultAsync.fromPromise(
+    getCloudflareContext({ async: true }),
+    (error) => new Error(`failed to load Cloudflare context: ${String(error)}`)
+  );
 }
