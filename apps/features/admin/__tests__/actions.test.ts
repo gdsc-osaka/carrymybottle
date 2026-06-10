@@ -49,11 +49,9 @@ describe('deleteStationAction', () => {
 
     const mockWhere = vi.fn().mockResolvedValue(undefined);
     const mockTx = {
-      update: vi
-        .fn()
-        .mockReturnValue({
-          set: vi.fn().mockReturnValue({ where: mockWhere }),
-        }),
+      update: vi.fn().mockReturnValue({
+        set: vi.fn().mockReturnValue({ where: mockWhere }),
+      }),
       delete: vi.fn().mockReturnValue({ where: mockWhere }),
     };
     const mockTransaction = vi
