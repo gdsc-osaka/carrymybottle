@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createStationAction, deleteStationAction } from '../actions'
 import { requireAdminSession } from '@/lib/auth/session'
-import { getDb } from '@/lib/db/client'
+import { getDb, type DB } from '@/lib/db/client'
 import { logAuditEvent } from '../queries'
 
 vi.mock('next/navigation', () => ({ redirect: vi.fn() }))
@@ -55,7 +55,7 @@ describe('deleteStationAction', () => {
       transaction: mockTransaction,
       insert: vi.fn().mockReturnValue({ values: vi.fn().mockResolvedValue(undefined) }),
     }
-    vi.mocked(getDb).mockReturnValue(mockDb as any)
+    vi.mocked(getDb).mockReturnValue(mockDb as unknown as DB)
 
     await deleteStationAction('station_001')
 

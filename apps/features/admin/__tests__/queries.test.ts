@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
+import { type DB } from '@/lib/db/client'
 import { logAuditEvent } from '../queries'
 
 describe('logAuditEvent', () => {
@@ -10,7 +11,7 @@ describe('logAuditEvent', () => {
     }
 
     await expect(
-      logAuditEvent(mockDb as any, 'delete', 'station', 'station_001')
+      logAuditEvent(mockDb as unknown as DB, 'delete', 'station', 'station_001')
     ).resolves.toBeUndefined()
   })
 })
