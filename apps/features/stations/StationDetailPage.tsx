@@ -1,9 +1,11 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare';
+
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { trackEvent } from '@/lib/analytics/events';
+import { isPrefetchRequest } from '@/lib/analytics/isPrefetchRequest';
 import { getDb } from '@/lib/db/client';
 import {
   STATION_STATUS_BADGE_VARIANT,
@@ -41,24 +43,32 @@ export async function StationDetailPage({
   // QR コード経由アクセスの検出（DesignDoc §3.4 / §11.3）。
   const isQrAccess = source === 'qr';
 
-  // 公開状態の給水機を取得できた後に詳細閲覧イベントを記録する（DesignDoc §12.1.1）。
-  await trackEvent({
-    eventName: 'water_station_detail_viewed',
-    stationId: station.id,
-    campusId: station.campusId,
-    buildingId: station.buildingId,
-    source,
-  });
+  const isPrefetch = await isPrefetchRequest();
 
-  // QR 経由アクセス時のみ、公開状態取得後に QR スキャンイベントを記録する（DesignDoc §12.1.1）。
-  if (isQrAccess) {
-    await trackEvent({
-      eventName: 'qr_code_scanned',
-      stationId: station.id,
-      campusId: station.campusId,
-      buildingId: station.buildingId,
-      source,
-    });
+  if (!isPrefetch) {
+    const events: Promise<void>[] = [
+      trackEvent({
+        eventName: 'water_station_detail_viewed',
+        stationId: station.id,
+        campusId: station.campusId,
+        buildingId: station.buildingId,
+        source,
+      }),
+    ];
+
+    if (isQrAccess) {
+      events.push(
+        trackEvent({
+          eventName: 'qr_code_scanned',
+          stationId: station.id,
+          campusId: station.campusId,
+          buildingId: station.buildingId,
+          source,
+        })
+      );
+    }
+
+    await Promise.all(events);
   }
 
   // 複数の水温種別に対応するため、対応種別を冷水 → 常温水 → 温水の順に並べる。
