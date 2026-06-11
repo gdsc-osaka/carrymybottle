@@ -5,6 +5,7 @@ import { err, ok, ResultAsync, type Result } from 'neverthrow';
 import { revalidatePath } from 'next/cache';
 import { getDb } from '@/lib/db/client';
 import { getOrCreateVoteTokenHash } from '@/lib/auth/vote-token';
+import { trackEvent } from '@/lib/analytics/events';
 import { saveInstallationComment, voteForInstallationTarget } from './queries';
 import {
   type SaveInstallationCommentInput,
@@ -84,6 +85,12 @@ export async function voteInstallationRequestAction(
     };
   }
 
+  await trackEvent({
+    eventName: 'installation_request_voted',
+    campusId: voteResult.value.campusId,
+    buildingId: voteResult.value.buildingId,
+  });
+
   revalidatePath('/requests');
   revalidatePath('/admin/requests');
 
@@ -118,10 +125,23 @@ export async function saveInstallationCommentAction(
             )
         )
     )
-    .map((data) => {
-      revalidatePath('/admin/requests');
-      return data;
-    });
+    .andThen((data) =>
+      ResultAsync.fromPromise(
+        (async () => {
+          await trackEvent({
+            eventName: 'installation_request_commented',
+            campusId: data.campusId,
+            buildingId: data.buildingId,
+          });
+          revalidatePath('/admin/requests');
+          return data;
+        })(),
+        (): SaveInstallationCommentActionError => ({
+          type: 'DB_ERROR',
+          message: 'failed to track installation request comment event',
+        })
+      )
+    );
 
   return result.match(
     (data) => ({ success: true, data }),
