@@ -1,18 +1,33 @@
-import { and, eq, gte, sql } from 'drizzle-orm';
+import { and, asc, eq, gte, sql } from 'drizzle-orm';
 import { err, ok, ResultAsync, type Result } from 'neverthrow';
 import type { DB } from '@/lib/db/client';
 import {
   buildings,
+  installationComments,
   installationTargets,
   installationVotes,
 } from '@/lib/db/schema';
-import type { VoteInstallationRequestInput } from './validation';
+import type {
+  SaveInstallationCommentInput,
+  VoteInstallationRequestInput,
+} from './validation';
 
 const VOTE_COOLDOWN_MS = 1000 * 60 * 60 * 24 * 7;
+const COMMENT_COOLDOWN_MS = VOTE_COOLDOWN_MS;
+
+export type GetInstallationRequestBuildingsError = {
+  type: 'DB_ERROR';
+  message: string;
+};
 
 export type VoteInstallationRequestError =
   | { type: 'BUILDING_NOT_FOUND' }
   | { type: 'ALREADY_VOTED' }
+  | { type: 'DB_ERROR'; message: string };
+
+export type SaveInstallationCommentError =
+  | { type: 'BUILDING_NOT_FOUND' }
+  | { type: 'ALREADY_COMMENTED' }
   | { type: 'DB_ERROR'; message: string };
 
 export interface VoteInstallationRequestResult {
@@ -20,6 +35,59 @@ export interface VoteInstallationRequestResult {
   campusId: string;
   buildingId: string;
   voteCount: number;
+}
+
+export interface SaveInstallationCommentResult {
+  commentId: string;
+  targetId: string;
+  campusId: string;
+  buildingId: string;
+}
+
+export interface InstallationRequestBuilding {
+  campusId: string;
+  buildingId: string;
+  buildingName: string;
+  targetId: string | null;
+  voteCount: number;
+}
+
+export function getInstallationRequestBuildings(
+  db: DB,
+  campusId: string
+): ResultAsync<
+  InstallationRequestBuilding[],
+  GetInstallationRequestBuildingsError
+> {
+  return ResultAsync.fromPromise(
+    db
+      .select({
+        campusId: buildings.campusId,
+        buildingId: buildings.id,
+        buildingName: buildings.name,
+        targetId: installationTargets.id,
+        voteCount: installationTargets.voteCount,
+      })
+      .from(buildings)
+      .leftJoin(
+        installationTargets,
+        and(
+          eq(installationTargets.buildingId, buildings.id),
+          eq(installationTargets.campusId, buildings.campusId)
+        )
+      )
+      .where(eq(buildings.campusId, campusId))
+      .orderBy(asc(buildings.sortOrder), asc(buildings.name)),
+    (error): GetInstallationRequestBuildingsError => ({
+      type: 'DB_ERROR',
+      message: error instanceof Error ? error.message : String(error),
+    })
+  ).map((rows) =>
+    rows.map((row) => ({
+      ...row,
+      voteCount: row.voteCount ?? 0,
+    }))
+  );
 }
 
 export function voteForInstallationTarget(
@@ -118,9 +186,90 @@ export function voteForInstallationTarget(
   ).andThen((result) => result);
 }
 
+export function saveInstallationComment(
+  db: DB,
+  input: SaveInstallationCommentInput,
+  voterTokenHash: string,
+  now = new Date()
+): ResultAsync<SaveInstallationCommentResult, SaveInstallationCommentError> {
+  return ResultAsync.fromPromise(
+    db.transaction(
+      async (
+        tx
+      ): Promise<
+        Result<SaveInstallationCommentResult, SaveInstallationCommentError>
+      > => {
+        const [building] = await tx
+          .select({ id: buildings.id })
+          .from(buildings)
+          .where(
+            and(
+              eq(buildings.id, input.buildingId),
+              eq(buildings.campusId, input.campusId)
+            )
+          )
+          .limit(1);
+
+        if (!building) {
+          return err({ type: 'BUILDING_NOT_FOUND' });
+        }
+
+        const target = await getOrCreateTarget(tx, input, now);
+        if (!target) {
+          return err({
+            type: 'DB_ERROR',
+            message: 'failed to create installation target',
+          });
+        }
+
+        const cooldownStartedAt = new Date(now.getTime() - COMMENT_COOLDOWN_MS);
+        const [recentComment] = await tx
+          .select({ id: installationComments.id })
+          .from(installationComments)
+          .where(
+            and(
+              eq(installationComments.targetId, target.id),
+              eq(installationComments.voterTokenHash, voterTokenHash),
+              gte(installationComments.createdAt, cooldownStartedAt)
+            )
+          )
+          .limit(1);
+
+        if (recentComment) {
+          return err({ type: 'ALREADY_COMMENTED' });
+        }
+
+        const commentId = `comment_${crypto
+          .randomUUID()
+          .replaceAll('-', '')
+          .slice(0, 12)}`;
+
+        await tx.insert(installationComments).values({
+          id: commentId,
+          targetId: target.id,
+          comment: input.comment,
+          voterTokenHash,
+          createdAt: now,
+        });
+
+        return ok({
+          commentId,
+          targetId: target.id,
+          campusId: target.campusId,
+          buildingId: target.buildingId,
+        });
+      }
+    ),
+    (error): SaveInstallationCommentError => ({
+      type: 'DB_ERROR',
+      message: error instanceof Error ? error.message : String(error),
+    })
+  ).andThen((result) => result);
+}
+
 async function getOrCreateTarget(
   tx: Parameters<Parameters<DB['transaction']>[0]>[0],
-  input: VoteInstallationRequestInput,
+  input: Pick<VoteInstallationRequestInput, 'campusId' | 'buildingId'>,
   now: Date
 ) {
   const [existingTarget] = await tx

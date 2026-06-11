@@ -1,5 +1,6 @@
 import {
   foreignKey,
+  index,
   integer,
   primaryKey,
   real,
@@ -108,15 +109,26 @@ export const installationVotes = sqliteTable('installation_votes', {
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 });
 
-export const installationComments = sqliteTable('installation_comments', {
-  id: text('id').primaryKey(),
-  targetId: text('target_id')
-    .notNull()
-    .references(() => installationTargets.id),
-  comment: text('comment').notNull(),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
-  deletedAt: integer('deleted_at', { mode: 'timestamp' }),
-});
+export const installationComments = sqliteTable(
+  'installation_comments',
+  {
+    id: text('id').primaryKey(),
+    targetId: text('target_id')
+      .notNull()
+      .references(() => installationTargets.id),
+    comment: text('comment').notNull(),
+    voterTokenHash: text('voter_token_hash'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    deletedAt: integer('deleted_at', { mode: 'timestamp' }),
+  },
+  (t) => [
+    index('installation_comments_target_token_created_idx').on(
+      t.targetId,
+      t.voterTokenHash,
+      t.createdAt
+    ),
+  ]
+);
 
 export const emergencyContacts = sqliteTable('emergency_contacts', {
   id: text('id').primaryKey(),
