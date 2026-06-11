@@ -1,4 +1,4 @@
-import { and, eq, gte, sql } from 'drizzle-orm';
+import { and, asc, eq, gte, sql } from 'drizzle-orm';
 import { err, ok, ResultAsync, type Result } from 'neverthrow';
 import type { DB } from '@/lib/db/client';
 import {
@@ -15,11 +15,62 @@ export type VoteInstallationRequestError =
   | { type: 'ALREADY_VOTED' }
   | { type: 'DB_ERROR'; message: string };
 
+export type GetInstallationRequestBuildingsError = {
+  type: 'DB_ERROR';
+  message: string;
+};
+
 export interface VoteInstallationRequestResult {
   targetId: string;
   campusId: string;
   buildingId: string;
   voteCount: number;
+}
+
+export interface InstallationRequestBuilding {
+  campusId: string;
+  buildingId: string;
+  buildingName: string;
+  targetId: string | null;
+  voteCount: number;
+}
+
+export function getInstallationRequestBuildings(
+  db: DB,
+  campusId: string
+): ResultAsync<
+  InstallationRequestBuilding[],
+  GetInstallationRequestBuildingsError
+> {
+  return ResultAsync.fromPromise(
+    db
+      .select({
+        campusId: buildings.campusId,
+        buildingId: buildings.id,
+        buildingName: buildings.name,
+        targetId: installationTargets.id,
+        voteCount: installationTargets.voteCount,
+      })
+      .from(buildings)
+      .leftJoin(
+        installationTargets,
+        and(
+          eq(installationTargets.buildingId, buildings.id),
+          eq(installationTargets.campusId, buildings.campusId)
+        )
+      )
+      .where(eq(buildings.campusId, campusId))
+      .orderBy(asc(buildings.sortOrder), asc(buildings.name)),
+    (error): GetInstallationRequestBuildingsError => ({
+      type: 'DB_ERROR',
+      message: error instanceof Error ? error.message : String(error),
+    })
+  ).map((rows) =>
+    rows.map((row) => ({
+      ...row,
+      voteCount: row.voteCount ?? 0,
+    }))
+  );
 }
 
 export function voteForInstallationTarget(
