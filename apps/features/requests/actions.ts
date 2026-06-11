@@ -125,23 +125,15 @@ export async function saveInstallationCommentAction(
             )
         )
     )
-    .andThen((data) =>
-      ResultAsync.fromPromise(
-        (async () => {
-          await trackEvent({
-            eventName: 'installation_request_commented',
-            campusId: data.campusId,
-            buildingId: data.buildingId,
-          });
-          revalidatePath('/admin/requests');
-          return data;
-        })(),
-        (): SaveInstallationCommentActionError => ({
-          type: 'DB_ERROR',
-          message: 'failed to track installation request comment event',
-        })
-      )
-    );
+    .map((data) => {
+      void trackEvent({
+        eventName: 'installation_request_commented',
+        campusId: data.campusId,
+        buildingId: data.buildingId,
+      });
+      revalidatePath('/admin/requests');
+      return data;
+    });
 
   return result.match(
     (data) => ({ success: true, data }),
