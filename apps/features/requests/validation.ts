@@ -8,3 +8,16 @@ export const voteInstallationRequestSchema = z.object({
 export type VoteInstallationRequestInput = z.infer<
   typeof voteInstallationRequestSchema
 >;
+
+export const saveInstallationCommentSchema =
+  voteInstallationRequestSchema.extend({
+    comment: z
+      .string()
+      .trim()
+      .min(1, 'コメントを入力してください')
+      .max(1000, 'コメントは1000文字以内で入力してください'),
+  });
+
+export type SaveInstallationCommentInput = z.infer<
+  typeof saveInstallationCommentSchema
+>;

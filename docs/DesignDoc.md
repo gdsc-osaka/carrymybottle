@@ -1,4 +1,4 @@
- # Design Doc: キャリボト Web マッププロジェクト
+# Design Doc: キャリボト Web マッププロジェクト
 
 ## Index
 
@@ -411,6 +411,7 @@ erDiagram
     text id PK
     text target_id FK
     text comment
+    text voter_token_hash
     datetime created_at
     datetime deleted_at
   }
@@ -582,14 +583,20 @@ Cookie の生値は DB に保存しない。DB にはハッシュ化した識別
 - `id`: text, primary key
 - `target_id`: text
 - `comment`: text
+- `voter_token_hash`: text, nullable。Cookie に保存した識別子をハッシュ化した値。
+  既存コメントの互換性のため nullable とする。
 - `created_at`: datetime
 - `deleted_at`: datetime, nullable
 
 MVP ではコメントを一般公開しない。公開側にはキャンパス、建物、投票数を中心に表示する。
 
+同じ `target_id` と同じ `voter_token_hash` の組み合わせについて、直近 7
+日以内の再コメントを拒否する。
+
 推奨インデックス:
 
 - `target_id`, `created_at`
+- `target_id`, `voter_token_hash`, `created_at`
 - `deleted_at`
 
 ### 4.10 emergency_contacts
@@ -794,6 +801,8 @@ Decision:
 - Cookie ベースで簡易的に同一ブラウザを識別する。
 - 同じ建物への再投票は 7 日後に可能とする。
 - サーバー側でも直近 7 日以内の重複投票を拒否する。
+- コメント投稿も同じ Cookie 識別子のハッシュを使い、同じ建物への直近 7
+  日以内の重複コメントを拒否する。
 
 Cookie の識別子はランダム値とし、DB にはハッシュ化した値のみ保存する。
 
@@ -1467,7 +1476,7 @@ Risk:
 Mitigation:
 
 - 投票は Cookie とサーバー側クールダウンで制限する。
-- コメントは一般公開しない。
+- コメントは一般公開せず、Cookie とサーバー側クールダウンで連投を制限する。
 - 緊急連絡はレート制限する。
 - 問題が出た場合は Cloudflare Turnstile を追加する。
 - 管理画面で削除できるようにする。

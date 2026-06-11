@@ -1,0 +1,2 @@
+ALTER TABLE `installation_comments` ADD `voter_token_hash` text;--> statement-breakpoint
+CREATE INDEX `installation_comments_target_token_created_idx` ON `installation_comments` (`target_id`,`voter_token_hash`,`created_at`);

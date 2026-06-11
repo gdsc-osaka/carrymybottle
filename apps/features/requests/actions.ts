@@ -1,21 +1,44 @@
 'use server';
 
 import { getCloudflareContext } from '@opennextjs/cloudflare';
+import { err, ok, ResultAsync, type Result } from 'neverthrow';
 import { revalidatePath } from 'next/cache';
 import { getDb } from '@/lib/db/client';
 import { getOrCreateVoteTokenHash } from '@/lib/auth/vote-token';
-import { voteForInstallationTarget } from './queries';
-import { voteInstallationRequestSchema } from './validation';
-import type { VoteInstallationRequestError } from './queries';
+import { saveInstallationComment, voteForInstallationTarget } from './queries';
+import {
+  type SaveInstallationCommentInput,
+  saveInstallationCommentSchema,
+  voteInstallationRequestSchema,
+} from './validation';
+import type {
+  SaveInstallationCommentError,
+  SaveInstallationCommentResult,
+  VoteInstallationRequestError,
+} from './queries';
 
 export type RequestActionResult<T = void> =
   | { success: true; data: T }
   | { success: false; error: string };
 
+type SaveInstallationCommentActionError =
+  | SaveInstallationCommentError
+  | { type: 'VALIDATION_ERROR'; message: string }
+  | { type: 'TOKEN_ERROR' }
+  | { type: 'CONTEXT_ERROR' };
+
 function extractVoteFormData(formData: FormData) {
   return {
     campusId: formData.get('campusId'),
     buildingId: formData.get('buildingId'),
+  };
+}
+
+function extractCommentFormData(formData: FormData) {
+  return {
+    campusId: formData.get('campusId'),
+    buildingId: formData.get('buildingId'),
+    comment: formData.get('comment'),
   };
 }
 
@@ -70,6 +93,42 @@ export async function voteInstallationRequestAction(
   };
 }
 
+export async function saveInstallationCommentAction(
+  formData: FormData
+): Promise<RequestActionResult<SaveInstallationCommentResult>> {
+  const result = await parseInstallationCommentFormData(formData)
+    .asyncAndThen((input) =>
+      getOrCreateVoteTokenHash()
+        .mapErr(
+          (): SaveInstallationCommentActionError => ({ type: 'TOKEN_ERROR' })
+        )
+        .andThen((voterTokenHash) =>
+          getCloudflareContextResult()
+            .mapErr(
+              (): SaveInstallationCommentActionError => ({
+                type: 'CONTEXT_ERROR',
+              })
+            )
+            .andThen(({ env }) =>
+              saveInstallationComment(
+                getDb(env.DB),
+                input,
+                voterTokenHash
+              ).mapErr((error): SaveInstallationCommentActionError => error)
+            )
+        )
+    )
+    .map((data) => {
+      revalidatePath('/admin/requests');
+      return data;
+    });
+
+  return result.match(
+    (data) => ({ success: true, data }),
+    (error) => ({ success: false, error: toCommentActionErrorMessage(error) })
+  );
+}
+
 function toVoteErrorMessage(error: VoteInstallationRequestError): string {
   switch (error.type) {
     case 'BUILDING_NOT_FOUND':
@@ -79,4 +138,54 @@ function toVoteErrorMessage(error: VoteInstallationRequestError): string {
     case 'DB_ERROR':
       return '投票の保存に失敗しました。時間をおいて再試行してください。';
   }
+}
+
+function toCommentErrorMessage(error: SaveInstallationCommentError): string {
+  switch (error.type) {
+    case 'ALREADY_COMMENTED':
+      return 'この建物には最近コメント済みです。時間をおいて再度投稿してください。';
+    case 'BUILDING_NOT_FOUND':
+      return '選択した建物が見つかりません。再度選択してください。';
+    case 'DB_ERROR':
+      return 'コメントの保存に失敗しました。時間をおいて再試行してください。';
+  }
+}
+
+function toCommentActionErrorMessage(
+  error: SaveInstallationCommentActionError
+): string {
+  switch (error.type) {
+    case 'VALIDATION_ERROR':
+      return error.message;
+    case 'TOKEN_ERROR':
+      return 'コメントの識別情報を作成できませんでした。時間をおいて再試行してください。';
+    case 'CONTEXT_ERROR':
+      return 'サーバー設定の取得に失敗しました。時間をおいて再試行してください。';
+    default:
+      return toCommentErrorMessage(error);
+  }
+}
+
+function parseInstallationCommentFormData(
+  formData: FormData
+): Result<SaveInstallationCommentInput, SaveInstallationCommentActionError> {
+  const parsed = saveInstallationCommentSchema.safeParse(
+    extractCommentFormData(formData)
+  );
+
+  if (!parsed.success) {
+    return err({
+      type: 'VALIDATION_ERROR',
+      message: parsed.error.issues[0].message,
+    });
+  }
+
+  return ok(parsed.data);
+}
+
+function getCloudflareContextResult() {
+  return ResultAsync.fromPromise(
+    getCloudflareContext({ async: true }),
+    (error) => new Error(`failed to load Cloudflare context: ${String(error)}`)
+  );
 }
