@@ -49,9 +49,20 @@ export function RequestsPage({ targets, campuses }: Props) {
 
   return (
     <div className="space-y-4">
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && (
+        <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          {error}
+        </p>
+      )}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">設置希望管理</h1>
+        <div>
+          <h1 className="text-2xl font-semibold text-slate-900">
+            設置希望管理
+          </h1>
+          <p className="text-sm text-slate-500">
+            利用者からの設置リクエストと投票・コメント
+          </p>
+        </div>
         <Select value={campusFilter} onValueChange={setCampusFilter}>
           <SelectTrigger className="w-48">
             <SelectValue placeholder="キャンパスで絞り込み" />
@@ -75,15 +86,25 @@ export function RequestsPage({ targets, campuses }: Props) {
 
       <div className="space-y-4">
         {filtered.map((target) => (
-          <div key={target.id} className="rounded-lg border p-4 space-y-3">
+          <div
+            key={target.id}
+            className="space-y-3 rounded-lg border border-slate-200 bg-white p-4"
+          >
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs font-medium text-sky-600">
                   {target.campus.name}
                 </span>
-                <h3 className="font-semibold">{target.building.name}</h3>
+                <h3 className="font-semibold text-slate-900">
+                  {target.building.name}
+                </h3>
               </div>
-              <Badge variant="secondary">{target.voteCount} 票</Badge>
+              <Badge
+                variant="outline"
+                className="border-teal-200 bg-teal-50 font-semibold text-teal-700"
+              >
+                {target.voteCount} 票
+              </Badge>
             </div>
 
             {target.comments.length > 0 && (

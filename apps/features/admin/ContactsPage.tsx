@@ -22,8 +22,10 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useAsyncAction } from '@/hooks/use-async-action';
+import { cn } from '@/lib/utils';
 import { deleteEmergencyContactAction } from './actions';
 import { ISSUE_TYPE_LABELS } from './validation';
+import { ISSUE_BADGE_CLASS } from './badge-styles';
 import type { EmergencyContactWithStation } from '@/lib/db/types';
 
 interface Props {
@@ -43,20 +45,43 @@ export function ContactsPage({ contacts }: Props) {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">緊急連絡管理</h1>
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      <div>
+        <h1 className="text-2xl font-semibold text-slate-900">緊急連絡管理</h1>
+        <p className="text-sm text-slate-500">
+          利用者から届いた不具合報告 {contacts.length} 件
+        </p>
+      </div>
+      {error && (
+        <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          {error}
+        </p>
+      )}
 
-      <div className="rounded-md border">
+      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>日時</TableHead>
-              <TableHead>給水機</TableHead>
-              <TableHead>種別</TableHead>
-              <TableHead>内容</TableHead>
-              <TableHead>連絡者</TableHead>
-              <TableHead>メール状態</TableHead>
-              <TableHead className="text-right">操作</TableHead>
+            <TableRow className="bg-slate-50 hover:bg-slate-50">
+              <TableHead className="font-semibold text-slate-700">
+                受信日時
+              </TableHead>
+              <TableHead className="font-semibold text-slate-700">
+                対象給水機
+              </TableHead>
+              <TableHead className="font-semibold text-slate-700">
+                問題種別
+              </TableHead>
+              <TableHead className="font-semibold text-slate-700">
+                内容
+              </TableHead>
+              <TableHead className="font-semibold text-slate-700">
+                連絡先メール
+              </TableHead>
+              <TableHead className="font-semibold text-slate-700">
+                送信状態
+              </TableHead>
+              <TableHead className="text-right font-semibold text-slate-700">
+                操作
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -64,15 +89,15 @@ export function ContactsPage({ contacts }: Props) {
               <TableRow>
                 <TableCell
                   colSpan={7}
-                  className="text-center text-muted-foreground py-8"
+                  className="py-10 text-center text-slate-400"
                 >
                   緊急連絡がありません
                 </TableCell>
               </TableRow>
             )}
             {contacts.map((contact) => (
-              <TableRow key={contact.id}>
-                <TableCell className="text-sm whitespace-nowrap">
+              <TableRow key={contact.id} className="hover:bg-rose-50/30">
+                <TableCell className="text-sm whitespace-nowrap text-slate-600">
                   {new Date(contact.createdAt).toLocaleString('ja-JP', {
                     month: '2-digit',
                     day: '2-digit',
@@ -80,41 +105,53 @@ export function ContactsPage({ contacts }: Props) {
                     minute: '2-digit',
                   })}
                 </TableCell>
-                <TableCell className="text-sm">
+                <TableCell className="text-sm font-medium text-slate-900">
                   {contact.station.name}
                 </TableCell>
                 <TableCell>
-                  <Badge variant="outline">
+                  <Badge
+                    variant="outline"
+                    className={cn(ISSUE_BADGE_CLASS[contact.issueType])}
+                  >
                     {ISSUE_TYPE_LABELS[contact.issueType]}
                   </Badge>
                 </TableCell>
-                <TableCell className="max-w-48 truncate text-sm">
+                <TableCell className="max-w-48 truncate text-sm text-slate-600">
                   {contact.message}
                 </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
+                <TableCell className="text-sm text-slate-500">
                   {contact.reporterEmail}
                 </TableCell>
                 <TableCell>
-                  <div className="space-y-1">
+                  <div className="flex flex-col items-start gap-1">
                     {contact.adminEmailSentAt ? (
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge
+                        variant="outline"
+                        className="border-emerald-200 bg-emerald-50 text-xs text-emerald-700"
+                      >
                         管理者通知済
                       </Badge>
                     ) : (
-                      <Badge variant="destructive" className="text-xs">
+                      <Badge
+                        variant="outline"
+                        className="border-rose-200 bg-rose-50 text-xs text-rose-700"
+                      >
                         管理者通知失敗
                       </Badge>
                     )}
                     {contact.autoReplyError ? (
                       <Badge
-                        variant="destructive"
-                        className="text-xs block"
+                        variant="outline"
+                        className="border-rose-200 bg-rose-50 text-xs text-rose-700"
                         title={contact.autoReplyError}
                       >
                         自動返信失敗
                       </Badge>
                     ) : contact.autoReplySentAt ? (
-                      <Badge variant="secondary" className="text-xs block">
+                      <Badge
+                        variant="outline"
+                        className="border-emerald-200 bg-emerald-50 text-xs text-emerald-700"
+                      >
                         自動返信済
                       </Badge>
                     ) : null}
