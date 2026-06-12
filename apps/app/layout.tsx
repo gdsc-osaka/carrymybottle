@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono, Inter } from 'next/font/google';
+import { Geist, Geist_Mono, Inter, Jost } from 'next/font/google';
 import './globals.css';
 
 const geistSans = Geist({
@@ -17,6 +17,14 @@ const inter = Inter({
   subsets: ['latin'],
 });
 
+// Display face for the wordmark — Jost is a free Futura-style geometric sans,
+// used as the web fallback behind real Futura (see --font-display in globals.css).
+const jost = Jost({
+  variable: '--font-jost',
+  subsets: ['latin'],
+  weight: ['500', '700'],
+});
+
 export const metadata: Metadata = {
   title: 'キャリボト (Cariboto) - 大阪大学給水スポット検索',
   description:
@@ -31,7 +39,7 @@ export default function RootLayout({
   return (
     <html
       lang="ja"
-      className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${jost.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
