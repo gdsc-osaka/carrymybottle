@@ -15,6 +15,7 @@ import {
 import { stationSchema } from './validation';
 import { logAuditEvent } from './queries';
 import { installationComments, emergencyContacts } from '@/lib/db/schema';
+import { enforceRateLimit } from '@/lib/rate-limit';
 
 async function getEnv() {
   const { env } = await getCloudflareContext({ async: true });
@@ -27,6 +28,14 @@ export type ActionResult<T = void> =
 
 // #84 ログイン
 export async function loginAction(formData: FormData): Promise<ActionResult> {
+  const rateLimit = await enforceRateLimit('admin_login');
+  if (rateLimit.isErr() && rateLimit.error.type === 'RATE_LIMITED') {
+    return {
+      success: false,
+      error: 'ログイン試行が多すぎます。しばらくしてから再度お試しください。',
+    };
+  }
+
   const password = formData.get('password');
   if (typeof password !== 'string' || !password) {
     return { success: false, error: 'パスワードを入力してください' };

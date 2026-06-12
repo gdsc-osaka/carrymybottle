@@ -166,3 +166,12 @@ export const adminAuditEvents = sqliteTable('admin_audit_events', {
   targetId: text('target_id').notNull(),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 });
+
+// Fixed-window rate limiting. One row per (action + identifier) hash; the
+// window resets in place once it expires, so the table stays bounded.
+export const rateLimits = sqliteTable('rate_limits', {
+  key: text('key').primaryKey(),
+  windowStart: integer('window_start', { mode: 'timestamp' }).notNull(),
+  count: integer('count').notNull().default(0),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+});

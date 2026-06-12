@@ -11,4 +11,12 @@ interface CloudflareEnv {
   EMERGENCY_CONTACT_TO: string;
   EMERGENCY_CONTACT_FROM: string;
   VOTE_TOKEN_SECRET: string;
+  // Optional rate-limit overrides. When unset, the defaults in
+  // lib/rate-limit/config.ts apply.
+  RATE_LIMIT_CONTACT_MAX?: string;
+  RATE_LIMIT_CONTACT_WINDOW_SEC?: string;
+  RATE_LIMIT_VOTE_MAX?: string;
+  RATE_LIMIT_VOTE_WINDOW_SEC?: string;
+  RATE_LIMIT_ADMIN_LOGIN_MAX?: string;
+  RATE_LIMIT_ADMIN_LOGIN_WINDOW_SEC?: string;
 }

@@ -16,6 +16,14 @@ APP_ENV = "development"
 APP_BASE_URL = "http://localhost:3000"
 EMERGENCY_CONTACT_TO = "carry.my.bottle@gmail.com"
 EMERGENCY_CONTACT_FROM = "noreply@example.com"
+# Optional rate-limit overrides (per client IP, fixed window). Defaults live in
+# lib/rate-limit/config.ts: contact 5/600s, vote 20/600s, admin_login 10/600s.
+# RATE_LIMIT_CONTACT_MAX = "5"
+# RATE_LIMIT_CONTACT_WINDOW_SEC = "600"
+# RATE_LIMIT_VOTE_MAX = "20"
+# RATE_LIMIT_VOTE_WINDOW_SEC = "600"
+# RATE_LIMIT_ADMIN_LOGIN_MAX = "10"
+# RATE_LIMIT_ADMIN_LOGIN_WINDOW_SEC = "600"
 
 [[d1_databases]]
 binding = "DB"

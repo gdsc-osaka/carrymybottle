@@ -10,6 +10,7 @@ import {
 } from './queries';
 import { sendAdminNotificationEmail, sendAutoReplyEmail } from './mail';
 import { trackEvent } from '@/lib/analytics/events';
+import { enforceRateLimit } from '@/lib/rate-limit';
 
 export type ContactActionResult =
   | { success: true }
@@ -18,6 +19,15 @@ export type ContactActionResult =
 export async function submitContactAction(
   formData: FormData
 ): Promise<ContactActionResult> {
+  const rateLimit = await enforceRateLimit('contact');
+  if (rateLimit.isErr() && rateLimit.error.type === 'RATE_LIMITED') {
+    return {
+      success: false,
+      error:
+        '短時間に送信が集中しています。しばらくしてから再度お試しください。',
+    };
+  }
+
   const raw = {
     stationId: formData.get('stationId'),
     issueType: formData.get('issueType'),
