@@ -45,6 +45,10 @@ export const stations = sqliteTable(
     buildingId: text('building_id').notNull(),
     name: text('name').notNull(),
     description: text('description'),
+    // 地図上の絶対座標（緯度・経度）。MapLibre のベクトルタイル地図でピンを表示する。
+    // 旧 relativeX/relativeY（PNG 地図上の相対座標）はベクトル地図移行に伴い未使用。
+    latitude: real('latitude'),
+    longitude: real('longitude'),
     relativeX: real('relative_x').notNull().default(0.5),
     relativeY: real('relative_y').notNull().default(0.5),
     status: text('status', { enum: ['available', 'stopped', 'broken'] })

@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState, useState, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,10 +14,15 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { VisualCoordinateEditor } from './VisualCoordinateEditor';
 import { createStationAction, updateStationAction } from './actions';
 import { STATUS_LABELS, TEMPERATURE_LABELS } from './validation';
 import type { Campus, Building, StationWithRelations } from '@/lib/db/types';
+
+// maplibre-gl is browser-only — load the picker client-side only.
+const CoordinatePickerMap = dynamic(() => import('./CoordinatePickerMap'), {
+  ssr: false,
+  loading: () => <div className="h-64 w-full rounded border bg-muted" />,
+});
 
 interface Props {
   campuses: Campus[];
@@ -35,24 +41,27 @@ export function StationForm({
 
   const [campusId, setCampusId] = useState(station?.campusId ?? '');
   const [buildingId, setBuildingId] = useState(station?.buildingId ?? '');
-  const [relativeX, setRelativeX] = useState(station?.relativeX ?? 0.5);
-  const [relativeY, setRelativeY] = useState(station?.relativeY ?? 0.5);
+  const [latitude, setLatitude] = useState<number | null>(
+    station?.latitude ?? null
+  );
+  const [longitude, setLongitude] = useState<number | null>(
+    station?.longitude ?? null
+  );
   const [temperatures, setTemperatures] = useState<string[]>(
     station?.temperatures.map((t) => t.temperatureType) ?? []
   );
 
-  const selectedCampus = campuses.find((c) => c.id === campusId);
   const filteredBuildings = buildings.filter((b) => b.campusId === campusId);
 
-  const handleCoordinate = useCallback((x: number, y: number) => {
-    setRelativeX(x);
-    setRelativeY(y);
+  const handleCoordinate = useCallback((lat: number, lng: number) => {
+    setLatitude(lat);
+    setLongitude(lng);
   }, []);
 
   const [state, formAction, pending] = useActionState(
     async (_prev: { error?: string } | null, formData: FormData) => {
-      formData.set('relativeX', String(relativeX));
-      formData.set('relativeY', String(relativeY));
+      formData.set('latitude', latitude == null ? '' : String(latitude));
+      formData.set('longitude', longitude == null ? '' : String(longitude));
       temperatures.forEach((t) => formData.append('temperatures', t));
 
       const result = isEdit
@@ -170,40 +179,48 @@ export function StationForm({
       </div>
 
       <div className="space-y-2">
-        <Label>座標（地図クリックで設定）</Label>
-        <VisualCoordinateEditor
-          campus={selectedCampus}
-          relativeX={relativeX}
-          relativeY={relativeY}
-          onCoordinateChange={handleCoordinate}
+        <Label>座標 *（地図クリックで設定）</Label>
+        <CoordinatePickerMap
+          campusId={campusId}
+          latitude={latitude}
+          longitude={longitude}
+          onChange={handleCoordinate}
         />
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
-            <Label htmlFor="relativeX" className="text-xs">
-              X座標 (0〜1)
+            <Label htmlFor="latitude" className="text-xs">
+              緯度 (latitude)
             </Label>
             <Input
-              id="relativeX"
+              id="latitude"
               type="number"
-              step="0.001"
-              min="0"
-              max="1"
-              value={relativeX}
-              onChange={(e) => setRelativeX(Number(e.target.value))}
+              step="0.000001"
+              min="-90"
+              max="90"
+              value={latitude ?? ''}
+              onChange={(e) =>
+                setLatitude(
+                  e.target.value === '' ? null : Number(e.target.value)
+                )
+              }
             />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="relativeY" className="text-xs">
-              Y座標 (0〜1)
+            <Label htmlFor="longitude" className="text-xs">
+              経度 (longitude)
             </Label>
             <Input
-              id="relativeY"
+              id="longitude"
               type="number"
-              step="0.001"
-              min="0"
-              max="1"
-              value={relativeY}
-              onChange={(e) => setRelativeY(Number(e.target.value))}
+              step="0.000001"
+              min="-180"
+              max="180"
+              value={longitude ?? ''}
+              onChange={(e) =>
+                setLongitude(
+                  e.target.value === '' ? null : Number(e.target.value)
+                )
+              }
             />
           </div>
         </div>

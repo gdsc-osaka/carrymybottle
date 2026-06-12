@@ -14,8 +14,14 @@ export const stationSchema = z.object({
     .min(1, '水温種別を1つ以上選択してください')
     .refine((v) => new Set(v).size === v.length, '水温種別は重複できません'),
   description: z.string().optional(),
-  relativeX: z.number().min(0).max(1),
-  relativeY: z.number().min(0).max(1),
+  latitude: z
+    .number({ message: '緯度を入力してください' })
+    .min(-90, '緯度は -90〜90 の範囲で入力してください')
+    .max(90, '緯度は -90〜90 の範囲で入力してください'),
+  longitude: z
+    .number({ message: '経度を入力してください' })
+    .min(-180, '経度は -180〜180 の範囲で入力してください')
+    .max(180, '経度は -180〜180 の範囲で入力してください'),
   isPublic: z.boolean(),
   shortLinkId: z.string().optional(),
   shortLinkUrl: z

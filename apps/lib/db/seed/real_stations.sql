@@ -18,30 +18,39 @@ VALUES
   ('suita_bldg_m3',           'suita',    'M3棟',                       20, strftime('%s','now'), strftime('%s','now'));
 
 -- 3. Stations -----------------------------------------------------------------
--- relative_x / relative_y are placeholders (0.5 area). Adjust later via the
--- admin Visual Coordinate Editor once map positions are confirmed.
+-- latitude / longitude are approximate and MUST be verified against OSM / on the
+-- ground before relying on them. relative_x / relative_y are legacy (unused by the
+-- MapLibre vector map) and kept only to satisfy NOT NULL defaults.
 INSERT OR IGNORE INTO stations
-  (id, campus_id, building_id, name, description, relative_x, relative_y, status, is_public, created_at, updated_at)
+  (id, campus_id, building_id, name, description, latitude, longitude, relative_x, relative_y, status, is_public, created_at, updated_at)
 VALUES
   ('toyonaka_fukuri_coop', 'toyonaka', 'toyonaka_bldg_fukuri',
    '生協コンビニ',
    '入口入ってすぐ右。コーヒーなどの機械の端。',
-   0.40, 0.45, 'available', 1, strftime('%s','now'), strftime('%s','now')),
+   34.8036, 135.4554, 0.40, 0.45, 'available', 1, strftime('%s','now'), strftime('%s','now')),
 
   ('toyonaka_zengaku_a', 'toyonaka', 'toyonaka_bldg_zengaku_a',
    'ピロティ正面',
    '共通棟ピロティから入って正面。階段近くの壁際。',
-   0.55, 0.55, 'available', 1, strftime('%s','now'), strftime('%s','now')),
+   34.8067, 135.4537, 0.55, 0.55, 'available', 1, strftime('%s','now'), strftime('%s','now')),
 
   ('suita_coop_honbumae', 'suita', 'suita_bldg_coop_honbumae',
    'コンビニ入口',
    '入口入ってすぐ左。お湯の機械の隣。',
-   0.45, 0.50, 'available', 1, strftime('%s','now'), strftime('%s','now')),
+   34.8224, 135.5246, 0.45, 0.50, 'available', 1, strftime('%s','now'), strftime('%s','now')),
 
   ('suita_m3_212', 'suita', 'suita_bldg_m3',
    '212講義室前',
    '理工学図書館から西側のM3棟（工学部棟）の2階。となりのM1棟の2階からもアクセス可。講義室前方右側。',
-   0.55, 0.50, 'available', 1, strftime('%s','now'), strftime('%s','now'));
+   34.8208, 135.5230, 0.55, 0.50, 'available', 1, strftime('%s','now'), strftime('%s','now'));
+
+-- 3b. Backfill coordinates for rows inserted before the latitude/longitude
+-- columns existed (INSERT OR IGNORE above is a no-op for existing ids). Safe to
+-- re-run: the UPDATE simply re-sets the same values.
+UPDATE stations SET latitude = 34.8036, longitude = 135.4554 WHERE id = 'toyonaka_fukuri_coop';
+UPDATE stations SET latitude = 34.8067, longitude = 135.4537 WHERE id = 'toyonaka_zengaku_a';
+UPDATE stations SET latitude = 34.8224, longitude = 135.5246 WHERE id = 'suita_coop_honbumae';
+UPDATE stations SET latitude = 34.8208, longitude = 135.5230 WHERE id = 'suita_m3_212';
 
 -- 4. Station temperatures -----------------------------------------------------
 INSERT OR IGNORE INTO station_temperatures (station_id, temperature_type, created_at)
