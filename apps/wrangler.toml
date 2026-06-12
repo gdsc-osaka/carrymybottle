@@ -16,7 +16,7 @@ assets = { directory = ".open-next/assets", binding = "ASSETS" }
 APP_ENV = "development"
 APP_BASE_URL = "http://localhost:3000"
 EMERGENCY_CONTACT_TO = "carry.my.bottle@gmail.com"
-EMERGENCY_CONTACT_FROM = "noreply@example.com"
+EMERGENCY_CONTACT_FROM = "noreply@gdgoc-osaka.jp"
 
 [[d1_databases]]
 binding = "DB"
