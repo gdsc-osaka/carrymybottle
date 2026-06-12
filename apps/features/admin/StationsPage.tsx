@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Plus } from 'lucide-react';
 import { useAsyncAction } from '@/hooks/use-async-action';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -30,16 +31,16 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { cn } from '@/lib/utils';
 import { StationForm } from './StationForm';
 import { deleteStationAction, unpublishStationAction } from './actions';
 import { STATUS_LABELS, TEMPERATURE_LABELS } from './validation';
+import {
+  STATUS_BADGE_CLASS,
+  TEMPERATURE_BADGE_CLASS,
+  VISIBILITY_BADGE_CLASS,
+} from './badge-styles';
 import type { Campus, Building, StationWithRelations } from '@/lib/db/types';
-
-const STATUS_BADGE: Record<string, string> = {
-  available: 'default',
-  stopped: 'secondary',
-  broken: 'destructive',
-};
 
 interface Props {
   stations: StationWithRelations[];
@@ -82,12 +83,27 @@ export function StationsPage({ stations, campuses, buildings }: Props) {
 
   return (
     <div className="space-y-4">
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && (
+        <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          {error}
+        </p>
+      )}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">給水機管理</h1>
+        <div>
+          <h1 className="text-2xl font-semibold text-slate-900">給水機管理</h1>
+          <p className="text-sm text-slate-500">
+            登録済みの給水機 {stations.length} 件
+          </p>
+        </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button onClick={openCreate}>+ 給水機を追加</Button>
+            <Button
+              onClick={openCreate}
+              className="bg-teal-600 text-white hover:bg-teal-700"
+            >
+              <Plus className="size-4" />
+              給水機を追加
+            </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
@@ -105,17 +121,31 @@ export function StationsPage({ stations, campuses, buildings }: Props) {
         </Dialog>
       </div>
 
-      <div className="rounded-md border">
+      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>名称</TableHead>
-              <TableHead>キャンパス</TableHead>
-              <TableHead>建物</TableHead>
-              <TableHead>状態</TableHead>
-              <TableHead>水温</TableHead>
-              <TableHead>公開</TableHead>
-              <TableHead className="text-right">操作</TableHead>
+            <TableRow className="bg-slate-50 hover:bg-slate-50">
+              <TableHead className="font-semibold text-slate-700">
+                給水機名
+              </TableHead>
+              <TableHead className="font-semibold text-slate-700">
+                キャンパス
+              </TableHead>
+              <TableHead className="font-semibold text-slate-700">
+                建物
+              </TableHead>
+              <TableHead className="font-semibold text-slate-700">
+                状態
+              </TableHead>
+              <TableHead className="font-semibold text-slate-700">
+                対応水温
+              </TableHead>
+              <TableHead className="font-semibold text-slate-700">
+                公開状態
+              </TableHead>
+              <TableHead className="text-right font-semibold text-slate-700">
+                操作
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -123,7 +153,7 @@ export function StationsPage({ stations, campuses, buildings }: Props) {
               <TableRow>
                 <TableCell
                   colSpan={7}
-                  className="text-center text-muted-foreground py-8"
+                  className="py-10 text-center text-slate-400"
                 >
                   給水機がありません
                 </TableCell>
@@ -132,37 +162,56 @@ export function StationsPage({ stations, campuses, buildings }: Props) {
             {stations.map((station) => (
               <TableRow
                 key={station.id}
-                className={!station.isPublic ? 'opacity-50' : ''}
+                className={cn(
+                  'hover:bg-teal-50/40',
+                  !station.isPublic && 'bg-slate-50/60'
+                )}
               >
-                <TableCell className="font-medium">{station.name}</TableCell>
-                <TableCell>{station.campus.name}</TableCell>
-                <TableCell>{station.building.name}</TableCell>
+                <TableCell className="font-medium text-slate-900">
+                  {station.name}
+                </TableCell>
+                <TableCell className="text-slate-600">
+                  {station.campus.name}
+                </TableCell>
+                <TableCell className="text-slate-600">
+                  {station.building.name}
+                </TableCell>
                 <TableCell>
                   <Badge
-                    variant={
-                      STATUS_BADGE[station.status] as
-                        | 'default'
-                        | 'secondary'
-                        | 'destructive'
-                    }
+                    variant="outline"
+                    className={STATUS_BADGE_CLASS[station.status]}
                   >
                     {STATUS_LABELS[station.status]}
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <div className="flex gap-1 flex-wrap">
+                  <div className="flex flex-wrap gap-1">
                     {station.temperatures.map((t) => (
                       <Badge
                         key={t.temperatureType}
                         variant="outline"
-                        className="text-xs"
+                        className={cn(
+                          'text-xs',
+                          TEMPERATURE_BADGE_CLASS[t.temperatureType]
+                        )}
                       >
                         {TEMPERATURE_LABELS[t.temperatureType]}
                       </Badge>
                     ))}
                   </div>
                 </TableCell>
-                <TableCell>{station.isPublic ? '公開' : '非公開'}</TableCell>
+                <TableCell>
+                  <Badge
+                    variant="outline"
+                    className={
+                      station.isPublic
+                        ? VISIBILITY_BADGE_CLASS.public
+                        : VISIBILITY_BADGE_CLASS.private
+                    }
+                  >
+                    {station.isPublic ? '公開中' : '非公開'}
+                  </Badge>
+                </TableCell>
                 <TableCell>
                   <div className="flex gap-2 justify-end">
                     <Button
