@@ -449,7 +449,9 @@ export function LandingPage() {
           <div className="flex flex-wrap justify-center gap-8">
             <a
               className="font-medium text-[#3d4947] transition-all hover:text-[#00685f]"
-              href="#"
+              href="https://www.osaka-u.ac.jp/ja"
+              target="_blank"
+              rel="noopener noreferrer"
             >
               大阪大学公式サイト
             </a>
