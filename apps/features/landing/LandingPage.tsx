@@ -115,6 +115,59 @@ function CountUp({
   );
 }
 
+/** Outlined teardrop with a glossy water bead inside — the hero emblem. */
+function WaterDropEmblem({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 100 116"
+      className={className}
+      fill="none"
+      aria-hidden="true"
+    >
+      <defs>
+        <linearGradient
+          id="drop-stroke"
+          x1="20"
+          y1="8"
+          x2="82"
+          y2="112"
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop offset="0" stopColor="#5cbcae" />
+          <stop offset="1" stopColor="#2f7fc6" />
+        </linearGradient>
+        <radialGradient
+          id="drop-bead"
+          cx="0.38"
+          cy="0.3"
+          r="0.8"
+          gradientUnits="objectBoundingBox"
+        >
+          <stop offset="0" stopColor="#ffffff" />
+          <stop offset="0.45" stopColor="#d4eef1" />
+          <stop offset="1" stopColor="#74bcc6" />
+        </radialGradient>
+      </defs>
+      <path
+        d="M50 8 C 50 8 80 50 80 78 A 30 30 0 1 1 20 78 C 20 50 50 8 50 8 Z"
+        stroke="url(#drop-stroke)"
+        strokeWidth="2.4"
+      />
+      <circle cx="50" cy="83" r="18.5" fill="url(#drop-bead)" />
+      <ellipse
+        cx="43"
+        cy="75"
+        rx="5.5"
+        ry="3.6"
+        fill="#ffffff"
+        opacity="0.85"
+      />
+    </svg>
+  );
+}
+
+const HERO_IMAGE = '/images/hero-water.png';
+
 function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
   const reduce = useReducedMotion();
@@ -125,8 +178,8 @@ function Hero() {
     target: sectionRef,
     offset: ['start start', 'end start'],
   });
-  const contentY = useTransform(scrollYProgress, [0, 1], [0, 140]);
-  const contentOpacity = useTransform(scrollYProgress, [0, 0.7], [1, 0]);
+  const contentY = useTransform(scrollYProgress, [0, 1], [0, 120]);
+  const contentOpacity = useTransform(scrollYProgress, [0, 0.75], [1, 0]);
 
   // Pointer state consumed each frame by the WebGL water surface.
   const ripplePointer = useRef<RipplePointer>({
@@ -146,25 +199,33 @@ function Hero() {
     if (splash) p.splash = true;
   }
 
+  const stats = [
+    { icon: MapPin, value: <CountUp to={3} />, label: '全キャンパス' },
+    { icon: Droplet, value: '24/7', label: '稼働中' },
+    { icon: Leaf, value: <CountUp to={0} suffix="円" />, label: '利用料金' },
+  ];
+
   return (
     <section
       ref={sectionRef}
       onPointerMove={(e) => handlePointer(e, false)}
       onPointerDown={(e) => handlePointer(e, true)}
-      className="lp-hero-gradient relative flex min-h-[92vh] items-center justify-center overflow-hidden px-5"
+      className="relative flex min-h-[92vh] items-center justify-center overflow-hidden px-5 py-24"
     >
-      {/* CSS fallback backdrop — shown until the WebGL water takes over */}
-      {!waterActive && (
-        <>
-          <div className="lp-aurora pointer-events-none absolute inset-0" />
-          <div className="lp-grid pointer-events-none absolute inset-0" />
-        </>
-      )}
+      {/* Static water photo — fallback shown until/unless the WebGL water loads */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={HERO_IMAGE}
+        alt=""
+        aria-hidden="true"
+        className="absolute inset-0 h-full w-full object-cover"
+      />
 
-      {/* Interactive water surface rippling under the hero content */}
+      {/* Interactive water surface — refracts the same photo on hover/touch */}
       {!reduce && (
         <WaterRippleCanvas
           pointer={ripplePointer}
+          imageSrc={HERO_IMAGE}
           onActiveChange={setWaterActive}
           className={`pointer-events-none absolute inset-0 h-full w-full transition-opacity duration-700 ${
             waterActive ? 'opacity-100' : 'opacity-0'
@@ -172,116 +233,95 @@ function Hero() {
         />
       )}
 
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/5 via-transparent to-white/25" />
+
       <motion.div
-        className="z-10 mx-auto max-w-4xl text-center"
+        className="relative z-10 flex w-full max-w-2xl flex-col items-center"
         style={{ y: contentY, opacity: contentOpacity }}
         variants={containerVariants}
         initial="hidden"
         animate="show"
       >
-        {/* Floating droplet emblem */}
+        {/* Frosted glass card */}
         <motion.div
           variants={itemVariants}
-          className="mb-8 flex justify-center"
+          className="w-full rounded-[2rem] border border-white/50 bg-white/25 px-8 py-12 text-center shadow-[0_20px_60px_-15px_rgba(0,80,90,0.25)] backdrop-blur-xl sm:px-14"
         >
+          {/* Droplet emblem */}
           <motion.div
-            className="lp-glass-card inline-flex rounded-[1.75rem] p-6"
-            animate={reduce ? undefined : { y: [0, -14, 0] }}
+            className="mb-1 flex justify-center"
+            animate={reduce ? undefined : { y: [0, -8, 0] }}
             transition={{ duration: 6, ease: 'easeInOut', repeat: Infinity }}
           >
+            <WaterDropEmblem className="h-24 w-24" />
+          </motion.div>
+
+          {/* Wordmark */}
+          <h1 className="font-[family-name:var(--font-display)] font-medium">
+            <span className="block text-3xl tracking-[0.18em] text-[#3a8d85] sm:text-4xl md:text-5xl">
+              carry my
+            </span>
+            <span className="block bg-gradient-to-r from-[#3aa597] to-[#2670c2] bg-clip-text pb-[0.1em] text-6xl tracking-[0.1em] text-transparent sm:text-7xl md:text-8xl">
+              bottle
+            </span>
+          </h1>
+
+          {/* Divider */}
+          <div className="mx-auto mt-3 mb-6 h-px w-12 bg-[#7fb5ad]" />
+
+          {/* Subtitle */}
+          <p className="mx-auto mb-9 max-w-lg text-sm leading-relaxed text-[#46595a] sm:text-base">
+            豊中・吹田・箕面キャンパス対応。
+            <br />
+            リアルタイムで給水スポットの温度や稼働状況を確認できます。
+          </p>
+
+          {/* CTAs */}
+          <div className="flex flex-col justify-center gap-3 sm:flex-row">
             <motion.div
-              animate={reduce ? undefined : { rotate: [0, -8, 8, 0] }}
-              transition={{
-                duration: 8,
-                ease: 'easeInOut',
-                repeat: Infinity,
-              }}
+              whileHover={{ scale: 1.03, y: -2 }}
+              whileTap={{ scale: 0.97 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 17 }}
             >
-              <Droplet className="h-20 w-20 fill-[#00685f] text-[#00685f]" />
+              <Link
+                href="/map"
+                className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#0f897f] to-[#1f6fc4] px-7 py-3.5 font-bold text-white shadow-lg shadow-[#0f897f]/25 transition-shadow hover:shadow-xl hover:shadow-[#1f6fc4]/30"
+              >
+                <MapIcon className="h-5 w-5" />
+                給水マップを開く
+              </Link>
             </motion.div>
-          </motion.div>
-        </motion.div>
-
-        {/* Organisation eyebrow */}
-        <motion.div
-          variants={itemVariants}
-          className="mb-5 flex justify-center"
-        >
-          <span className="lp-glass-card inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold tracking-[0.25em] text-[#00685f] uppercase">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#008378]" />
-            Carry My Bottle
-          </span>
-        </motion.div>
-
-        <motion.h1
-          variants={itemVariants}
-          className="lp-text-gradient mb-6 text-6xl font-extrabold tracking-tighter md:text-[80px]"
-        >
-          キャリボト
-        </motion.h1>
-
-        <motion.p
-          variants={itemVariants}
-          className="mx-auto mb-10 max-w-2xl text-lg text-[#3d4947] md:text-xl"
-        >
-          豊中・吹田・箕面キャンパス対応。
-          <br />
-          リアルタイムで給水スポットの温度や稼働状況を確認できます。
-        </motion.p>
-
-        <motion.div
-          variants={itemVariants}
-          className="mb-16 flex flex-col justify-center gap-4 sm:flex-row"
-        >
-          <motion.div
-            whileHover={{ scale: 1.04, y: -2 }}
-            whileTap={{ scale: 0.96 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-          >
-            <Link
-              href="/map"
-              className="flex items-center justify-center gap-2 rounded-[1.5rem] bg-[#008378] px-8 py-4 text-lg font-bold text-[#f4fffc] shadow-lg shadow-[#008378]/30 transition-shadow hover:shadow-xl hover:shadow-[#008378]/40"
+            <motion.a
+              href="#about"
+              whileHover={{ scale: 1.03, y: -2 }}
+              whileTap={{ scale: 0.97 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+              className="rounded-2xl border border-white/60 bg-white/40 px-7 py-3.5 font-bold text-[#2a4a48] backdrop-blur-sm transition-colors hover:bg-white/60"
             >
-              <MapIcon className="h-5 w-5" />
-              給水マップを開く
-            </Link>
-          </motion.div>
-          <motion.a
-            href="#about"
-            whileHover={{ scale: 1.04, y: -2 }}
-            whileTap={{ scale: 0.96 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-            className="lp-glass-card rounded-[1.5rem] px-8 py-4 text-lg font-bold transition-colors hover:bg-white/90"
-          >
-            使い方ガイド
-          </motion.a>
+              使い方ガイド
+            </motion.a>
+          </div>
         </motion.div>
 
-        {/* Stats */}
+        {/* Stats pill */}
         <motion.div
           variants={itemVariants}
-          className="mx-auto grid max-w-2xl grid-cols-3 gap-4"
+          className="mt-7 grid w-full max-w-2xl grid-cols-3 divide-x divide-white/50 rounded-3xl border border-white/40 bg-white/20 py-6 backdrop-blur-md"
         >
-          <div className="p-4">
-            <div className="mb-1 text-3xl font-bold text-[#00685f] md:text-4xl">
-              <CountUp to={3} />
+          {stats.map((stat) => (
+            <div
+              key={stat.label}
+              className="flex flex-col items-center gap-1.5 px-3"
+            >
+              <div className="flex items-center gap-2.5 text-4xl font-bold text-[#1f6b64]">
+                <stat.icon className="h-7 w-7 text-[#3a9d93]" />
+                {stat.value}
+              </div>
+              <span className="text-lg font-medium text-[#5a6b6a]">
+                {stat.label}
+              </span>
             </div>
-            <div className="text-sm font-medium text-[#3d4947]">
-              全キャンパス
-            </div>
-          </div>
-          <div className="border-x border-[#bcc9c6]/40 p-4">
-            <div className="mb-1 text-3xl font-bold text-[#00685f] md:text-4xl">
-              24/7
-            </div>
-            <div className="text-sm font-medium text-[#3d4947]">稼働中</div>
-          </div>
-          <div className="p-4">
-            <div className="mb-1 text-3xl font-bold text-[#00685f] md:text-4xl">
-              <CountUp to={0} suffix="円" />
-            </div>
-            <div className="text-sm font-medium text-[#3d4947]">利用料金</div>
-          </div>
+          ))}
         </motion.div>
       </motion.div>
 
@@ -289,12 +329,18 @@ function Hero() {
       <motion.a
         href="#about"
         aria-label="下にスクロール"
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 text-[#00685f]"
+        className="absolute bottom-6 left-1/2 flex -translate-x-1/2 flex-col items-center gap-1 text-[#3a6b66]"
         style={{ opacity: contentOpacity }}
-        animate={reduce ? undefined : { y: [0, 10, 0] }}
-        transition={{ duration: 2, ease: 'easeInOut', repeat: Infinity }}
       >
-        <ChevronDown className="h-8 w-8" />
+        <span className="text-[0.65rem] font-semibold tracking-[0.3em]">
+          SCROLL
+        </span>
+        <motion.span
+          animate={reduce ? undefined : { y: [0, 8, 0] }}
+          transition={{ duration: 2, ease: 'easeInOut', repeat: Infinity }}
+        >
+          <ChevronDown className="h-5 w-5" />
+        </motion.span>
       </motion.a>
     </section>
   );
@@ -319,21 +365,21 @@ export function LandingPage() {
               transition={{ type: 'spring', stiffness: 400, damping: 12 }}
               className="inline-flex"
             >
-              <Droplet className="h-8 w-8 fill-[#00685f] text-[#00685f]" />
+              <Droplet className="h-8 w-8 fill-[#1f8f87] text-[#1f8f87]" />
             </motion.span>
-            <span className="text-2xl font-bold tracking-tight text-[#00685f]">
-              キャリボト
+            <span className="bg-gradient-to-r from-[#0f897f] to-[#1f6fc4] bg-clip-text font-[family-name:var(--font-display)] text-2xl font-bold lowercase tracking-tight text-transparent">
+              carry my bottle
             </span>
           </Link>
           <nav className="hidden items-center gap-8 md:flex">
             {NAV_LINKS.map((link) => (
               <a
                 key={link.href}
-                className="group relative font-medium text-[#3d4947] transition-colors hover:text-[#00685f]"
+                className="group relative font-medium text-[#3d4947] transition-colors hover:text-[#0f897f]"
                 href={link.href}
               >
                 {link.label}
-                <span className="absolute -bottom-1 left-0 h-0.5 w-0 rounded-full bg-[#00685f] transition-all duration-300 group-hover:w-full" />
+                <span className="absolute -bottom-1 left-0 h-0.5 w-0 rounded-full bg-gradient-to-r from-[#0f897f] to-[#1f6fc4] transition-all duration-300 group-hover:w-full" />
               </a>
             ))}
             <motion.div
@@ -343,7 +389,7 @@ export function LandingPage() {
             >
               <Link
                 href="/map"
-                className="rounded-full bg-[#00685f] px-6 py-2.5 font-bold text-white transition-colors hover:bg-[#008378]"
+                className="rounded-full bg-gradient-to-r from-[#0f897f] to-[#1f6fc4] px-6 py-2.5 font-bold text-white shadow-lg shadow-[#1f6fc4]/20 transition-shadow hover:shadow-xl hover:shadow-[#1f6fc4]/30"
               >
                 使ってみる
               </Link>
@@ -353,7 +399,7 @@ export function LandingPage() {
             type="button"
             aria-label="メニューを開く"
             aria-expanded={menuOpen}
-            className="text-[#00685f] md:hidden"
+            className="text-[#0f897f] md:hidden"
             onClick={() => setMenuOpen((v) => !v)}
           >
             <Menu className="h-8 w-8" />
@@ -371,7 +417,7 @@ export function LandingPage() {
               {NAV_LINKS.map((link) => (
                 <li key={link.href}>
                   <a
-                    className="block font-medium text-[#3d4947] transition-colors hover:text-[#00685f]"
+                    className="block font-medium text-[#3d4947] transition-colors hover:text-[#0f897f]"
                     href={link.href}
                     onClick={() => setMenuOpen(false)}
                   >
@@ -382,7 +428,7 @@ export function LandingPage() {
               <li>
                 <Link
                   href="/map"
-                  className="block rounded-full bg-[#00685f] px-6 py-2.5 text-center font-bold text-white"
+                  className="block rounded-full bg-gradient-to-r from-[#0f897f] to-[#1f6fc4] px-6 py-2.5 text-center font-bold text-white"
                   onClick={() => setMenuOpen(false)}
                 >
                   使ってみる

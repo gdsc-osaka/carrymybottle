@@ -130,6 +130,13 @@
   }
 }
 
+/* Wordmark display stack: real Futura where installed, Jost (free Futura-like)
+   as the web fallback loaded via next/font. */
+:root {
+  --font-display:
+    Futura, var(--font-jost), 'Century Gothic', ui-sans-serif, sans-serif;
+}
+
 /* ---- Landing page (LP) styles ---- */
 .lp-glass-card {
   background: rgba(255, 255, 255, 0.7);

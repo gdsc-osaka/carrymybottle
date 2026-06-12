@@ -17,6 +17,8 @@ export interface RipplePointer {
 
 interface Props {
   pointer: RefObject<RipplePointer>;
+  /** 波打たせる背景画像の URL（object-fit: cover 相当で描画）。 */
+  imageSrc: string;
   /** WebGL 水面が実際に描画されているかを親へ通知する。 */
   onActiveChange?: (active: boolean) => void;
   className?: string;
@@ -68,38 +70,28 @@ void main() {
 `;
 
 /**
- * 水面の描画。高さ勾配から法線を求め、ブランド配色のベースグラデを
- * 屈折させてスペキュラ／フレネルを加えることで「澄んだ透明な水」を表現する。
- * ベース色は lp-hero-gradient / lp-aurora の配色を踏襲。
+ * 水面の描画。背景の水面写真テクスチャを高さ勾配で屈折させ、波頭の
+ * スペキュラと斜面の陰影を重ねることで「写真の水面が実際に波打つ」表現にする。
+ * フラット（無波）時は元写真とほぼ同一に見える。
  */
 const RENDER_FRAG_SRC = `#version 300 es
 precision highp float;
 uniform sampler2D uSim;
+uniform sampler2D uImage;
 uniform vec2 uTexel;
-uniform float uAspect;
-uniform float uTime;
+uniform vec2 uResolution; // 表示キャンバスの px サイズ
+uniform vec2 uImageSize;  // 画像の自然 px サイズ
 in vec2 vUv;
 out vec4 outColor;
 
-float blob(vec2 p, vec2 c, float r) {
-  vec2 d = p - c;
-  return exp(-dot(d, d) / (r * r));
-}
-
-// lp-hero-gradient / lp-aurora を再現したブランドカラーの水底（uv 原点は左下）。
-vec3 baseColor(vec2 uv) {
-  vec2 p = vec2(uv.x * uAspect, uv.y);
-  float t = uTime * 0.05;
-  vec3 col = vec3(0.969, 0.976, 0.984);                                                // #f7f9fb
-  col = mix(col, vec3(0.537, 0.961, 0.906),
-            0.60 * blob(p, vec2(uAspect * (0.18 + 0.06 * sin(t)), 0.86), 0.55));       // #89f5e7
-  col = mix(col, vec3(0.678, 0.776, 1.000),
-            0.55 * blob(p, vec2(uAspect * (0.84 + 0.05 * cos(t * 1.3)), 0.76), 0.60)); // #adc6ff
-  col = mix(col, vec3(0.000, 0.514, 0.471),
-            0.28 * blob(p, vec2(uAspect * 0.62, 0.12 + 0.05 * sin(t * 0.8)), 0.55));   // #008378
-  col = mix(col, vec3(0.000, 0.345, 0.745),
-            0.20 * blob(p, vec2(uAspect * 0.12, 0.20 + 0.04 * cos(t)), 0.50));         // #0058be
-  return col;
+// object-fit: cover 相当の UV 変換（中央クロップ）。
+vec2 coverUv(vec2 uv) {
+  float canvasAspect = uResolution.x / uResolution.y;
+  float imgAspect = uImageSize.x / uImageSize.y;
+  vec2 scale = canvasAspect > imgAspect
+    ? vec2(1.0, imgAspect / canvasAspect)
+    : vec2(canvasAspect / imgAspect, 1.0);
+  return (uv - 0.5) * scale + 0.5;
 }
 
 void main() {
@@ -109,15 +101,16 @@ void main() {
   float ht = texture(uSim, vUv + vec2(0.0, uTexel.y)).r;
   vec2 grad = vec2(hr - hl, ht - hb);
 
-  vec3 col = baseColor(vUv - grad * 1.2);                  // 屈折
-  vec3 n = normalize(vec3(-grad * 12.0, 1.0));
+  // 高さ勾配で写真を屈折させてサンプリング。
+  vec2 uv = coverUv(vUv) - grad * 0.9;
+  vec3 col = texture(uImage, uv).rgb;
+
+  vec3 n = normalize(vec3(-grad * 10.0, 1.0));
   vec3 lightDir = normalize(vec3(-0.35, 0.55, 0.75));
   float spec = pow(max(dot(reflect(-lightDir, n), vec3(0.0, 0.0, 1.0)), 0.0), 120.0);
-  float fresnel = pow(1.0 - n.z, 1.5);
-  // 平水面（dot ≒ 0.755）からの差分で波面に明暗をつける。
-  col += (dot(n, lightDir) - 0.755) * 1.4;
-  col += spec * 0.9;                                       // 波頭のきらめき
-  col = mix(col, vec3(0.42, 0.85, 0.80), fresnel * 0.5);   // 斜面のアクア色
+  // 平水面（dot ≒ 0.755）からの差分で波面に控えめな明暗をつける。
+  col += (dot(n, lightDir) - 0.755) * 0.9;
+  col += spec * 0.7;                       // 波頭のきらめき
   outColor = vec4(col, 1.0);
 }
 `;
@@ -172,12 +165,14 @@ function linkProgram(
  * ヒーロー背景のインタラクティブ水面（依存ゼロの生 WebGL2 実装）。
  *
  * RG16F の ping-pong レンダーターゲット2枚で高さフィールドを保持し、
- * ポインタ移動／タップをガウス型ドロップとして注入する。
+ * ポインタ移動／タップをガウス型ドロップとして注入、その勾配で背景写真
+ * （imageSrc）を屈折させて「写真の水面が波打つ」表現にする。
  * WebGL2 や浮動小数レンダーターゲットが使えない環境では何も描画せず、
- * 親側の CSS フォールバック（lp-hero-gradient / lp-aurora）に任せる。
+ * 親側に置いた静的 <img> フォールバックに任せる。
  */
 export function WaterRippleCanvas({
   pointer,
+  imageSrc,
   onActiveChange,
   className,
 }: Props) {
@@ -217,9 +212,10 @@ export function WaterRippleCanvas({
     };
     const renderU = {
       sim: gl.getUniformLocation(renderProg, 'uSim'),
+      image: gl.getUniformLocation(renderProg, 'uImage'),
       texel: gl.getUniformLocation(renderProg, 'uTexel'),
-      aspect: gl.getUniformLocation(renderProg, 'uAspect'),
-      time: gl.getUniformLocation(renderProg, 'uTime'),
+      resolution: gl.getUniformLocation(renderProg, 'uResolution'),
+      imageSize: gl.getUniformLocation(renderProg, 'uImageSize'),
     };
 
     const tex: WebGLTexture[] = [];
@@ -233,6 +229,13 @@ export function WaterRippleCanvas({
     let active = false;
     let lastAuto = -Infinity;
     const last = { x: 0.5, y: 0.5 };
+
+    // 背景写真テクスチャ。読み込み完了まで描画は開始しない。
+    let imageTex: WebGLTexture | null = null;
+    let imageW = 1;
+    let imageH = 1;
+    const image = new Image();
+    image.crossOrigin = 'anonymous';
 
     const fail = () => {
       disposed = true;
@@ -287,11 +290,40 @@ export function WaterRippleCanvas({
       }
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
       read = 0;
-      if (!active) {
-        active = true;
-        onActiveChange?.(true);
-      }
+      maybeActivate();
     };
+
+    // ping-pong ターゲットと背景写真の両方が揃って初めて描画開始を通知する。
+    const maybeActivate = () => {
+      if (active || disposed || tex.length < 2 || !imageTex) return;
+      active = true;
+      onActiveChange?.(true);
+    };
+
+    image.onload = () => {
+      if (disposed) return;
+      imageW = image.naturalWidth || 1;
+      imageH = image.naturalHeight || 1;
+      imageTex = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, imageTex);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+      gl.texImage2D(
+        gl.TEXTURE_2D,
+        0,
+        gl.RGBA,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
+        image
+      );
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+      maybeActivate();
+    };
+    image.onerror = () => fail();
+    image.src = imageSrc;
 
     const resize = () => {
       if (disposed) return;
@@ -313,7 +345,7 @@ export function WaterRippleCanvas({
 
     const frame = (tMs: number) => {
       rafId = requestAnimationFrame(frame);
-      if (tex.length < 2) return;
+      if (tex.length < 2 || !imageTex) return;
 
       // このフレームで注入するドロップをポインタ状態から決める。
       const p = pointer.current;
@@ -362,16 +394,19 @@ export function WaterRippleCanvas({
         read = write;
       }
 
-      // 水面を画面へ合成。
+      // 波打った写真を画面へ合成。
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
       gl.viewport(0, 0, canvas.width, canvas.height);
       gl.useProgram(renderProg);
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, tex[read]);
       gl.uniform1i(renderU.sim, 0);
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D, imageTex);
+      gl.uniform1i(renderU.image, 1);
       gl.uniform2f(renderU.texel, 1 / simW, 1 / simH);
-      gl.uniform1f(renderU.aspect, canvas.width / canvas.height);
-      gl.uniform1f(renderU.time, tMs / 1000);
+      gl.uniform2f(renderU.resolution, canvas.width, canvas.height);
+      gl.uniform2f(renderU.imageSize, imageW, imageH);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     };
 
@@ -408,6 +443,9 @@ export function WaterRippleCanvas({
       io.disconnect();
       document.removeEventListener('visibilitychange', onVisibility);
       canvas.removeEventListener('webglcontextlost', onContextLost);
+      image.onload = null;
+      image.onerror = null;
+      if (imageTex) gl.deleteTexture(imageTex);
       for (const t of tex) gl.deleteTexture(t);
       for (const f of fb) gl.deleteFramebuffer(f);
       gl.deleteVertexArray(vao);
@@ -415,7 +453,7 @@ export function WaterRippleCanvas({
       gl.deleteProgram(renderProg);
       gl.getExtension('WEBGL_lose_context')?.loseContext();
     };
-  }, [pointer, onActiveChange]);
+  }, [pointer, imageSrc, onActiveChange]);
 
   return <canvas ref={canvasRef} className={className} aria-hidden="true" />;
 }
