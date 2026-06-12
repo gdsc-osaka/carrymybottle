@@ -132,7 +132,10 @@ function compileShader(
   gl.shaderSource(shader, source);
   gl.compileShader(shader);
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    console.error('WaterRippleCanvas shader error:', gl.getShaderInfoLog(shader));
+    console.error(
+      'WaterRippleCanvas shader error:',
+      gl.getShaderInfoLog(shader)
+    );
     gl.deleteShader(shader);
     return null;
   }
@@ -155,7 +158,10 @@ function linkProgram(
   gl.deleteShader(vert);
   gl.deleteShader(frag);
   if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    console.error('WaterRippleCanvas link error:', gl.getProgramInfoLog(program));
+    console.error(
+      'WaterRippleCanvas link error:',
+      gl.getProgramInfoLog(program)
+    );
     gl.deleteProgram(program);
     return null;
   }
@@ -170,7 +176,11 @@ function linkProgram(
  * WebGL2 や浮動小数レンダーターゲットが使えない環境では何も描画せず、
  * 親側の CSS フォールバック（lp-hero-gradient / lp-aurora）に任せる。
  */
-export function WaterRippleCanvas({ pointer, onActiveChange, className }: Props) {
+export function WaterRippleCanvas({
+  pointer,
+  onActiveChange,
+  className,
+}: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -242,14 +252,32 @@ export function WaterRippleCanvas({ pointer, onActiveChange, className }: Props)
         const f = gl.createFramebuffer();
         if (!t || !f) return fail();
         gl.bindTexture(gl.TEXTURE_2D, t);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RG16F, simW, simH, 0, gl.RG, gl.HALF_FLOAT, null);
+        gl.texImage2D(
+          gl.TEXTURE_2D,
+          0,
+          gl.RG16F,
+          simW,
+          simH,
+          0,
+          gl.RG,
+          gl.HALF_FLOAT,
+          null
+        );
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         gl.bindFramebuffer(gl.FRAMEBUFFER, f);
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0);
-        if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
+        gl.framebufferTexture2D(
+          gl.FRAMEBUFFER,
+          gl.COLOR_ATTACHMENT0,
+          gl.TEXTURE_2D,
+          t,
+          0
+        );
+        if (
+          gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE
+        ) {
           gl.deleteTexture(t);
           gl.deleteFramebuffer(f);
           return fail();
@@ -273,7 +301,8 @@ export function WaterRippleCanvas({ pointer, onActiveChange, className }: Props)
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const bw = Math.round(w * dpr);
       const bh = Math.round(h * dpr);
-      if (canvas.width === bw && canvas.height === bh && tex.length === 2) return;
+      if (canvas.width === bw && canvas.height === bh && tex.length === 2)
+        return;
       canvas.width = bw;
       canvas.height = bh;
       const s = Math.min(1, SIM_MAX / Math.max(bw, bh));
