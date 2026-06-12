@@ -16,7 +16,8 @@
     "gen-hash": "node node_modules/tsx/dist/cli.mjs scripts/gen-hash.ts",
     "db:generate": "node node_modules/drizzle-kit/bin.cjs generate",
     "db:migrate:local": "for f in lib/db/migrations/*.sql; do wrangler d1 execute DB --local --file=\"$f\"; done",
-    "db:migrate:remote": "for f in lib/db/migrations/*.sql; do wrangler d1 execute DB --env=production --remote --file=\"$f\"; done"
+    "db:migrate:remote": "for f in lib/db/migrations/*.sql; do wrangler d1 execute DB --env=production --remote --file=\"$f\"; done",
+    "test": "vitest run"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
@@ -29,6 +30,7 @@
     "embla-carousel-react": "^8.6.0",
     "input-otp": "^1.4.2",
     "lucide-react": "^1.16.0",
+    "motion": "^12.40.0",
     "neverthrow": "^8.2.0",
     "next": "16.2.6",
     "next-themes": "^0.4.6",
@@ -61,6 +63,7 @@
     "tailwindcss": "^4",
     "tsx": "^4.22.3",
     "typescript": "^5",
+    "vitest": "^4.1.8",
     "wrangler": "^4.94.0"
   }
 }
