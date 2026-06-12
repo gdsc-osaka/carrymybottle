@@ -9,10 +9,10 @@ import {
   useMotionValue,
   useReducedMotion,
   useScroll,
-  useSpring,
   useTransform,
   type Variants,
 } from 'motion/react';
+import { WaterRippleCanvas, type RipplePointer } from './WaterRippleCanvas';
 import {
   ArrowRight,
   BadgeCheck,
@@ -118,6 +118,7 @@ function CountUp({
 function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
   const reduce = useReducedMotion();
+  const [waterActive, setWaterActive] = useState(false);
 
   // Scroll-linked parallax: hero content drifts up and fades as you scroll past.
   const { scrollYProgress } = useScroll({
@@ -127,42 +128,49 @@ function Hero() {
   const contentY = useTransform(scrollYProgress, [0, 1], [0, 140]);
   const contentOpacity = useTransform(scrollYProgress, [0, 0.7], [1, 0]);
 
-  // Pointer parallax for the floating blobs.
-  const pointerX = useMotionValue(0);
-  const pointerY = useMotionValue(0);
-  const springX = useSpring(pointerX, { stiffness: 60, damping: 20 });
-  const springY = useSpring(pointerY, { stiffness: 60, damping: 20 });
-  const blobAX = useTransform(springX, [-0.5, 0.5], [-40, 40]);
-  const blobAY = useTransform(springY, [-0.5, 0.5], [-40, 40]);
-  const blobBX = useTransform(springX, [-0.5, 0.5], [30, -30]);
-  const blobBY = useTransform(springY, [-0.5, 0.5], [30, -30]);
+  // Pointer state consumed each frame by the WebGL water surface.
+  const ripplePointer = useRef<RipplePointer>({
+    x: 0.5,
+    y: 0.5,
+    moved: false,
+    splash: false,
+  });
 
-  function handlePointerMove(e: React.PointerEvent<HTMLElement>) {
+  function handlePointer(e: React.PointerEvent<HTMLElement>, splash: boolean) {
     if (reduce) return;
     const rect = e.currentTarget.getBoundingClientRect();
-    pointerX.set((e.clientX - rect.left) / rect.width - 0.5);
-    pointerY.set((e.clientY - rect.top) / rect.height - 0.5);
+    const p = ripplePointer.current;
+    p.x = (e.clientX - rect.left) / rect.width;
+    p.y = (e.clientY - rect.top) / rect.height;
+    p.moved = true;
+    if (splash) p.splash = true;
   }
 
   return (
     <section
       ref={sectionRef}
-      onPointerMove={handlePointerMove}
+      onPointerMove={(e) => handlePointer(e, false)}
+      onPointerDown={(e) => handlePointer(e, true)}
       className="lp-hero-gradient relative flex min-h-[92vh] items-center justify-center overflow-hidden px-5"
     >
-      {/* Living aurora + dot grid backdrop */}
-      <div className="lp-aurora pointer-events-none absolute inset-0" />
-      <div className="lp-grid pointer-events-none absolute inset-0" />
+      {/* CSS fallback backdrop — shown until the WebGL water takes over */}
+      {!waterActive && (
+        <>
+          <div className="lp-aurora pointer-events-none absolute inset-0" />
+          <div className="lp-grid pointer-events-none absolute inset-0" />
+        </>
+      )}
 
-      {/* Pointer-reactive colour blobs */}
-      <motion.div
-        className="pointer-events-none absolute top-1/4 -left-24 h-[28rem] w-[28rem] rounded-full bg-[#00685f]/25 blur-[110px]"
-        style={{ x: blobAX, y: blobAY }}
-      />
-      <motion.div
-        className="pointer-events-none absolute -right-24 bottom-1/4 h-[28rem] w-[28rem] rounded-full bg-[#0058be]/25 blur-[110px]"
-        style={{ x: blobBX, y: blobBY }}
-      />
+      {/* Interactive water surface rippling under the hero content */}
+      {!reduce && (
+        <WaterRippleCanvas
+          pointer={ripplePointer}
+          onActiveChange={setWaterActive}
+          className={`pointer-events-none absolute inset-0 h-full w-full transition-opacity duration-700 ${
+            waterActive ? 'opacity-100' : 'opacity-0'
+          }`}
+        />
+      )}
 
       <motion.div
         className="z-10 mx-auto max-w-4xl text-center"
