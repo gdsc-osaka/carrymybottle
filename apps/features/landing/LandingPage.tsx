@@ -172,7 +172,10 @@ function Hero() {
         animate="show"
       >
         {/* Floating droplet emblem */}
-        <motion.div variants={itemVariants} className="mb-8 flex justify-center">
+        <motion.div
+          variants={itemVariants}
+          className="mb-8 flex justify-center"
+        >
           <motion.div
             className="lp-glass-card inline-flex rounded-[1.75rem] p-6"
             animate={reduce ? undefined : { y: [0, -14, 0] }}
@@ -192,7 +195,10 @@ function Hero() {
         </motion.div>
 
         {/* Organisation eyebrow */}
-        <motion.div variants={itemVariants} className="mb-5 flex justify-center">
+        <motion.div
+          variants={itemVariants}
+          className="mb-5 flex justify-center"
+        >
           <span className="lp-glass-card inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold tracking-[0.25em] text-[#00685f] uppercase">
             <span className="h-1.5 w-1.5 rounded-full bg-[#008378]" />
             Carry My Bottle
@@ -252,7 +258,9 @@ function Hero() {
             <div className="mb-1 text-3xl font-bold text-[#00685f] md:text-4xl">
               <CountUp to={3} />
             </div>
-            <div className="text-sm font-medium text-[#3d4947]">全キャンパス</div>
+            <div className="text-sm font-medium text-[#3d4947]">
+              全キャンパス
+            </div>
           </div>
           <div className="border-x border-[#bcc9c6]/40 p-4">
             <div className="mb-1 text-3xl font-bold text-[#00685f] md:text-4xl">
@@ -420,7 +428,10 @@ export function LandingPage() {
                     className="mb-6 flex h-12 w-12 items-center justify-center rounded-[0.75rem]"
                     style={{ backgroundColor: `${card.color}1a` }}
                   >
-                    <card.icon className="h-6 w-6" style={{ color: card.color }} />
+                    <card.icon
+                      className="h-6 w-6"
+                      style={{ color: card.color }}
+                    />
                   </div>
                   <h3 className="mb-3 text-xl font-bold">{card.title}</h3>
                   <p className="text-[#3d4947]">{card.body}</p>

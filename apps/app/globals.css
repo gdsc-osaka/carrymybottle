@@ -148,10 +148,26 @@
 /* Living aurora layer that slowly drifts behind the hero. */
 .lp-aurora {
   background:
-    radial-gradient(40% 50% at 20% 20%, rgba(107, 216, 203, 0.55) 0%, transparent 60%),
-    radial-gradient(45% 55% at 80% 30%, rgba(173, 198, 255, 0.5) 0%, transparent 60%),
-    radial-gradient(50% 60% at 60% 85%, rgba(0, 131, 120, 0.35) 0%, transparent 60%),
-    radial-gradient(40% 50% at 15% 80%, rgba(0, 88, 190, 0.25) 0%, transparent 60%);
+    radial-gradient(
+      40% 50% at 20% 20%,
+      rgba(107, 216, 203, 0.55) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      45% 55% at 80% 30%,
+      rgba(173, 198, 255, 0.5) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      50% 60% at 60% 85%,
+      rgba(0, 131, 120, 0.35) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      40% 50% at 15% 80%,
+      rgba(0, 88, 190, 0.25) 0%,
+      transparent 60%
+    );
   background-size: 200% 200%;
   filter: blur(40px);
   animation: lp-aurora 22s ease-in-out infinite;
@@ -177,12 +193,22 @@
     transparent 0
   );
   background-size: 32px 32px;
-  mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, black 30%, transparent 75%);
+  mask-image: radial-gradient(
+    ellipse 70% 60% at 50% 40%,
+    black 30%,
+    transparent 75%
+  );
 }
 
 /* Animated gradient text used for the hero wordmark. */
 .lp-text-gradient {
-  background: linear-gradient(120deg, #00685f 0%, #008378 30%, #0058be 60%, #00685f 100%);
+  background: linear-gradient(
+    120deg,
+    #00685f 0%,
+    #008378 30%,
+    #0058be 60%,
+    #00685f 100%
+  );
   background-size: 200% auto;
   background-clip: text;
   -webkit-background-clip: text;
