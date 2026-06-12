@@ -64,6 +64,12 @@ export async function logoutAction(): Promise<void> {
   redirect('/admin/login');
 }
 
+// 空欄や非数値は NaN にして Zod に弾かせる（0 などへ暗黙変換させない）。
+function parseCoord(value: FormDataEntryValue | null): number {
+  if (typeof value !== 'string' || value.trim() === '') return Number.NaN;
+  return Number(value);
+}
+
 function extractStationFormData(formData: FormData) {
   return {
     name: formData.get('name'),
@@ -72,8 +78,8 @@ function extractStationFormData(formData: FormData) {
     status: formData.get('status'),
     temperatures: formData.getAll('temperatures'),
     description: formData.get('description') || undefined,
-    relativeX: Number(formData.get('relativeX') ?? 0.5),
-    relativeY: Number(formData.get('relativeY') ?? 0.5),
+    latitude: parseCoord(formData.get('latitude')),
+    longitude: parseCoord(formData.get('longitude')),
     isPublic: formData.get('isPublic') === 'true',
     shortLinkId: formData.get('shortLinkId') || undefined,
     shortLinkUrl: formData.get('shortLinkUrl') || undefined,
@@ -104,8 +110,8 @@ export async function createStationAction(
       buildingId: input.buildingId,
       name: input.name,
       description: input.description,
-      relativeX: input.relativeX,
-      relativeY: input.relativeY,
+      latitude: input.latitude,
+      longitude: input.longitude,
       status: input.status,
       isPublic: input.isPublic,
       shortLinkId: input.shortLinkId,
@@ -151,8 +157,8 @@ export async function updateStationAction(
         buildingId: input.buildingId,
         name: input.name,
         description: input.description,
-        relativeX: input.relativeX,
-        relativeY: input.relativeY,
+        latitude: input.latitude,
+        longitude: input.longitude,
         status: input.status,
         isPublic: input.isPublic,
         shortLinkId: input.shortLinkId,

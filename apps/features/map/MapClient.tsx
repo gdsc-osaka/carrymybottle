@@ -1,10 +1,17 @@
 'use client';
 
-import React, { Suspense } from 'react';
+import { Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CAMPUSES, type CampusId } from '@/lib/constants/campuses';
-import { MapCanvas, type StationWithRelations } from './MapCanvas';
+import type { StationWithRelations } from './types';
+
+// maplibre-gl is browser-only — load the map client-side only.
+const MapLibreMap = dynamic(() => import('./MapLibreMap'), {
+  ssr: false,
+  loading: () => <div className="h-full w-full bg-muted" />,
+});
 
 function isCampusId(value: string | null): value is CampusId {
   return value !== null && CAMPUSES.some((c) => c.id === value);
@@ -55,11 +62,10 @@ function MapContent({ stations }: { stations: StationWithRelations[] }) {
 
       {/* Map Content Area */}
       <main className="relative flex-1 overflow-hidden bg-muted">
-        <MapCanvas
-          mapImagePath={selectedCampus.mapImagePath}
+        <MapLibreMap
+          campusId={selectedCampusId}
           stations={stations}
           onStationClick={(station) => {
-            // TODO: #40 給水機ピンタップ → 給水機詳細ナビゲーション
             router.push(`/stations/${station.id}`);
           }}
         />

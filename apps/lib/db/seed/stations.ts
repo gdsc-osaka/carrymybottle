@@ -20,6 +20,8 @@ export function seedStations(db: DB): ResultAsync<void, SeedError> {
             buildingId: 'toyonaka_bldg_01', // 全学教育推進機構
             name: '全学教育推進機構 1F ロビー',
             description: '正面玄関を入ってすぐ右手にあります。',
+            latitude: 34.8056,
+            longitude: 135.4538,
             relativeX: 0.25,
             relativeY: 0.6,
             status: 'available',
@@ -33,6 +35,8 @@ export function seedStations(db: DB): ResultAsync<void, SeedError> {
             buildingId: 'toyonaka_bldg_04', // 総合図書館
             name: '総合図書館 2F',
             description: 'ラーニング・コモンズ付近にあります。',
+            latitude: 34.8042,
+            longitude: 135.4571,
             relativeX: 0.75,
             relativeY: 0.35,
             status: 'available',
@@ -48,6 +52,8 @@ export function seedStations(db: DB): ResultAsync<void, SeedError> {
             buildingId: 'suita_bldg_01', // 工学部センタースクエア
             name: 'センタースクエア 食堂前',
             description: '食堂の入り口付近に設置されています。',
+            latitude: 34.8221,
+            longitude: 135.5238,
             relativeX: 0.5,
             relativeY: 0.5,
             status: 'available',
@@ -61,6 +67,8 @@ export function seedStations(db: DB): ResultAsync<void, SeedError> {
             buildingId: 'suita_bldg_02', // 医学部本館
             name: '医学部本館 1F',
             description: '学生ラウンジの奥です。',
+            latitude: 34.8195,
+            longitude: 135.5189,
             relativeX: 0.3,
             relativeY: 0.7,
             status: 'stopped',
@@ -76,6 +84,8 @@ export function seedStations(db: DB): ResultAsync<void, SeedError> {
             buildingId: 'minoh_bldg_03', // 学生交流プラザ
             name: '学生交流プラザ',
             description: '入り口入ってすぐです。',
+            latitude: 34.8268,
+            longitude: 135.4842,
             relativeX: 0.8,
             relativeY: 0.2,
             status: 'available',
