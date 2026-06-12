@@ -450,22 +450,14 @@ export function LandingPage() {
             <a
               className="font-medium text-[#3d4947] transition-all hover:text-[#00685f]"
               href="https://www.osaka-u.ac.jp/ja"
-              target="_blank"
-              rel="noopener noreferrer"
             >
               大阪大学公式サイト
             </a>
             <a
               className="font-medium text-[#3d4947] transition-all hover:text-[#00685f]"
-              href="#"
-            >
-              報告書
-            </a>
-            <a
-              className="font-medium text-[#3d4947] transition-all hover:text-[#00685f]"
               href="#features"
             >
-              機能一覧
+              機能
             </a>
             <a
               className="font-medium text-[#3d4947] transition-all hover:text-[#00685f]"
