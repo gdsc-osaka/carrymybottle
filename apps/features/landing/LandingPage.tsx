@@ -441,6 +441,7 @@ export function LandingPage() {
             <p className="text-sm opacity-70">
               © 2024 キャリボト. 大阪大学サステナビリティプロジェクト.
             </p>
+            {/* TODO(#166): 正式なキャリボトのコンタクトメールに置き換える */}
             <p className="text-sm font-medium text-[#00685f]">
               contact@cariboto.osaka-u.ac.jp
             </p>
