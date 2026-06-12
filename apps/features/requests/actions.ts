@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { getDb } from '@/lib/db/client';
 import { getOrCreateVoteTokenHash } from '@/lib/auth/vote-token';
 import { trackEvent } from '@/lib/analytics/events';
+import { enforceRateLimit } from '@/lib/rate-limit';
 import { saveInstallationComment, voteForInstallationTarget } from './queries';
 import {
   type SaveInstallationCommentInput,
@@ -53,6 +54,14 @@ export async function voteInstallationRequestAction(
     voteCount: number;
   }>
 > {
+  const rateLimit = await enforceRateLimit('vote');
+  if (rateLimit.isErr() && rateLimit.error.type === 'RATE_LIMITED') {
+    return {
+      success: false,
+      error: '投票が集中しています。しばらくしてから再度お試しください。',
+    };
+  }
+
   const parsed = voteInstallationRequestSchema.safeParse(
     extractVoteFormData(formData)
   );

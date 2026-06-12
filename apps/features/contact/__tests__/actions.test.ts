@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { err } from 'neverthrow';
 import { submitContactAction } from '../actions';
 import { insertEmergencyContact, updateAutoReplyError } from '../queries';
 import { sendAdminNotificationEmail, sendAutoReplyEmail } from '../mail';
+import { enforceRateLimit } from '@/lib/rate-limit';
 
 vi.mock('@opennextjs/cloudflare', () => ({
   getCloudflareContext: vi.fn().mockResolvedValue({
@@ -23,6 +25,10 @@ vi.mock('../mail', () => ({
 vi.mock('@/lib/analytics/events', () => ({
   trackEvent: vi.fn().mockResolvedValue(undefined),
 }));
+vi.mock('@/lib/rate-limit', async () => {
+  const { ok } = await import('neverthrow');
+  return { enforceRateLimit: vi.fn().mockResolvedValue(ok(undefined)) };
+});
 
 describe('submitContactAction', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -57,5 +63,23 @@ describe('submitContactAction', () => {
       expect.any(String),
       expect.stringContaining('Resend timeout')
     );
+  });
+
+  it('レート制限超過時は DB・メール未呼び出しで失敗を返す', async () => {
+    vi.mocked(enforceRateLimit).mockResolvedValueOnce(
+      err({ type: 'RATE_LIMITED', retryAfterSeconds: 30 })
+    );
+
+    const formData = new FormData();
+    formData.set('stationId', 'station_abc123');
+    formData.set('issueType', 'broken');
+    formData.set('message', '故障しています');
+    formData.set('reporterEmail', 'reporter@example.com');
+
+    const result = await submitContactAction(formData);
+
+    expect(result).toMatchObject({ success: false, error: expect.any(String) });
+    expect(vi.mocked(insertEmergencyContact)).not.toHaveBeenCalled();
+    expect(vi.mocked(sendAdminNotificationEmail)).not.toHaveBeenCalled();
   });
 });

@@ -8,6 +8,7 @@ import type {
   installationComments,
   installationTargets,
   installationVotes,
+  rateLimits,
   stationTemperatures,
   stations,
 } from './schema';
@@ -47,6 +48,9 @@ export type NewAnalyticsEvent = InferInsertModel<typeof analyticsEvents>;
 
 export type AdminAuditEvent = InferSelectModel<typeof adminAuditEvents>;
 export type NewAdminAuditEvent = InferInsertModel<typeof adminAuditEvents>;
+
+export type RateLimit = InferSelectModel<typeof rateLimits>;
+export type NewRateLimit = InferInsertModel<typeof rateLimits>;
 
 export type StationWithRelations = Station & {
   campus: Campus;
