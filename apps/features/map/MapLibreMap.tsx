@@ -59,6 +59,15 @@ export default function MapLibreMap({
     });
     mapRef.current = map;
 
+    // OpenFreeMapのスプライトに無いPOIアイコン(class/subclass名)が要求される
+    // たびに警告が出るので、透明1pxを登録して抑止する。該当POIはテキスト
+    // ラベルのみで描画される(元の挙動と同じ)。
+    map.on('styleimagemissing', (e) => {
+      if (!map.hasImage(e.id)) {
+        map.addImage(e.id, { width: 1, height: 1, data: new Uint8Array(4) });
+      }
+    });
+
     map.addControl(
       new maplibregl.NavigationControl({ showCompass: false }),
       'top-right'
