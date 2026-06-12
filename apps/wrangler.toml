@@ -8,6 +8,10 @@ name = "carrymybottle"
 main = ".open-next/worker.js"
 compatibility_date = "2025-01-01"
 compatibility_flags = ["nodejs_compat"]
+# Cloudflare account that owns the dev and prod D1 databases. Inherited by all
+# environments (incl. [env.production]); not a secret. Avoids wrangler's
+# account auto-detection failing in some environments (e.g. WSL).
+account_id = "09381b15a7d3beb91294a7ce295420a4"
 
 assets = { directory = ".open-next/assets", binding = "ASSETS" }
 
