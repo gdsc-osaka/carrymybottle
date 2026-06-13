@@ -1,7 +1,14 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Building2, CheckCircle2, MapPin, Trophy, Vote } from 'lucide-react';
+import {
+  Building2,
+  CheckCircle2,
+  Droplet,
+  MapPin,
+  Trophy,
+  Vote,
+} from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -94,19 +101,23 @@ export function RequestsPage({
   }
 
   return (
-    <main className="min-h-[100dvh] bg-[#f8fafa] text-foreground">
+    <main className="min-h-[100dvh] bg-[#f7f9fb] text-foreground">
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-4 py-5">
         <header className="flex flex-col gap-3">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-xs font-medium text-[#2f7781]">
-                Mizu-Path Osaka
+              <p className="flex items-center gap-1 text-xs font-semibold lowercase tracking-wide text-[#0f897f]">
+                <Droplet
+                  className="size-3.5 fill-[#1f8f87] text-[#1f8f87]"
+                  aria-hidden="true"
+                />
+                carry my bottle
               </p>
-              <h1 className="text-2xl font-bold tracking-normal">
+              <h1 className="bg-gradient-to-r from-[#0f897f] to-[#1f6fc4] bg-clip-text text-2xl font-bold tracking-tight text-transparent">
                 設置希望の投票
               </h1>
             </div>
-            <div className="flex shrink-0 items-center gap-1 rounded-lg border border-[#429eab]/25 bg-white px-3 py-2 text-sm font-semibold text-[#2f7781] shadow-sm">
+            <div className="flex shrink-0 items-center gap-1 rounded-full border border-[#0f897f]/25 bg-white px-3 py-2 text-sm font-semibold text-[#00685f] shadow-sm">
               <Vote className="size-4" aria-hidden="true" />
               {totalVotes}票
             </div>
@@ -117,12 +128,12 @@ export function RequestsPage({
             onValueChange={handleCampusChange}
             className="w-full"
           >
-            <TabsList className="grid h-10 w-full grid-cols-3 bg-white shadow-sm">
+            <TabsList className="grid w-full grid-cols-3 rounded-full bg-[#eef2f3] p-1 group-data-horizontal/tabs:h-11">
               {campuses.map((campus) => (
                 <TabsTrigger
                   key={campus.id}
                   value={campus.id}
-                  className="text-sm data-active:bg-[#429eab] data-active:text-white"
+                  className="rounded-full text-sm font-semibold text-[#5a6b6a] transition-all hover:text-[#0f897f] data-active:bg-gradient-to-r data-active:from-[#0f897f] data-active:to-[#1f6fc4] data-active:text-white data-active:shadow-md data-active:shadow-[#1f6fc4]/25"
                 >
                   {campus.name}
                 </TabsTrigger>
@@ -143,7 +154,7 @@ export function RequestsPage({
         <section className="rounded-lg border bg-white p-3 shadow-sm">
           <div className="mb-3 flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-2">
-              <MapPin className="size-4 shrink-0 text-[#429eab]" />
+              <MapPin className="size-4 shrink-0 text-[#0f897f]" />
               <h2 className="truncate text-base font-semibold">
                 {selectedCampus?.name ?? 'キャンパス'}の建物
               </h2>
@@ -175,7 +186,7 @@ export function RequestsPage({
                     className={[
                       'flex min-w-36 shrink-0 flex-col gap-1 rounded-lg border px-3 py-2 text-left shadow-sm transition',
                       isSelected
-                        ? 'border-[#429eab] bg-[#429eab] text-white'
+                        ? 'border-[#0f897f] bg-[#0f897f] text-white'
                         : 'border-border bg-white hover:bg-muted',
                     ].join(' ')}
                   >
@@ -213,7 +224,7 @@ export function RequestsPage({
                   {selectedBuilding.buildingName}
                 </h2>
               </div>
-              <Badge className="shrink-0 bg-[#429eab] text-white">
+              <Badge className="shrink-0 bg-[#0f897f] text-white">
                 {selectedBuilding.voteCount}票
               </Badge>
             </div>
@@ -233,7 +244,7 @@ export function RequestsPage({
                 <p
                   className={
                     message.type === 'success'
-                      ? 'flex items-center gap-2 text-sm text-[#2f7781]'
+                      ? 'flex items-center gap-2 text-sm text-[#00685f]'
                       : 'text-sm text-destructive'
                   }
                 >
@@ -246,7 +257,7 @@ export function RequestsPage({
               <Button
                 type="submit"
                 size="lg"
-                className="w-full bg-[#429eab] text-white hover:bg-[#2f7781]"
+                className="w-full bg-gradient-to-r from-[#0f897f] to-[#1f6fc4] text-white shadow-md shadow-[#1f6fc4]/25 hover:opacity-90"
                 disabled={isVoting}
               >
                 <Vote className="size-4" aria-hidden="true" />
@@ -258,7 +269,7 @@ export function RequestsPage({
 
         <section className="rounded-lg border bg-white p-4 shadow-sm">
           <div className="mb-3 flex items-center gap-2">
-            <Trophy className="size-4 text-[#429eab]" aria-hidden="true" />
+            <Trophy className="size-4 text-[#0f897f]" aria-hidden="true" />
             <h2 className="text-base font-semibold">現在のリクエスト状況</h2>
           </div>
 
@@ -273,7 +284,7 @@ export function RequestsPage({
                 }}
                 className="flex w-full items-center gap-3 py-3 text-left"
               >
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#f8fafa] text-sm font-semibold text-[#2f7781]">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#f7f9fb] text-sm font-semibold text-[#00685f]">
                   {index + 1}
                 </span>
                 <span className="min-w-0 flex-1">
