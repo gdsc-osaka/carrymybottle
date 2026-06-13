@@ -8,9 +8,11 @@ export function seedStations(db: DB): ResultAsync<void, SeedError> {
   const now = new Date();
 
   return ResultAsync.fromPromise(
-    db.transaction(async (tx) => {
+    // D1 は対話的トランザクション(BEGIN/COMMIT)を持たないため、複数文の
+    // アトミック実行は db.batch() を使う。
+    db.batch([
       // 1. 給水機本体のシード
-      await tx
+      db
         .insert(stations)
         .values([
           // 豊中キャンパス (toyonaka)
@@ -94,10 +96,10 @@ export function seedStations(db: DB): ResultAsync<void, SeedError> {
             updatedAt: now,
           },
         ])
-        .onConflictDoNothing();
+        .onConflictDoNothing(),
 
       // 2. 給水機の温度情報のシード (station_temperatures)
-      await tx
+      db
         .insert(stationTemperatures)
         .values([
           // toyonaka_station_01: 冷水と常温
@@ -160,8 +162,8 @@ export function seedStations(db: DB): ResultAsync<void, SeedError> {
             stationTemperatures.stationId,
             stationTemperatures.temperatureType,
           ],
-        });
-    }),
+        }),
+    ]),
     (error) => {
       console.error(error);
       return 'DB_ERROR' as const;
