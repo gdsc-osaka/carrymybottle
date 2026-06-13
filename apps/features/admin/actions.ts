@@ -103,8 +103,10 @@ export async function createStationAction(
   const id = `station_${crypto.randomUUID().replace(/-/g, '').slice(0, 8)}`;
   const now = new Date();
 
-  await db.transaction(async (tx) => {
-    await tx.insert(stations).values({
+  // D1 は対話的トランザクション(BEGIN/COMMIT)を持たないため、複数文の
+  // アトミック実行は db.batch() を使う。
+  await db.batch([
+    db.insert(stations).values({
       id,
       campusId: input.campusId,
       buildingId: input.buildingId,
@@ -118,15 +120,15 @@ export async function createStationAction(
       shortLinkUrl: input.shortLinkUrl || null,
       createdAt: now,
       updatedAt: now,
-    });
-    await tx.insert(stationTemperatures).values(
+    }),
+    db.insert(stationTemperatures).values(
       input.temperatures.map((t) => ({
         stationId: id,
         temperatureType: t,
         createdAt: now,
       }))
-    );
-  });
+    ),
+  ]);
   await logAuditEvent(db, 'create', 'station', id);
   revalidatePath('/admin/stations');
   return { success: true, data: undefined };
@@ -149,8 +151,10 @@ export async function updateStationAction(
   const db = getDb(env.DB);
   const now = new Date();
 
-  await db.transaction(async (tx) => {
-    await tx
+  // D1 は対話的トランザクション(BEGIN/COMMIT)を持たないため、複数文の
+  // アトミック実行は db.batch() を使う。
+  await db.batch([
+    db
       .update(stations)
       .set({
         campusId: input.campusId,
@@ -165,18 +169,18 @@ export async function updateStationAction(
         shortLinkUrl: input.shortLinkUrl || null,
         updatedAt: now,
       })
-      .where(eq(stations.id, stationId));
-    await tx
+      .where(eq(stations.id, stationId)),
+    db
       .delete(stationTemperatures)
-      .where(eq(stationTemperatures.stationId, stationId));
-    await tx.insert(stationTemperatures).values(
+      .where(eq(stationTemperatures.stationId, stationId)),
+    db.insert(stationTemperatures).values(
       input.temperatures.map((t) => ({
         stationId,
         temperatureType: t,
         createdAt: now,
       }))
-    );
-  });
+    ),
+  ]);
   await logAuditEvent(db, 'update', 'station', stationId);
   revalidatePath('/admin/stations');
   return { success: true, data: undefined };
@@ -209,16 +213,18 @@ export async function deleteStationAction(
   const db = getDb(env.DB);
 
   const now = new Date();
-  await db.transaction(async (tx) => {
-    await tx
+  // D1 は対話的トランザクション(BEGIN/COMMIT)を持たないため、複数文の
+  // アトミック実行は db.batch() を使う。
+  await db.batch([
+    db
       .update(emergencyContacts)
       .set({ deletedAt: now })
-      .where(eq(emergencyContacts.stationId, stationId));
-    await tx
+      .where(eq(emergencyContacts.stationId, stationId)),
+    db
       .delete(stationTemperatures)
-      .where(eq(stationTemperatures.stationId, stationId));
-    await tx.delete(stations).where(eq(stations.id, stationId));
-  });
+      .where(eq(stationTemperatures.stationId, stationId)),
+    db.delete(stations).where(eq(stations.id, stationId)),
+  ]);
   await logAuditEvent(db, 'delete', 'station', stationId);
   revalidatePath('/admin/stations');
   return { success: true, data: undefined };
