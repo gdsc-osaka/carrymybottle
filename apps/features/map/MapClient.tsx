@@ -3,6 +3,7 @@
 import { Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { Droplet } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CAMPUSES, type CampusId } from '@/lib/constants/campuses';
 import type { StationWithRelations } from './types';
@@ -43,16 +44,25 @@ function MapContent({ stations }: { stations: StationWithRelations[] }) {
   return (
     <div className="flex h-[100dvh] flex-col bg-background">
       {/* Header & Tabs */}
-      <header className="flex flex-col gap-3 border-b bg-card p-4 shadow-sm">
-        <h1 className="text-xl font-bold">給水機マップ</h1>
+      <header className="z-10 flex flex-col gap-3 border-b border-[#0f897f]/10 bg-white/80 px-4 pt-4 pb-3 shadow-sm backdrop-blur-md">
+        <div className="flex items-center gap-2">
+          <Droplet className="h-6 w-6 fill-[#1f8f87] text-[#1f8f87]" />
+          <h1 className="bg-gradient-to-r from-[#0f897f] to-[#1f6fc4] bg-clip-text text-xl font-bold tracking-tight text-transparent">
+            給水機マップ
+          </h1>
+        </div>
         <Tabs
           value={selectedCampusId}
           onValueChange={handleTabChange}
           className="w-full"
         >
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-3 rounded-full bg-[#eef2f3] p-1 group-data-horizontal/tabs:h-11">
             {CAMPUSES.map((campus) => (
-              <TabsTrigger key={campus.id} value={campus.id}>
+              <TabsTrigger
+                key={campus.id}
+                value={campus.id}
+                className="rounded-full text-sm font-semibold text-[#5a6b6a] transition-all hover:text-[#0f897f] data-active:bg-gradient-to-r data-active:from-[#0f897f] data-active:to-[#1f6fc4] data-active:text-white data-active:shadow-md data-active:shadow-[#1f6fc4]/25"
+              >
                 {campus.name}
               </TabsTrigger>
             ))}
