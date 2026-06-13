@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import {
+  ArrowLeft,
   Building2,
   CheckCircle2,
   Droplet,
@@ -104,6 +105,16 @@ export function RequestsPage({
     <main className="min-h-[100dvh] bg-[#f7f9fb] text-foreground">
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-4 py-5">
         <header className="flex flex-col gap-3">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => router.back()}
+            className="-ml-2 w-fit text-[#0f897f] hover:bg-[#0f897f]/10 hover:text-[#00685f]"
+          >
+            <ArrowLeft className="size-4" aria-hidden="true" />
+            戻る
+          </Button>
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <h1 className="flex items-center gap-2 text-xl font-bold tracking-tight">
