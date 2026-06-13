@@ -27,7 +27,7 @@ database_id = "e0af63ef-25c0-48b3-8459-9875e1d87814"
 [env.production.vars]
 APP_ENV = "production"
 # TODO: update APP_BASE_URL once the production custom domain is confirmed
-APP_BASE_URL = "https://example.com"
+APP_BASE_URL = "https://carrymybottle.gdsc-osaka.workers.dev"
 EMERGENCY_CONTACT_TO = "carry.my.bottle@gmail.com"
 EMERGENCY_CONTACT_FROM = "noreply@example.com"
 
