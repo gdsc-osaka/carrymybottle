@@ -135,6 +135,5 @@ Before opening a PR, verify:
 ## 10. Environment-Aware Behaviour
 
 - Always read `APP_ENV` to distinguish `development` from `production`.
-- Outgoing email subject lines in development must be prefixed with `[DEV]`.
 - Analytics events must store the `environment` field to prevent polluting production metrics with dev data.
 - Never point local or development code at the production D1 database.

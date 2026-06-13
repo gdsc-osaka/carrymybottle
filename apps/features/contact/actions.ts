@@ -49,9 +49,7 @@ export async function submitContactAction(
   await insertEmergencyContact(db, id, parsed.data);
 
   const station = await getStationWithRelations(db, parsed.data.stationId);
-  const baseSubject = `緊急連絡: ${station?.name ?? parsed.data.stationId}`;
-  const subjectPrefix = env.APP_ENV === 'development' ? '[DEV] ' : '';
-  const subject = `${subjectPrefix}${baseSubject}`;
+  const subject = `緊急連絡: ${station?.name ?? parsed.data.stationId}`;
 
   // 管理者通知は必須経路。失敗を握りつぶさず、ユーザーにも明示してリトライを促す。
   try {
