@@ -1,12 +1,20 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useState } from 'react';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { Droplet } from 'lucide-react';
+import { Droplet, Map as MapIcon, Menu, Vote, X } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 import { CAMPUSES, type CampusId } from '@/lib/constants/campuses';
 import type { StationWithRelations } from './types';
+
+/** マップヘッダーのナビゲーションリンク。 */
+const NAV_LINKS = [
+  { href: '/map', label: 'マップ', icon: MapIcon },
+  { href: '/requests', label: '設置リクエスト', icon: Vote },
+] as const;
 
 // maplibre-gl is browser-only — load the map client-side only.
 const MapLibreMap = dynamic(() => import('./MapLibreMap'), {
@@ -22,6 +30,7 @@ function MapContent({ stations }: { stations: StationWithRelations[] }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   // URLからcampusパラメータを取得。デフォルトは 'toyonaka'
   const campusParam = searchParams.get('campus');
@@ -44,12 +53,73 @@ function MapContent({ stations }: { stations: StationWithRelations[] }) {
   return (
     <div className="flex h-[100dvh] flex-col bg-background">
       {/* Header & Tabs */}
-      <header className="z-10 flex flex-col gap-3 border-b border-[#0f897f]/10 bg-white/80 px-4 pt-4 pb-3 shadow-sm backdrop-blur-md">
-        <div className="flex items-center gap-2">
-          <Droplet className="h-6 w-6 fill-[#1f8f87] text-[#1f8f87]" />
-          <h1 className="bg-gradient-to-r from-[#0f897f] to-[#1f6fc4] bg-clip-text text-xl font-bold tracking-tight text-transparent">
-            給水機マップ
-          </h1>
+      <header className="relative z-20 flex flex-col gap-3 border-b border-[#0f897f]/10 bg-white/80 px-4 pt-4 pb-3 shadow-sm backdrop-blur-md">
+        <div className="relative flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Droplet className="h-6 w-6 fill-[#1f8f87] text-[#1f8f87]" />
+            <h1 className="bg-gradient-to-r from-[#0f897f] to-[#1f6fc4] bg-clip-text text-xl font-bold tracking-tight text-transparent">
+              給水機マップ
+            </h1>
+          </div>
+
+          {/* デスクトップ: インラインのナビリンク */}
+          <nav className="hidden items-center gap-6 sm:flex">
+            {NAV_LINKS.map((link) => {
+              const active = pathname === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  aria-current={active ? 'page' : undefined}
+                  className={cn(
+                    'text-sm font-medium transition-colors hover:text-[#0f897f]',
+                    active ? 'text-[#0f897f]' : 'text-[#3d4947]'
+                  )}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
+          </nav>
+
+          {/* モバイル: ハンバーガーメニュー */}
+          <button
+            type="button"
+            aria-label="メニューを開く"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((v) => !v)}
+            className="-mr-1 text-[#0f897f] sm:hidden"
+          >
+            {menuOpen ? (
+              <X className="size-6" aria-hidden="true" />
+            ) : (
+              <Menu className="size-6" aria-hidden="true" />
+            )}
+          </button>
+
+          {/* モバイル: 展開メニュー */}
+          {menuOpen && (
+            <nav className="absolute top-full right-0 z-30 mt-3 flex min-w-44 flex-col overflow-hidden rounded-xl border border-[#0f897f]/15 bg-white shadow-lg sm:hidden">
+              {NAV_LINKS.map((link) => {
+                const active = pathname === link.href;
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    aria-current={active ? 'page' : undefined}
+                    onClick={() => setMenuOpen(false)}
+                    className={cn(
+                      'flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors hover:bg-[#0f897f]/5',
+                      active ? 'text-[#0f897f]' : 'text-[#3d4947]'
+                    )}
+                  >
+                    <link.icon className="size-4" aria-hidden="true" />
+                    {link.label}
+                  </Link>
+                );
+              })}
+            </nav>
+          )}
         </div>
         <Tabs
           value={selectedCampusId}
