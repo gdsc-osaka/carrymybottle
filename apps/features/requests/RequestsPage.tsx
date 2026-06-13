@@ -106,16 +106,18 @@ export function RequestsPage({
         <header className="flex flex-col gap-3">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="flex items-center gap-1 text-xs font-semibold lowercase tracking-wide text-[#0f897f]">
+              <h1 className="flex items-center gap-2 text-xl font-bold tracking-tight">
                 <Droplet
-                  className="size-3.5 fill-[#1f8f87] text-[#1f8f87]"
+                  className="size-6 shrink-0 fill-[#1f8f87] text-[#1f8f87]"
                   aria-hidden="true"
                 />
-                carry my bottle
-              </p>
-              <h1 className="bg-gradient-to-r from-[#0f897f] to-[#1f6fc4] bg-clip-text text-2xl font-bold tracking-tight text-transparent">
-                設置希望の投票
+                <span className="bg-gradient-to-r from-[#0f897f] to-[#1f6fc4] bg-clip-text text-transparent">
+                  設置リクエスト
+                </span>
               </h1>
+              <p className="mt-1.5 text-xs text-[#5a6b6a]">
+                投票で次の給水機の設置場所を決めよう
+              </p>
             </div>
             <div className="flex shrink-0 items-center gap-1 rounded-full border border-[#0f897f]/25 bg-white px-3 py-2 text-sm font-semibold text-[#00685f] shadow-sm">
               <Vote className="size-4" aria-hidden="true" />
