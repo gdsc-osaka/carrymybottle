@@ -53,15 +53,26 @@ export async function submitContactAction(
   const subjectPrefix = env.APP_ENV === 'development' ? '[DEV] ' : '';
   const subject = `${subjectPrefix}${baseSubject}`;
 
-  await sendAdminNotificationEmail({
-    stationName: station?.name ?? parsed.data.stationId,
-    campusName: station?.campus?.name ?? '',
-    buildingName: station?.building?.name ?? '',
-    issueType: parsed.data.issueType,
-    message: parsed.data.message,
-    reporterEmail: parsed.data.reporterEmail,
-    subject,
-  });
+  // 管理者通知は必須経路。失敗を握りつぶさず、ユーザーにも明示してリトライを促す。
+  try {
+    await sendAdminNotificationEmail({
+      stationName: station?.name ?? parsed.data.stationId,
+      campusName: station?.campus?.name ?? '',
+      buildingName: station?.building?.name ?? '',
+      issueType: parsed.data.issueType,
+      message: parsed.data.message,
+      reporterEmail: parsed.data.reporterEmail,
+      subject,
+    });
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    console.error('[contact] admin notification failed:', errorMessage);
+    return {
+      success: false,
+      error:
+        '通知メールの送信に失敗しました。お手数ですが時間をおいて再度お試しください。',
+    };
+  }
 
   try {
     await sendAutoReplyEmail({
