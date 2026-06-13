@@ -175,7 +175,7 @@ export function ContactsPage({ contacts }: Props) {
                             緊急連絡を削除しますか？
                           </AlertDialogTitle>
                           <AlertDialogDescription>
-                            この緊急連絡を削除します（論理削除）。
+                            この緊急連絡を削除します。
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
