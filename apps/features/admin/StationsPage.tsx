@@ -105,7 +105,7 @@ export function StationsPage({ stations, campuses, buildings }: Props) {
               給水機を追加
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto md:max-w-4xl">
             <DialogHeader>
               <DialogTitle>
                 {editStation ? '給水機を編集' : '給水機を追加'}
