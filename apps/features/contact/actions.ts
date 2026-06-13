@@ -7,6 +7,8 @@ import {
   insertEmergencyContact,
   getStationWithRelations,
   updateAutoReplyError,
+  markAdminEmailSent,
+  markAutoReplySent,
 } from './queries';
 import { sendAdminNotificationEmail, sendAutoReplyEmail } from './mail';
 import { trackEvent } from '@/lib/analytics/events';
@@ -73,6 +75,8 @@ export async function submitContactAction(
         '通知メールの送信に失敗しました。お手数ですが時間をおいて再度お試しください。',
     };
   }
+  // 送信成功を記録（管理画面の送信状態表示に使う）。記録失敗は致命的ではない。
+  await markAdminEmailSent(db, id, new Date()).catch(() => {});
 
   try {
     await sendAutoReplyEmail({
@@ -82,6 +86,7 @@ export async function submitContactAction(
       reporterEmail: parsed.data.reporterEmail,
       subject: `【受付完了】${subject}`,
     });
+    await markAutoReplySent(db, id, new Date()).catch(() => {});
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
     console.error('[contact] auto-reply failed:', errorMessage);
