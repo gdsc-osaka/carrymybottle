@@ -1,11 +1,20 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Building2, CheckCircle2, MapPin, Trophy, Vote } from 'lucide-react';
+import {
+  ArrowLeft,
+  Building2,
+  CheckCircle2,
+  Droplet,
+  MapPin,
+  Trophy,
+  Vote,
+} from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 import type { CampusId, CAMPUSES } from '@/lib/constants/campuses';
 import { voteInstallationRequestAction } from './actions';
 import type { InstallationRequestBuilding } from './queries';
@@ -94,19 +103,35 @@ export function RequestsPage({
   }
 
   return (
-    <main className="min-h-[100dvh] bg-[#f8fafa] text-foreground">
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-4 py-5">
+    <main className="min-h-[100dvh] bg-[#f7f9fb] text-foreground">
+      <div className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 py-5">
         <header className="flex flex-col gap-3">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => router.back()}
+            className="-ml-2 w-fit text-[#0f897f] hover:bg-[#0f897f]/10 hover:text-[#00685f]"
+          >
+            <ArrowLeft className="size-4" aria-hidden="true" />
+            戻る
+          </Button>
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-xs font-medium text-[#2f7781]">
-                Mizu-Path Osaka
-              </p>
-              <h1 className="text-2xl font-bold tracking-normal">
-                設置希望の投票
+              <h1 className="flex items-center gap-2 text-xl font-bold tracking-tight">
+                <Droplet
+                  className="size-6 shrink-0 fill-[#1f8f87] text-[#1f8f87]"
+                  aria-hidden="true"
+                />
+                <span className="bg-gradient-to-r from-[#0f897f] to-[#1f6fc4] bg-clip-text text-transparent">
+                  設置リクエスト
+                </span>
               </h1>
+              <p className="mt-1.5 text-xs text-[#5a6b6a]">
+                投票で次の給水機の設置場所を決めよう
+              </p>
             </div>
-            <div className="flex shrink-0 items-center gap-1 rounded-lg border border-[#429eab]/25 bg-white px-3 py-2 text-sm font-semibold text-[#2f7781] shadow-sm">
+            <div className="flex shrink-0 items-center gap-1 rounded-full border border-[#0f897f]/25 bg-white px-3 py-2 text-sm font-semibold text-[#00685f] shadow-sm">
               <Vote className="size-4" aria-hidden="true" />
               {totalVotes}票
             </div>
@@ -117,12 +142,12 @@ export function RequestsPage({
             onValueChange={handleCampusChange}
             className="w-full"
           >
-            <TabsList className="grid h-10 w-full grid-cols-3 bg-white shadow-sm">
+            <TabsList className="grid w-full grid-cols-3 rounded-full bg-[#eef2f3] p-1 group-data-horizontal/tabs:h-11">
               {campuses.map((campus) => (
                 <TabsTrigger
                   key={campus.id}
                   value={campus.id}
-                  className="text-sm data-active:bg-[#429eab] data-active:text-white"
+                  className="rounded-full text-sm font-semibold text-[#5a6b6a] transition-all hover:text-[#0f897f] data-active:bg-gradient-to-r data-active:from-[#0f897f] data-active:to-[#1f6fc4] data-active:text-white data-active:shadow-md data-active:shadow-[#1f6fc4]/25"
                 >
                   {campus.name}
                 </TabsTrigger>
@@ -140,10 +165,10 @@ export function RequestsPage({
           </p>
         ) : null}
 
-        <section className="rounded-lg border bg-white p-3 shadow-sm">
+        <section className="rounded-[1.25rem] border border-[#0f897f]/15 bg-white p-3 shadow-sm">
           <div className="mb-3 flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-2">
-              <MapPin className="size-4 shrink-0 text-[#429eab]" />
+              <MapPin className="size-4 shrink-0 text-[#0f897f]" />
               <h2 className="truncate text-base font-semibold">
                 {selectedCampus?.name ?? 'キャンパス'}の建物
               </h2>
@@ -172,22 +197,21 @@ export function RequestsPage({
                       setSelectedBuildingId(building.buildingId);
                       setMessage(null);
                     }}
-                    className={[
-                      'flex min-w-36 shrink-0 flex-col gap-1 rounded-lg border px-3 py-2 text-left shadow-sm transition',
+                    className={cn(
+                      'flex min-w-36 shrink-0 flex-col gap-1 rounded-xl border px-3 py-2 text-left shadow-sm transition',
                       isSelected
-                        ? 'border-[#429eab] bg-[#429eab] text-white'
-                        : 'border-border bg-white hover:bg-muted',
-                    ].join(' ')}
+                        ? 'border-[#0f897f] bg-[#0f897f] text-white'
+                        : 'border-[#0f897f]/15 bg-white hover:bg-muted'
+                    )}
                   >
                     <span className="line-clamp-2 min-h-10 text-sm font-semibold leading-5">
                       {building.buildingName}
                     </span>
                     <span
-                      className={
-                        isSelected
-                          ? 'text-xs text-white/85'
-                          : 'text-xs text-muted-foreground'
-                      }
+                      className={cn(
+                        'text-xs',
+                        isSelected ? 'text-white/85' : 'text-muted-foreground'
+                      )}
                     >
                       {building.voteCount}票
                     </span>
@@ -203,7 +227,7 @@ export function RequestsPage({
         </section>
 
         {selectedBuilding ? (
-          <section className="rounded-lg border bg-white p-4 shadow-sm">
+          <section className="rounded-[1.25rem] border border-[#0f897f]/15 bg-white p-4 shadow-sm">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-xs font-medium text-muted-foreground">
@@ -213,7 +237,7 @@ export function RequestsPage({
                   {selectedBuilding.buildingName}
                 </h2>
               </div>
-              <Badge className="shrink-0 bg-[#429eab] text-white">
+              <Badge className="shrink-0 bg-[#0f897f] text-white">
                 {selectedBuilding.voteCount}票
               </Badge>
             </div>
@@ -231,11 +255,12 @@ export function RequestsPage({
               />
               {message ? (
                 <p
-                  className={
+                  className={cn(
+                    'text-sm',
                     message.type === 'success'
-                      ? 'flex items-center gap-2 text-sm text-[#2f7781]'
-                      : 'text-sm text-destructive'
-                  }
+                      ? 'flex items-center gap-2 text-[#00685f]'
+                      : 'text-destructive'
+                  )}
                 >
                   {message.type === 'success' ? (
                     <CheckCircle2 className="size-4" aria-hidden="true" />
@@ -246,7 +271,7 @@ export function RequestsPage({
               <Button
                 type="submit"
                 size="lg"
-                className="w-full bg-[#429eab] text-white hover:bg-[#2f7781]"
+                className="w-full bg-gradient-to-r from-[#0f897f] to-[#1f6fc4] text-white shadow-md shadow-[#1f6fc4]/25 hover:opacity-90"
                 disabled={isVoting}
               >
                 <Vote className="size-4" aria-hidden="true" />
@@ -256,9 +281,9 @@ export function RequestsPage({
           </section>
         ) : null}
 
-        <section className="rounded-lg border bg-white p-4 shadow-sm">
+        <section className="rounded-[1.25rem] border border-[#0f897f]/15 bg-white p-4 shadow-sm">
           <div className="mb-3 flex items-center gap-2">
-            <Trophy className="size-4 text-[#429eab]" aria-hidden="true" />
+            <Trophy className="size-4 text-[#0f897f]" aria-hidden="true" />
             <h2 className="text-base font-semibold">現在のリクエスト状況</h2>
           </div>
 
@@ -273,7 +298,7 @@ export function RequestsPage({
                 }}
                 className="flex w-full items-center gap-3 py-3 text-left"
               >
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#f8fafa] text-sm font-semibold text-[#2f7781]">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#f7f9fb] text-sm font-semibold text-[#00685f]">
                   {index + 1}
                 </span>
                 <span className="min-w-0 flex-1">
