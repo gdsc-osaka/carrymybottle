@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Droplet, Map as MapIcon, Menu, Vote, X } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { CAMPUSES, type CampusId } from '@/lib/constants/campuses';
@@ -19,7 +20,11 @@ const NAV_LINKS = [
 // maplibre-gl is browser-only — load the map client-side only.
 const MapLibreMap = dynamic(() => import('./MapLibreMap'), {
   ssr: false,
-  loading: () => <div className="h-full w-full bg-muted" />,
+  loading: () => (
+    <div className="flex h-full w-full items-center justify-center bg-muted">
+      <Spinner className="size-8 text-[#0f897f]" />
+    </div>
+  ),
 });
 
 function isCampusId(value: string | null): value is CampusId {
@@ -158,8 +163,8 @@ export function MapClient({ stations }: { stations: StationWithRelations[] }) {
   return (
     <Suspense
       fallback={
-        <div className="flex h-[100dvh] items-center justify-center">
-          読み込み中...
+        <div className="flex h-[100dvh] items-center justify-center bg-[#f7f9fb]">
+          <Spinner className="size-8 text-[#0f897f]" />
         </div>
       }
     >

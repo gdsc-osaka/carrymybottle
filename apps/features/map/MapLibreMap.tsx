@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { toast } from 'sonner';
+import { Spinner } from '@/components/ui/spinner';
 import { CAMPUSES, type CampusId } from '@/lib/constants/campuses';
 import { StationPin } from './StationPin';
 import type { StationWithRelations } from './types';
@@ -39,6 +40,10 @@ export default function MapLibreMap({
   const campusIdRef = useRef(campusId);
   const isFirstCampusEffect = useRef(true);
   const [mapReady, setMapReady] = useState(false);
+  // 地図(タイル/スタイル)読み込み完了とピン配置完了の2段階。ピンの方が早く
+  // 終わるため、両方が揃うまでローディングオーバーレイを表示し続ける。
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const [pinsReady, setPinsReady] = useState(false);
   const [pins, setPins] = useState<
     { station: StationWithRelations; el: HTMLElement }[]
   >([]);
@@ -58,6 +63,9 @@ export default function MapLibreMap({
       attributionControl: false,
     });
     mapRef.current = map;
+
+    // タイル/スタイルの初回読み込み完了。ローディング解除の片方の条件。
+    map.on('load', () => setMapLoaded(true));
 
     // OpenFreeMapのスプライトに無いPOIアイコン(class/subclass名)が要求される
     // たびに警告が出るので、透明1pxを登録して抑止する。該当POIはテキスト
@@ -152,7 +160,10 @@ export default function MapLibreMap({
       nextPins.push({ station, el: marker.getElement() });
     }
     setPins(nextPins);
+    setPinsReady(true);
   }, [stations, mapReady]);
+
+  const loading = !(mapLoaded && pinsReady);
 
   return (
     <div className="relative h-full w-full">
@@ -163,6 +174,12 @@ export default function MapLibreMap({
           el,
           station.id
         )
+      )}
+      {/* 地図タイルとピンの両方が揃うまでオーバーレイで覆う。 */}
+      {loading && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-muted">
+          <Spinner className="size-8 text-[#0f897f]" />
+        </div>
       )}
     </div>
   );
