@@ -14,6 +14,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 import type { CampusId, CAMPUSES } from '@/lib/constants/campuses';
 import { voteInstallationRequestAction } from './actions';
 import type { InstallationRequestBuilding } from './queries';
@@ -164,7 +165,7 @@ export function RequestsPage({
           </p>
         ) : null}
 
-        <section className="rounded-lg border bg-white p-3 shadow-sm">
+        <section className="rounded-[1.25rem] border border-[#0f897f]/15 bg-white p-3 shadow-sm">
           <div className="mb-3 flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-2">
               <MapPin className="size-4 shrink-0 text-[#0f897f]" />
@@ -196,22 +197,21 @@ export function RequestsPage({
                       setSelectedBuildingId(building.buildingId);
                       setMessage(null);
                     }}
-                    className={[
-                      'flex min-w-36 shrink-0 flex-col gap-1 rounded-lg border px-3 py-2 text-left shadow-sm transition',
+                    className={cn(
+                      'flex min-w-36 shrink-0 flex-col gap-1 rounded-xl border px-3 py-2 text-left shadow-sm transition',
                       isSelected
                         ? 'border-[#0f897f] bg-[#0f897f] text-white'
-                        : 'border-border bg-white hover:bg-muted',
-                    ].join(' ')}
+                        : 'border-[#0f897f]/15 bg-white hover:bg-muted'
+                    )}
                   >
                     <span className="line-clamp-2 min-h-10 text-sm font-semibold leading-5">
                       {building.buildingName}
                     </span>
                     <span
-                      className={
-                        isSelected
-                          ? 'text-xs text-white/85'
-                          : 'text-xs text-muted-foreground'
-                      }
+                      className={cn(
+                        'text-xs',
+                        isSelected ? 'text-white/85' : 'text-muted-foreground'
+                      )}
                     >
                       {building.voteCount}票
                     </span>
@@ -227,7 +227,7 @@ export function RequestsPage({
         </section>
 
         {selectedBuilding ? (
-          <section className="rounded-lg border bg-white p-4 shadow-sm">
+          <section className="rounded-[1.25rem] border border-[#0f897f]/15 bg-white p-4 shadow-sm">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-xs font-medium text-muted-foreground">
@@ -255,11 +255,12 @@ export function RequestsPage({
               />
               {message ? (
                 <p
-                  className={
+                  className={cn(
+                    'text-sm',
                     message.type === 'success'
-                      ? 'flex items-center gap-2 text-sm text-[#00685f]'
-                      : 'text-sm text-destructive'
-                  }
+                      ? 'flex items-center gap-2 text-[#00685f]'
+                      : 'text-destructive'
+                  )}
                 >
                   {message.type === 'success' ? (
                     <CheckCircle2 className="size-4" aria-hidden="true" />
@@ -280,7 +281,7 @@ export function RequestsPage({
           </section>
         ) : null}
 
-        <section className="rounded-lg border bg-white p-4 shadow-sm">
+        <section className="rounded-[1.25rem] border border-[#0f897f]/15 bg-white p-4 shadow-sm">
           <div className="mb-3 flex items-center gap-2">
             <Trophy className="size-4 text-[#0f897f]" aria-hidden="true" />
             <h2 className="text-base font-semibold">現在のリクエスト状況</h2>
