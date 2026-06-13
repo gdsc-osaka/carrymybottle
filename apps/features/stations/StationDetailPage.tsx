@@ -82,7 +82,7 @@ export async function StationDetailPage({
       className="min-h-[100dvh] bg-[#f7f9fb]"
       data-qr-access={isQrAccess ? 'true' : undefined}
     >
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col gap-5 px-4 py-4">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col gap-5 px-4 py-5">
         {/* マップへ戻る導線（QR 流入時も給水機のキャンパスへ着地する）。 */}
         <Button
           asChild

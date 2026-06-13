@@ -104,7 +104,7 @@ export function RequestsPage({
 
   return (
     <main className="min-h-[100dvh] bg-[#f7f9fb] text-foreground">
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-4 py-5">
+      <div className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 py-5">
         <header className="flex flex-col gap-3">
           <Button
             type="button"

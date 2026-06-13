@@ -72,32 +72,32 @@ export function ContactPage({ stationId }: Props) {
   }
 
   return (
-    <div className="flex min-h-[100dvh] flex-col bg-[#f7f9fb]">
-      <header className="border-b border-[#0f897f]/10 bg-white/80 px-4 pt-4 pb-3 shadow-sm backdrop-blur-md">
+    <main className="min-h-[100dvh] bg-[#f7f9fb]">
+      <div className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 py-5">
         <Button
           asChild
           variant="ghost"
           size="sm"
-          className="-ml-2 mb-1 w-fit text-[#0f897f] hover:bg-[#0f897f]/10 hover:text-[#00685f]"
+          className="-ml-2 w-fit text-[#0f897f] hover:bg-[#0f897f]/10 hover:text-[#00685f]"
         >
           <Link href={`/stations/${stationId}`}>
             <ArrowLeft className="size-4" aria-hidden="true" />
             戻る
           </Link>
         </Button>
-        <div className="flex items-center gap-2">
-          <Droplet
-            className="h-6 w-6 fill-[#1f8f87] text-[#1f8f87]"
-            aria-hidden="true"
-          />
-          <h1 className="bg-gradient-to-r from-[#0f897f] to-[#1f6fc4] bg-clip-text text-xl font-bold tracking-tight text-transparent">
-            緊急連絡フォーム
-          </h1>
-        </div>
-        <p className="mt-1 text-sm text-[#5a6b6a]">給水機 ID: {stationId}</p>
-      </header>
+        <header className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <Droplet
+              className="h-6 w-6 fill-[#1f8f87] text-[#1f8f87]"
+              aria-hidden="true"
+            />
+            <h1 className="bg-gradient-to-r from-[#0f897f] to-[#1f6fc4] bg-clip-text text-xl font-bold tracking-tight text-transparent">
+              緊急連絡フォーム
+            </h1>
+          </div>
+          <p className="text-sm text-[#5a6b6a]">給水機 ID: {stationId}</p>
+        </header>
 
-      <main className="flex-1 p-4">
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <div className="flex flex-col gap-6 rounded-[1.25rem] border border-[#0f897f]/15 bg-white p-5 shadow-sm">
             <section className="flex flex-col gap-3">
@@ -179,7 +179,7 @@ export function ContactPage({ stationId }: Props) {
             {isSubmitting ? '送信中...' : '送信する'}
           </Button>
         </form>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }
