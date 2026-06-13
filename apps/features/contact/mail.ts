@@ -27,7 +27,7 @@ export async function sendAdminNotificationEmail(
   const adminUrl = `${env.APP_BASE_URL}/admin/contacts`;
   const resend = await getMailClient();
 
-  await resend.emails.send({
+  const { error } = await resend.emails.send({
     from,
     to,
     subject: params.subject,
@@ -46,6 +46,12 @@ export async function sendAdminNotificationEmail(
       `管理画面: ${adminUrl}`,
     ].join('\n'),
   });
+
+  // Resend は API エラー時に throw せず { error } を返すため、ここで明示的に
+  // throw して呼び出し側で送信失敗を検知できるようにする（管理者通知は必須経路）。
+  if (error) {
+    throw new Error(`${error.name}: ${error.message}`);
+  }
 }
 
 type AutoReplyParams = {
