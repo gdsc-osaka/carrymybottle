@@ -65,6 +65,23 @@ describe('submitContactAction', () => {
     );
   });
 
+  it('管理者通知失敗時は success:false を返し、自動返信を呼ばない', async () => {
+    vi.mocked(sendAdminNotificationEmail).mockRejectedValue(
+      new Error('domain is not verified')
+    );
+
+    const formData = new FormData();
+    formData.set('stationId', 'station_abc123');
+    formData.set('issueType', 'broken');
+    formData.set('message', '故障しています');
+    formData.set('reporterEmail', 'reporter@example.com');
+
+    const result = await submitContactAction(formData);
+
+    expect(result).toMatchObject({ success: false, error: expect.any(String) });
+    expect(vi.mocked(sendAutoReplyEmail)).not.toHaveBeenCalled();
+  });
+
   it('レート制限超過時は DB・メール未呼び出しで失敗を返す', async () => {
     vi.mocked(enforceRateLimit).mockResolvedValueOnce(
       err({ type: 'RATE_LIMITED', retryAfterSeconds: 30 })
