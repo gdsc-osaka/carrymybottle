@@ -1,10 +1,23 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono, Inter, Jost } from 'next/font/google';
+import { Geist, Geist_Mono, Inter, Jost, Noto_Sans_JP } from 'next/font/google';
 import './globals.css';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
   subsets: ['latin'],
+});
+
+// Japanese face. Safari has no built-in Japanese sans default and falls back to
+// Hiragino Mincho (明朝体) when none is supplied, so we self-host Noto Sans JP
+// and put it in the --font-sans stack (see globals.css). The Japanese glyph set
+// is large, so we don't preload it — `display: swap` lets text paint with the
+// system fallback first and swap in Noto Sans JP once it loads.
+const notoSansJP = Noto_Sans_JP({
+  variable: '--font-noto-sans-jp',
+  subsets: ['latin'],
+  weight: ['400', '500', '700'],
+  display: 'swap',
+  preload: false,
 });
 
 const geistMono = Geist_Mono({
@@ -39,7 +52,7 @@ export default function RootLayout({
   return (
     <html
       lang="ja"
-      className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${jost.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${jost.variable} ${notoSansJP.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

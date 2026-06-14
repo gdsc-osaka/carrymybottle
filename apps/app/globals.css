@@ -49,6 +49,14 @@
 }
 
 :root {
+  /* Default text stack. Latin glyphs render in Inter/Geist; Japanese glyphs
+     fall through to Noto Sans JP (self-hosted via next/font). The trailing
+     native Japanese sans fonts and `sans-serif` keep text from falling back to
+     Mincho (明朝体) in Safari before Noto Sans JP finishes loading. */
+  --font-sans:
+    var(--font-inter), var(--font-geist-sans), var(--font-noto-sans-jp),
+    ui-sans-serif, system-ui, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN',
+    'Noto Sans JP', Meiryo, sans-serif;
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
@@ -245,4 +253,20 @@
 .maplibregl-user-location-accuracy-circle,
 .maplibregl-user-location-dot {
   pointer-events: none;
+}
+
+/*
+ * MapLibre のズーム(+/-)・現在地ボタンは既定で 29px 四方と、指でのタップには
+ * 小さすぎる。タッチデバイス(pointer: coarse)に限り 44px 四方へ広げ、Apple HIG /
+ * WCAG 2.5.5 が推奨する最小タップ領域を満たす。アイコンは中央寄せのまま余白が
+ * 増えるだけなので、見た目の崩れはない。マウス環境(細かいポインタ)では既定の
+ * コンパクトなサイズを維持する。
+ */
+@media (pointer: coarse) {
+  /* 2クラス分のセレクタで maplibre-gl.css(コンポーネントで後から読み込まれ
+     同一詳細度の 29px ルールを持つ)に確実に勝つ。 */
+  .maplibregl-ctrl.maplibregl-ctrl-group button {
+    width: 44px;
+    height: 44px;
+  }
 }
