@@ -73,112 +73,119 @@ export function ContactPage({ stationId }: Props) {
 
   return (
     <main className="min-h-[100dvh] bg-[#f7f9fb]">
-      <div className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 py-5">
+      <div className="mx-auto w-full max-w-md px-4 py-5 lg:max-w-5xl lg:px-8 lg:py-12">
         <Button
           asChild
           variant="ghost"
           size="sm"
-          className="-ml-2 w-fit text-[#0f897f] hover:bg-[#0f897f]/10 hover:text-[#00685f]"
+          className="-ml-2 mb-5 w-fit text-[#0f897f] hover:bg-[#0f897f]/10 hover:text-[#00685f]"
         >
           <Link href={`/stations/${stationId}`}>
             <ArrowLeft className="size-4" aria-hidden="true" />
             戻る
           </Link>
         </Button>
-        <header className="flex flex-col gap-1">
-          <div className="flex items-center gap-2">
-            <Droplet
-              className="h-6 w-6 fill-[#1f8f87] text-[#1f8f87]"
-              aria-hidden="true"
-            />
-            <h1 className="bg-gradient-to-r from-[#0f897f] to-[#1f6fc4] bg-clip-text text-xl font-bold tracking-tight text-transparent">
-              緊急連絡フォーム
-            </h1>
-          </div>
-          <p className="text-sm text-[#5a6b6a]">給水機 ID: {stationId}</p>
-        </header>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-          <div className="flex flex-col gap-6 rounded-[1.25rem] border border-[#0f897f]/15 bg-white p-5 shadow-sm">
-            <section className="flex flex-col gap-3">
-              <Label className="text-sm font-semibold text-[#3d4947]">
-                不具合の種類
-              </Label>
-              <RadioGroup
-                value={issueType}
-                onValueChange={(v) => setIssueType(v as IssueType)}
-                required
-              >
-                {ISSUE_TYPES.map((type) => (
-                  <div key={type} className="flex items-center gap-3">
-                    <RadioGroupItem value={type} id={`issue-type-${type}`} />
-                    <Label
-                      htmlFor={`issue-type-${type}`}
-                      className="cursor-pointer font-normal"
-                    >
-                      {ISSUE_TYPE_LABELS[type]}
-                    </Label>
-                  </div>
-                ))}
-              </RadioGroup>
-            </section>
-
-            <section className="flex flex-col gap-2">
-              <Label
-                htmlFor="message"
-                className="text-sm font-semibold text-[#3d4947]"
-              >
-                詳細内容
-              </Label>
-              <Textarea
-                id="message"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="状況を詳しく教えてください"
-                required
-                rows={4}
+        {/* モバイルは縦積み、PC は「説明 + フォーム」の 2 カラム。 */}
+        <div className="flex flex-col gap-5 lg:grid lg:grid-cols-2 lg:gap-12">
+          <header className="flex flex-col gap-1 lg:gap-4 lg:pt-2">
+            <div className="flex items-center gap-2">
+              <Droplet
+                className="h-6 w-6 fill-[#1f8f87] text-[#1f8f87] lg:h-8 lg:w-8"
+                aria-hidden="true"
               />
-            </section>
-
-            <section className="flex flex-col gap-2">
-              <Label
-                htmlFor="reporter-email"
-                className="text-sm font-semibold text-[#3d4947]"
-              >
-                連絡先メールアドレス
-              </Label>
-              <Input
-                id="reporter-email"
-                type="email"
-                value={reporterEmail}
-                onChange={(e) => setReporterEmail(e.target.value)}
-                placeholder="your@email.com"
-                required
-              />
-              <p className="text-xs text-[#5a6b6a]">
-                受付完了メールをお送りします
-              </p>
-            </section>
-          </div>
-
-          {errorMessage && (
-            <p
-              role="alert"
-              className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-            >
-              {errorMessage}
+              <h1 className="bg-gradient-to-r from-[#0f897f] to-[#1f6fc4] bg-clip-text text-xl font-bold tracking-tight text-transparent lg:text-3xl">
+                緊急連絡フォーム
+              </h1>
+            </div>
+            <p className="text-sm text-[#5a6b6a]">給水機 ID: {stationId}</p>
+            <p className="hidden text-sm leading-relaxed text-[#46595a] lg:block">
+              給水機の不具合や故障を見つけたら、こちらからお知らせください。いただいた内容は管理者へ通知され、確認次第対応いたします。受付完了の控えメールもお送りします。
             </p>
-          )}
+          </header>
 
-          <Button
-            type="submit"
-            size="lg"
-            disabled={isSubmitting}
-            className="w-full bg-gradient-to-r from-[#0f897f] to-[#1f6fc4] text-white shadow-md shadow-[#1f6fc4]/25 hover:opacity-90"
-          >
-            {isSubmitting ? '送信中...' : '送信する'}
-          </Button>
-        </form>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+            <div className="flex flex-col gap-6 rounded-[1.25rem] border border-[#0f897f]/15 bg-white p-5 shadow-sm">
+              <section className="flex flex-col gap-3">
+                <Label className="text-sm font-semibold text-[#3d4947]">
+                  不具合の種類
+                </Label>
+                <RadioGroup
+                  value={issueType}
+                  onValueChange={(v) => setIssueType(v as IssueType)}
+                  required
+                >
+                  {ISSUE_TYPES.map((type) => (
+                    <div key={type} className="flex items-center gap-3">
+                      <RadioGroupItem value={type} id={`issue-type-${type}`} />
+                      <Label
+                        htmlFor={`issue-type-${type}`}
+                        className="cursor-pointer font-normal"
+                      >
+                        {ISSUE_TYPE_LABELS[type]}
+                      </Label>
+                    </div>
+                  ))}
+                </RadioGroup>
+              </section>
+
+              <section className="flex flex-col gap-2">
+                <Label
+                  htmlFor="message"
+                  className="text-sm font-semibold text-[#3d4947]"
+                >
+                  詳細内容
+                </Label>
+                <Textarea
+                  id="message"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="状況を詳しく教えてください"
+                  required
+                  rows={4}
+                />
+              </section>
+
+              <section className="flex flex-col gap-2">
+                <Label
+                  htmlFor="reporter-email"
+                  className="text-sm font-semibold text-[#3d4947]"
+                >
+                  連絡先メールアドレス
+                </Label>
+                <Input
+                  id="reporter-email"
+                  type="email"
+                  value={reporterEmail}
+                  onChange={(e) => setReporterEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  required
+                />
+                <p className="text-xs text-[#5a6b6a]">
+                  受付完了メールをお送りします
+                </p>
+              </section>
+            </div>
+
+            {errorMessage && (
+              <p
+                role="alert"
+                className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+              >
+                {errorMessage}
+              </p>
+            )}
+
+            <Button
+              type="submit"
+              size="lg"
+              disabled={isSubmitting}
+              className="w-full bg-gradient-to-r from-[#0f897f] to-[#1f6fc4] text-white shadow-md shadow-[#1f6fc4]/25 hover:opacity-90"
+            >
+              {isSubmitting ? '送信中...' : '送信する'}
+            </Button>
+          </form>
+        </div>
       </div>
     </main>
   );
