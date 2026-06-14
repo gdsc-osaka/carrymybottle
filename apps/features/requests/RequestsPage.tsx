@@ -111,7 +111,7 @@ export function RequestsPage({
             variant="ghost"
             size="sm"
             onClick={() => router.back()}
-            className="-ml-2 w-fit text-[#0f897f] hover:bg-[#0f897f]/10 hover:text-[#00685f]"
+            className="-ml-2 h-11 w-fit text-[#0f897f] hover:bg-[#0f897f]/10 hover:text-[#00685f]"
           >
             <ArrowLeft className="size-4" aria-hidden="true" />
             戻る
@@ -142,7 +142,7 @@ export function RequestsPage({
             onValueChange={handleCampusChange}
             className="w-full"
           >
-            <TabsList className="grid w-full grid-cols-3 rounded-full bg-[#eef2f3] p-1 group-data-horizontal/tabs:h-11">
+            <TabsList className="grid w-full grid-cols-3 rounded-full bg-[#eef2f3] p-1 group-data-horizontal/tabs:h-12 sm:group-data-horizontal/tabs:h-11">
               {campuses.map((campus) => (
                 <TabsTrigger
                   key={campus.id}
@@ -279,7 +279,7 @@ export function RequestsPage({
                   <Button
                     type="submit"
                     size="lg"
-                    className="w-full bg-gradient-to-r from-[#0f897f] to-[#1f6fc4] text-white shadow-md shadow-[#1f6fc4]/25 hover:opacity-90"
+                    className="h-12 w-full bg-gradient-to-r from-[#0f897f] to-[#1f6fc4] text-base text-white shadow-md shadow-[#1f6fc4]/25 hover:opacity-90"
                     disabled={isVoting}
                   >
                     <Vote className="size-4" aria-hidden="true" />

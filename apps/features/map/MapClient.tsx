@@ -93,7 +93,7 @@ function MapContent({ stations }: { stations: StationWithRelations[] }) {
             aria-label="メニューを開く"
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen((v) => !v)}
-            className="-mr-1 text-[#0f897f] sm:hidden"
+            className="-mr-2 flex size-11 items-center justify-center text-[#0f897f] sm:hidden"
           >
             {menuOpen ? (
               <X className="size-6" aria-hidden="true" />
@@ -131,7 +131,7 @@ function MapContent({ stations }: { stations: StationWithRelations[] }) {
           onValueChange={handleTabChange}
           className="w-full"
         >
-          <TabsList className="grid w-full grid-cols-3 rounded-full bg-[#eef2f3] p-1 group-data-horizontal/tabs:h-11">
+          <TabsList className="grid w-full grid-cols-3 rounded-full bg-[#eef2f3] p-1 group-data-horizontal/tabs:h-12 sm:group-data-horizontal/tabs:h-11">
             {CAMPUSES.map((campus) => (
               <TabsTrigger
                 key={campus.id}
