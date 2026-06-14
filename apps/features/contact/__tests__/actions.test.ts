@@ -1,7 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { err } from 'neverthrow';
 import { submitContactAction } from '../actions';
-import { insertEmergencyContact, updateAutoReplyError } from '../queries';
+import {
+  insertEmergencyContact,
+  updateAutoReplyError,
+  markAdminEmailSent,
+  markAutoReplySent,
+} from '../queries';
 import { sendAdminNotificationEmail, sendAutoReplyEmail } from '../mail';
 import { enforceRateLimit } from '@/lib/rate-limit';
 
@@ -17,6 +22,8 @@ vi.mock('../queries', () => ({
   insertEmergencyContact: vi.fn().mockResolvedValue(undefined),
   getStationWithRelations: vi.fn().mockResolvedValue(null),
   updateAutoReplyError: vi.fn().mockResolvedValue(undefined),
+  markAdminEmailSent: vi.fn().mockResolvedValue(undefined),
+  markAutoReplySent: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock('../mail', () => ({
   sendAdminNotificationEmail: vi.fn().mockResolvedValue(undefined),
@@ -42,6 +49,20 @@ describe('submitContactAction', () => {
     expect(result).toMatchObject({ success: false, error: expect.any(String) });
     expect(vi.mocked(insertEmergencyContact)).not.toHaveBeenCalled();
     expect(vi.mocked(sendAdminNotificationEmail)).not.toHaveBeenCalled();
+  });
+
+  it('全送信成功時は success:true を返し、通知済み時刻を記録する', async () => {
+    const formData = new FormData();
+    formData.set('stationId', 'station_abc123');
+    formData.set('issueType', 'broken');
+    formData.set('message', '故障しています');
+    formData.set('reporterEmail', 'reporter@example.com');
+
+    const result = await submitContactAction(formData);
+
+    expect(result).toEqual({ success: true });
+    expect(vi.mocked(markAdminEmailSent)).toHaveBeenCalled();
+    expect(vi.mocked(markAutoReplySent)).toHaveBeenCalled();
   });
 
   it('自動返信失敗時も success:true を返し updateAutoReplyError を記録する', async () => {

@@ -37,6 +37,28 @@ export async function updateAutoReplyError(
     .where(eq(emergencyContacts.id, id));
 }
 
+export async function markAdminEmailSent(
+  db: DB,
+  id: string,
+  sentAt: Date
+): Promise<void> {
+  await db
+    .update(emergencyContacts)
+    .set({ adminEmailSentAt: sentAt })
+    .where(eq(emergencyContacts.id, id));
+}
+
+export async function markAutoReplySent(
+  db: DB,
+  id: string,
+  sentAt: Date
+): Promise<void> {
+  await db
+    .update(emergencyContacts)
+    .set({ autoReplySentAt: sentAt })
+    .where(eq(emergencyContacts.id, id));
+}
+
 export async function insertEmergencyContact(
   db: DB,
   id: string,
