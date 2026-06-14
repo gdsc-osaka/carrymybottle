@@ -23,8 +23,9 @@ const STYLE_URL = '/map-style/style.json';
  *
  * Station pins are MapLibre Markers whose DOM elements host a React-rendered
  * {@link StationPin} via portal, so they keep Tailwind styling and click
- * handlers. The current-location pin is the built-in GeolocateControl dot,
- * which is visually distinct from the teal station droplets.
+ * handlers. The current-location pin is a custom blue Marker tracked via
+ * `watchPosition` (visually distinct from the teal station droplets); the
+ * GeolocateControl button only recenters on demand and never auto-follows.
  *
  * maplibre-gl is browser-only, so this component must be loaded with
  * `dynamic(..., { ssr: false })` from a Client Component.
@@ -85,10 +86,45 @@ export default function MapLibreMap({
       'bottom-right'
     );
 
+    // 現在地ドットは自前のマーカーで描く。MapLibre 既定の追従モード
+    // (trackUserLocation)は GPS 更新のたびにカメラを現在地へ引き戻し、地図操作の
+    // 邪魔になるため使わない。watchPosition で位置だけを更新し、カメラは動かさない。
+    const userLocationEl = document.createElement('div');
+    userLocationEl.className = 'cmb-user-location';
+    const userLocationMarker = new maplibregl.Marker({
+      element: userLocationEl,
+    });
+    let userLocationAdded = false;
+    let geoWatchId: number | null = null;
+
+    const startUserLocationWatch = () => {
+      if (geoWatchId !== null || !navigator.geolocation) return;
+      geoWatchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          userLocationMarker.setLngLat([
+            pos.coords.longitude,
+            pos.coords.latitude,
+          ]);
+          // 初回測位でマーカーを地図に載せる(以降は位置のみ更新)。
+          if (!userLocationAdded) {
+            userLocationMarker.addTo(map);
+            userLocationAdded = true;
+          }
+        },
+        () => {
+          // 取得失敗時はドットを更新しないだけ(手動操作に任せる)。
+        },
+        { enableHighAccuracy: true }
+      );
+    };
+
+    // 現在地ボタンは「押したときだけ現在地へ寄せる」挙動にする。trackUserLocation を
+    // false にすることで一度きりのカメラ移動になり、操作中に引き戻されない。ドットは
+    // 自前で描くため showUserLocation は無効。
     const geolocate = new maplibregl.GeolocateControl({
       positionOptions: { enableHighAccuracy: true },
-      trackUserLocation: true,
-      showUserLocation: true,
+      trackUserLocation: false,
+      showUserLocation: false,
     });
     map.addControl(geolocate, 'top-right');
     geolocate.on('error', () => {
@@ -96,18 +132,21 @@ export default function MapLibreMap({
         '現在地を取得できませんでした。ブラウザの位置情報設定をご確認ください。'
       );
     });
+    // ボタン経由で許可された場合も、以降は現在地ドットを表示し続ける。
+    geolocate.on('geolocate', startUserLocationWatch);
 
-    // 一度許可したユーザーは、次回以降ボタンを押さずに現在地取得を自動開始する。
-    // 未許可(prompt)の状態で勝手に許可ダイアログを出さないよう、Permissions API で
-    // 'granted' を確認できたときだけ trigger する。Permissions API 非対応ブラウザ
-    // (古い iOS Safari 等)では何もせず、従来どおり手動操作にフォールバックする。
+    // 位置情報を許可済みのユーザーは、ロード時点から現在地ドットを表示する
+    // (カメラは動かさない)。未許可(prompt)の状態では勝手に許可ダイアログを出さない
+    // よう、Permissions API で 'granted' を確認できたときだけ watch を開始する。
+    // Permissions API 非対応ブラウザ(古い iOS Safari 等)では何もせず、現在地ボタンの
+    // 手動操作にフォールバックする。
     map.once('load', () => {
       if (!navigator.permissions?.query) return;
       navigator.permissions
         .query({ name: 'geolocation' })
         .then((status) => {
           if (status.state === 'granted') {
-            geolocate.trigger();
+            startUserLocationWatch();
           }
         })
         .catch(() => {
@@ -119,6 +158,10 @@ export default function MapLibreMap({
 
     const markers = markersRef.current;
     return () => {
+      if (geoWatchId !== null) {
+        navigator.geolocation.clearWatch(geoWatchId);
+      }
+      userLocationMarker.remove();
       map.remove();
       mapRef.current = null;
       markers.clear();
