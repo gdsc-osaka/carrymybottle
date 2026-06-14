@@ -82,7 +82,7 @@ export async function StationDetailPage({
       className="min-h-[100dvh] bg-[#f7f9fb]"
       data-qr-access={isQrAccess ? 'true' : undefined}
     >
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col gap-5 px-4 py-5">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col gap-5 px-4 py-5 lg:max-w-5xl lg:gap-8 lg:px-8 lg:py-10">
         {/* マップへ戻る導線（QR 流入時も給水機のキャンパスへ着地する）。 */}
         <Button
           asChild
@@ -96,57 +96,67 @@ export async function StationDetailPage({
           </Link>
         </Button>
 
-        {/* 詳細カード（ランディングの給水機カードに合わせたデザイン）。 */}
-        <div className="rounded-[1.5rem] border border-[#0f897f]/15 bg-white p-6 shadow-sm">
-          <header className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <span className="inline-block rounded bg-[#00685f]/10 px-2 py-1 text-xs font-bold tracking-widest text-[#00685f]">
-                {station.campus.name}
+        {/* モバイルは縦積み、PC は「詳細 + アクション」の 2 カラム。 */}
+        <div className="flex flex-1 flex-col gap-5 lg:grid lg:grid-cols-[1.7fr_1fr] lg:items-start lg:gap-8">
+          {/* 詳細カード（ランディングの給水機カードに合わせたデザイン）。 */}
+          <div className="rounded-[1.5rem] border border-[#0f897f]/15 bg-white p-6 shadow-sm lg:p-8">
+            <header className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <span className="inline-block rounded bg-[#00685f]/10 px-2 py-1 text-xs font-bold tracking-widest text-[#00685f]">
+                  {station.campus.name}
+                </span>
+                <h1 className="mt-2 text-2xl font-bold tracking-tight text-[#191c1e] lg:text-3xl">
+                  {station.name}
+                </h1>
+                <p className="mt-1 text-sm text-[#3d4947] lg:text-base">
+                  {station.building.name}
+                </p>
+              </div>
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#0f897f] to-[#1f6fc4] text-white shadow-md shadow-[#1f6fc4]/25 lg:size-14">
+                <Droplet
+                  className="size-5 fill-current lg:size-6"
+                  aria-hidden="true"
+                />
               </span>
-              <h1 className="mt-2 text-2xl font-bold tracking-tight text-[#191c1e]">
-                {station.name}
-              </h1>
-              <p className="mt-1 text-sm text-[#3d4947]">
-                {station.building.name}
+            </header>
+
+            {station.description ? (
+              <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-[#46595a] lg:text-base">
+                {station.description}
               </p>
-            </div>
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#0f897f] to-[#1f6fc4] text-white shadow-md shadow-[#1f6fc4]/25">
-              <Droplet className="size-5 fill-current" aria-hidden="true" />
-            </span>
-          </header>
+            ) : null}
 
-          {station.description ? (
-            <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-[#46595a]">
-              {station.description}
-            </p>
-          ) : null}
-
-          <section
-            aria-label="給水機の状態"
-            className="mt-5 flex flex-wrap gap-2"
-          >
-            <Badge variant={STATION_STATUS_BADGE_VARIANT[station.status]}>
-              {STATION_STATUS_LABELS[station.status]}
-            </Badge>
-            {temperatureTypes.map((type) => (
-              <Badge key={type} variant="outline">
-                {STATION_TEMPERATURE_LABELS[type]}
+            <section
+              aria-label="給水機の状態"
+              className="mt-5 flex flex-wrap gap-2 lg:mt-6"
+            >
+              <Badge variant={STATION_STATUS_BADGE_VARIANT[station.status]}>
+                {STATION_STATUS_LABELS[station.status]}
               </Badge>
-            ))}
+              {temperatureTypes.map((type) => (
+                <Badge key={type} variant="outline">
+                  {STATION_TEMPERATURE_LABELS[type]}
+                </Badge>
+              ))}
+            </section>
+          </div>
+
+          {/* アクション: モバイルは画面下部、PC はサイドのカードに収める。 */}
+          <section
+            aria-label="アクション"
+            className="mt-auto flex flex-col gap-3 lg:mt-0 lg:rounded-[1.5rem] lg:border lg:border-[#0f897f]/15 lg:bg-white lg:p-6 lg:shadow-sm"
+          >
+            <p className="hidden text-sm font-semibold text-[#3d4947] lg:block">
+              この給水機について
+            </p>
+            <Button asChild variant="destructive" size="lg">
+              <Link href={`/contact/${station.id}`}>緊急連絡フォーム</Link>
+            </Button>
+            <Button asChild variant="outline" size="lg">
+              <Link href="/requests">設置希望を見る・投票する</Link>
+            </Button>
           </section>
         </div>
-
-        <section
-          aria-label="アクション"
-          className="mt-auto flex flex-col gap-3"
-        >
-          <Button asChild variant="destructive" size="lg">
-            <Link href={`/contact/${station.id}`}>緊急連絡フォーム</Link>
-          </Button>
-          <Button asChild variant="outline" size="lg">
-            <Link href="/requests">設置希望を見る・投票する</Link>
-          </Button>
-        </section>
       </div>
     </main>
   );
