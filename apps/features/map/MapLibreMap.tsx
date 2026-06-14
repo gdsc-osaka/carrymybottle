@@ -97,6 +97,24 @@ export default function MapLibreMap({
       );
     });
 
+    // 一度許可したユーザーは、次回以降ボタンを押さずに現在地取得を自動開始する。
+    // 未許可(prompt)の状態で勝手に許可ダイアログを出さないよう、Permissions API で
+    // 'granted' を確認できたときだけ trigger する。Permissions API 非対応ブラウザ
+    // (古い iOS Safari 等)では何もせず、従来どおり手動操作にフォールバックする。
+    map.once('load', () => {
+      if (!navigator.permissions?.query) return;
+      navigator.permissions
+        .query({ name: 'geolocation' })
+        .then((status) => {
+          if (status.state === 'granted') {
+            geolocate.trigger();
+          }
+        })
+        .catch(() => {
+          // 取得失敗時は手動操作に任せる。
+        });
+    });
+
     setMapReady(true);
 
     const markers = markersRef.current;
