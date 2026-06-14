@@ -23,8 +23,9 @@ const STYLE_URL = '/map-style/style.json';
  *
  * Station pins are MapLibre Markers whose DOM elements host a React-rendered
  * {@link StationPin} via portal, so they keep Tailwind styling and click
- * handlers. The current-location pin is the built-in GeolocateControl dot,
- * which is visually distinct from the teal station droplets.
+ * handlers. The current-location pin is a custom blue Marker tracked via
+ * `watchPosition` (visually distinct from the teal station droplets); the
+ * GeolocateControl button only recenters on demand and never auto-follows.
  *
  * maplibre-gl is browser-only, so this component must be loaded with
  * `dynamic(..., { ssr: false })` from a Client Component.
@@ -64,6 +65,12 @@ export default function MapLibreMap({
     });
     mapRef.current = map;
 
+    // 現在地の最新測位結果。ドット描画とボタンでの再センタリングで共有する。
+    let lastUserLngLat: [number, number] | null = null;
+    // アンマウント後に非同期コールバック(Permissions / watch)が削除済みマップを
+    // 触らないためのフラグ。クリーンアップで true にする。
+    let isCancelled = false;
+
     // タイル/スタイルの初回読み込み完了。ローディング解除の片方の条件。
     map.on('load', () => setMapLoaded(true));
 
@@ -85,29 +92,128 @@ export default function MapLibreMap({
       'bottom-right'
     );
 
-    const geolocate = new maplibregl.GeolocateControl({
-      positionOptions: { enableHighAccuracy: true },
-      trackUserLocation: true,
-      showUserLocation: true,
+    // 現在地ドット・現在地ボタンは自前で実装する。MapLibre 既定の GeolocateControl は
+    // trackUserLocation:true だと GPS 更新のたびにカメラを現在地へ引き戻して地図操作を
+    // 妨げ、false にするとボタンが getCurrentPosition(一度きりの高精度測位)に依存して
+    // 端末次第で遅延・失敗し無反応に見える。そこで watchPosition を常時動かして位置だけ
+    // を更新し(カメラは動かさない)、ボタンはその最新位置へ一度きり寄せる方式にする。
+    const userLocationEl = document.createElement('div');
+    userLocationEl.className = 'cmb-user-location';
+    const userLocationMarker = new maplibregl.Marker({
+      element: userLocationEl,
     });
-    map.addControl(geolocate, 'top-right');
-    geolocate.on('error', () => {
-      toast.error(
-        '現在地を取得できませんでした。ブラウザの位置情報設定をご確認ください。'
-      );
-    });
+    let userLocationAdded = false;
+    // ボタン押下時にまだ未測位だった場合、初回測位で一度だけ寄せるためのフラグ。
+    let centerOnNextFix = false;
+    let geoWatchId: number | null = null;
 
-    // 一度許可したユーザーは、次回以降ボタンを押さずに現在地取得を自動開始する。
-    // 未許可(prompt)の状態で勝手に許可ダイアログを出さないよう、Permissions API で
-    // 'granted' を確認できたときだけ trigger する。Permissions API 非対応ブラウザ
-    // (古い iOS Safari 等)では何もせず、従来どおり手動操作にフォールバックする。
+    // MapLibre 既定の現在地ボタンと同じ見た目になるよう、同じクラスを再利用する。
+    const geolocateButton = document.createElement('button');
+    geolocateButton.type = 'button';
+    geolocateButton.className = 'maplibregl-ctrl-geolocate';
+    geolocateButton.title = '現在地へ移動';
+    geolocateButton.setAttribute('aria-label', '現在地へ移動');
+    const geolocateIcon = document.createElement('span');
+    geolocateIcon.className = 'maplibregl-ctrl-icon';
+    geolocateIcon.setAttribute('aria-hidden', 'true');
+    geolocateButton.appendChild(geolocateIcon);
+
+    // 測位待ちの間はボタンを待機表示(MapLibre 標準のスピナー)にし、押しても
+    // 反応していないように見えないようにする。
+    const setWaiting = (waiting: boolean) => {
+      geolocateButton.classList.toggle(
+        'maplibregl-ctrl-geolocate-waiting',
+        waiting
+      );
+    };
+
+    const recenterToUser = (lngLat: [number, number]) => {
+      map.easeTo({
+        center: lngLat,
+        zoom: Math.max(map.getZoom(), 16),
+        duration: 800,
+      });
+    };
+
+    const startUserLocationWatch = () => {
+      if (isCancelled || geoWatchId !== null || !navigator.geolocation) return;
+      geoWatchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          if (isCancelled) return;
+          lastUserLngLat = [pos.coords.longitude, pos.coords.latitude];
+          userLocationMarker.setLngLat(lastUserLngLat);
+          // 初回測位でマーカーを地図に載せる(以降は位置のみ更新)。
+          if (!userLocationAdded) {
+            userLocationMarker.addTo(map);
+            userLocationAdded = true;
+          }
+          // ボタンを押した時点で未測位だった場合は、初回測位で一度だけ寄せる。
+          if (centerOnNextFix) {
+            centerOnNextFix = false;
+            setWaiting(false);
+            recenterToUser(lastUserLngLat);
+          }
+        },
+        (err) => {
+          // ボタン操作に対する測位失敗のときだけ通知する。
+          if (centerOnNextFix) {
+            centerOnNextFix = false;
+            setWaiting(false);
+            toast.error(
+              '現在地を取得できませんでした。ブラウザの位置情報設定をご確認ください。'
+            );
+          }
+          // 許可拒否は watch が二度と成功・通知しないため、watch を畳んで次回ボタン
+          // 押下で再試行(=再通知)できるようにする。一時的なエラーは watch を維持して
+          // 回復に任せる。
+          if (err.code === err.PERMISSION_DENIED && geoWatchId !== null) {
+            navigator.geolocation.clearWatch(geoWatchId);
+            geoWatchId = null;
+          }
+        },
+        { enableHighAccuracy: true }
+      );
+    };
+
+    // 現在地ボタン(自前)。押したときだけ watch の最新位置へ一度きり寄せる(追従しない)。
+    // 未測位ならまず watch を開始し(未許可なら許可ダイアログ)、初回測位で寄せる。
+    const handleRecenterClick = () => {
+      startUserLocationWatch();
+      if (lastUserLngLat) {
+        recenterToUser(lastUserLngLat);
+      } else {
+        centerOnNextFix = true;
+        setWaiting(true);
+      }
+    };
+
+    geolocateButton.addEventListener('click', handleRecenterClick);
+
+    const geolocateControl: maplibregl.IControl = {
+      onAdd: () => {
+        const container = document.createElement('div');
+        container.className = 'maplibregl-ctrl maplibregl-ctrl-group';
+        container.appendChild(geolocateButton);
+        return container;
+      },
+      onRemove: () => {
+        geolocateButton.removeEventListener('click', handleRecenterClick);
+      },
+    };
+    map.addControl(geolocateControl, 'top-right');
+
+    // 位置情報を許可済みのユーザーは、ロード時点から現在地ドットを表示する
+    // (カメラは動かさない)。未許可(prompt)の状態では勝手に許可ダイアログを出さない
+    // よう、Permissions API で 'granted' を確認できたときだけ watch を開始する。
+    // Permissions API 非対応ブラウザ(古い iOS Safari 等)では何もせず、現在地ボタンの
+    // 手動操作にフォールバックする。
     map.once('load', () => {
       if (!navigator.permissions?.query) return;
       navigator.permissions
         .query({ name: 'geolocation' })
         .then((status) => {
-          if (status.state === 'granted') {
-            geolocate.trigger();
+          if (status.state === 'granted' && !isCancelled) {
+            startUserLocationWatch();
           }
         })
         .catch(() => {
@@ -119,6 +225,12 @@ export default function MapLibreMap({
 
     const markers = markersRef.current;
     return () => {
+      // 非同期コールバックが削除済みマップを触らないよう、まず無効化する。
+      isCancelled = true;
+      if (geoWatchId !== null) {
+        navigator.geolocation.clearWatch(geoWatchId);
+      }
+      userLocationMarker.remove();
       map.remove();
       mapRef.current = null;
       markers.clear();
