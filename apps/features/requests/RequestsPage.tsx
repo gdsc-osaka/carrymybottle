@@ -111,7 +111,7 @@ export function RequestsPage({
             variant="ghost"
             size="sm"
             onClick={() => router.back()}
-            className="-ml-2 h-11 w-fit text-[#0f897f] hover:bg-[#0f897f]/10 hover:text-[#00685f]"
+            className="-ml-2 h-11 w-fit text-[#0f897f] hover:bg-[#0f897f]/10 hover:text-[#00685f] sm:h-7"
           >
             <ArrowLeft className="size-4" aria-hidden="true" />
             戻る
@@ -279,7 +279,7 @@ export function RequestsPage({
                   <Button
                     type="submit"
                     size="lg"
-                    className="h-12 w-full bg-gradient-to-r from-[#0f897f] to-[#1f6fc4] text-base text-white shadow-md shadow-[#1f6fc4]/25 hover:opacity-90"
+                    className="h-12 w-full bg-gradient-to-r from-[#0f897f] to-[#1f6fc4] text-base text-white shadow-md shadow-[#1f6fc4]/25 hover:opacity-90 sm:h-9 sm:text-sm"
                     disabled={isVoting}
                   >
                     <Vote className="size-4" aria-hidden="true" />

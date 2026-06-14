@@ -60,8 +60,7 @@ export function ContactPage({ stationId }: Props) {
         <Button
           asChild
           variant="ghost"
-          size="lg"
-          className="mt-2 h-11 text-[#0f897f] hover:bg-[#0f897f]/10 hover:text-[#00685f]"
+          className="mt-2 h-11 text-[#0f897f] hover:bg-[#0f897f]/10 hover:text-[#00685f] sm:h-8"
         >
           <Link href={`/stations/${stationId}`}>
             <ArrowLeft className="size-4" aria-hidden="true" />
@@ -79,7 +78,7 @@ export function ContactPage({ stationId }: Props) {
           asChild
           variant="ghost"
           size="sm"
-          className="-ml-2 mb-5 h-11 w-fit text-[#0f897f] hover:bg-[#0f897f]/10 hover:text-[#00685f]"
+          className="-ml-2 mb-5 h-11 w-fit text-[#0f897f] hover:bg-[#0f897f]/10 hover:text-[#00685f] sm:h-7"
         >
           <Link href={`/stations/${stationId}`}>
             <ArrowLeft className="size-4" aria-hidden="true" />
@@ -181,7 +180,7 @@ export function ContactPage({ stationId }: Props) {
               type="submit"
               size="lg"
               disabled={isSubmitting}
-              className="h-12 w-full bg-gradient-to-r from-[#0f897f] to-[#1f6fc4] text-base text-white shadow-md shadow-[#1f6fc4]/25 hover:opacity-90"
+              className="h-12 w-full bg-gradient-to-r from-[#0f897f] to-[#1f6fc4] text-base text-white shadow-md shadow-[#1f6fc4]/25 hover:opacity-90 sm:h-9 sm:text-sm"
             >
               {isSubmitting ? '送信中...' : '送信する'}
             </Button>
