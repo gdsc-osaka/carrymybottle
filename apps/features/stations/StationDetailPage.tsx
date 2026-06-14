@@ -88,7 +88,7 @@ export async function StationDetailPage({
           asChild
           variant="ghost"
           size="sm"
-          className="-ml-2 w-fit text-[#0f897f] hover:bg-[#0f897f]/10 hover:text-[#00685f]"
+          className="-ml-2 h-11 w-fit text-[#0f897f] hover:bg-[#0f897f]/10 hover:text-[#00685f]"
         >
           <Link href={`/map?campus=${station.campusId}`}>
             <ArrowLeft className="size-4" />
@@ -149,10 +149,20 @@ export async function StationDetailPage({
             <p className="hidden text-sm font-semibold text-[#3d4947] lg:block">
               この給水機について
             </p>
-            <Button asChild variant="destructive" size="lg">
+            <Button
+              asChild
+              variant="destructive"
+              size="lg"
+              className="h-12 text-base"
+            >
               <Link href={`/contact/${station.id}`}>緊急連絡フォーム</Link>
             </Button>
-            <Button asChild variant="outline" size="lg">
+            <Button
+              asChild
+              variant="outline"
+              size="lg"
+              className="h-12 text-base"
+            >
               <Link href="/requests">設置希望を見る・投票する</Link>
             </Button>
           </section>
