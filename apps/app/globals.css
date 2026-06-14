@@ -260,7 +260,9 @@
 /*
  * 自前の現在地ドット。MapLibre 既定の追従(trackUserLocation)はカメラを動かして
  * 地図操作の邪魔になるため使わず、watchPosition で位置だけを更新するマーカーを
- * 自前で描く。給水ピン(ティール)と区別できるよう青系にする。
+ * 自前で描く。給水ピン(ティール)と区別できるよう青系にする。ドットの周りに
+ * box-shadow のリングを広げる鼓動(パルス)アニメを付ける。リングはドットの外側に
+ * 広がるためドットを覆わず、pointer-events:none なので給水ピンのクリックも奪わない。
  */
 .cmb-user-location {
   width: 18px;
@@ -268,9 +270,33 @@
   border-radius: 9999px;
   background: #1f6fc4;
   border: 3px solid #ffffff;
-  box-shadow:
-    0 0 0 2px rgba(31, 111, 196, 0.35),
-    0 1px 3px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  animation: cmb-user-location-pulse 2.2s ease-out infinite;
+}
+
+@keyframes cmb-user-location-pulse {
+  0% {
+    box-shadow:
+      0 1px 3px rgba(0, 0, 0, 0.3),
+      0 0 0 0 rgba(31, 111, 196, 0.5);
+  }
+  70% {
+    box-shadow:
+      0 1px 3px rgba(0, 0, 0, 0.3),
+      0 0 0 20px rgba(31, 111, 196, 0);
+  }
+  100% {
+    box-shadow:
+      0 1px 3px rgba(0, 0, 0, 0.3),
+      0 0 0 20px rgba(31, 111, 196, 0);
+  }
+}
+
+/* モーション低減設定では鼓動を止め、静的なドットだけにする。 */
+@media (prefers-reduced-motion: reduce) {
+  .cmb-user-location {
+    animation: none;
+  }
 }
 
 /*

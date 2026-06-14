@@ -18,45 +18,6 @@ interface Props {
 
 const STYLE_URL = '/map-style/style.json';
 
-// 現在地の精度サークル用の source / layer ID。
-const ACCURACY_SOURCE_ID = 'cmb-user-accuracy';
-const ACCURACY_LAYER_ID = 'cmb-user-accuracy-fill';
-
-/** 精度サークルのポリゴン Feature(GeoJSON 互換の最小形)。 */
-interface AccuracyCircleFeature {
-  type: 'Feature';
-  geometry: { type: 'Polygon'; coordinates: [number, number][][] };
-  properties: Record<string, never>;
-}
-
-/**
- * 現在地の精度(メートル)を表す円を地理ポリゴンとして生成する。ピクセルではなく
- * 実寸の GeoJSON なので、MapLibre が地図のズームに応じて自動で拡縮する。
- */
-function buildAccuracyCircle(
-  lng: number,
-  lat: number,
-  radiusMeters: number,
-  steps = 64
-): AccuracyCircleFeature {
-  const earthRadius = 6378137;
-  const latRad = (lat * Math.PI) / 180;
-  const ring: [number, number][] = [];
-  for (let i = 0; i <= steps; i++) {
-    const theta = (i / steps) * 2 * Math.PI;
-    const dx = radiusMeters * Math.cos(theta);
-    const dy = radiusMeters * Math.sin(theta);
-    const dLng = ((dx / (earthRadius * Math.cos(latRad))) * 180) / Math.PI;
-    const dLat = ((dy / earthRadius) * 180) / Math.PI;
-    ring.push([lng + dLng, lat + dLat]);
-  }
-  return {
-    type: 'Feature',
-    geometry: { type: 'Polygon', coordinates: [ring] },
-    properties: {},
-  };
-}
-
 /**
  * Renders the campus map with MapLibre GL + OpenFreeMap vector tiles.
  *
@@ -104,52 +65,11 @@ export default function MapLibreMap({
     });
     mapRef.current = map;
 
-    // 現在地の最新測位結果。ドット・精度サークルの描画と、ボタンでの再センタリングで
-    // 共有する。
+    // 現在地の最新測位結果。ドット描画とボタンでの再センタリングで共有する。
     let lastUserLngLat: [number, number] | null = null;
-    let lastAccuracyMeters: number | null = null;
-
-    const updateAccuracyCircle = () => {
-      const source =
-        map.getSource<maplibregl.GeoJSONSource>(ACCURACY_SOURCE_ID);
-      if (!source || !lastUserLngLat || lastAccuracyMeters === null) return;
-      source.setData({
-        type: 'FeatureCollection',
-        features: [
-          buildAccuracyCircle(
-            lastUserLngLat[0],
-            lastUserLngLat[1],
-            lastAccuracyMeters
-          ),
-        ],
-      });
-    };
 
     // タイル/スタイルの初回読み込み完了。ローディング解除の片方の条件。
     map.on('load', () => setMapLoaded(true));
-
-    // 現在地の精度サークル(薄い青の円)。DOM ではなく地理ポリゴンの fill レイヤーで
-    // 描くため、ズームに応じて実寸で拡縮し、canvas 描画なので給水ピン(DOMマーカー)の
-    // クリックを奪わない。空のソース/レイヤーを用意し、測位ごとに setData で更新する。
-    map.on('load', () => {
-      if (map.getSource(ACCURACY_SOURCE_ID)) return;
-      map.addSource(ACCURACY_SOURCE_ID, {
-        type: 'geojson',
-        data: { type: 'FeatureCollection', features: [] },
-      });
-      map.addLayer({
-        id: ACCURACY_LAYER_ID,
-        type: 'fill',
-        source: ACCURACY_SOURCE_ID,
-        paint: {
-          'fill-color': '#1f6fc4',
-          'fill-opacity': 0.12,
-          'fill-outline-color': '#1f6fc4',
-        },
-      });
-      // ロード前に測位済みなら、ここで円を反映する。
-      updateAccuracyCircle();
-    });
 
     // OpenFreeMapのスプライトに無いPOIアイコン(class/subclass名)が要求される
     // たびに警告が出るので、透明1pxを登録して抑止する。該当POIはテキスト
@@ -197,10 +117,7 @@ export default function MapLibreMap({
       geoWatchId = navigator.geolocation.watchPosition(
         (pos) => {
           lastUserLngLat = [pos.coords.longitude, pos.coords.latitude];
-          lastAccuracyMeters = pos.coords.accuracy;
           userLocationMarker.setLngLat(lastUserLngLat);
-          // 精度サークルを最新の位置・精度に更新する。
-          updateAccuracyCircle();
           // 初回測位でマーカーを地図に載せる(以降は位置のみ更新)。
           if (!userLocationAdded) {
             userLocationMarker.addTo(map);
