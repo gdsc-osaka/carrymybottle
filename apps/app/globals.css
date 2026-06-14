@@ -236,3 +236,13 @@
     animation: none;
   }
 }
+
+/*
+ * 現在地の精度サークル・ドットは MapLibre が DOM マーカーとして描画し、
+ * 給水ピンより後に追加されるため上に重なってクリックを奪う。装飾用途なので
+ * ポインタイベントを無効化し、円の上からでも給水ピンを押せるようにする。
+ */
+.maplibregl-user-location-accuracy-circle,
+.maplibregl-user-location-dot {
+  pointer-events: none;
+}
