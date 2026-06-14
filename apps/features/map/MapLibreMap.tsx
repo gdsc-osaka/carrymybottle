@@ -86,54 +86,95 @@ export default function MapLibreMap({
       'bottom-right'
     );
 
-    // 現在地ドットは自前のマーカーで描く。MapLibre 既定の追従モード
-    // (trackUserLocation)は GPS 更新のたびにカメラを現在地へ引き戻し、地図操作の
-    // 邪魔になるため使わない。watchPosition で位置だけを更新し、カメラは動かさない。
+    // 現在地ドット・現在地ボタンは自前で実装する。MapLibre 既定の GeolocateControl は
+    // trackUserLocation:true だと GPS 更新のたびにカメラを現在地へ引き戻して地図操作を
+    // 妨げ、false にするとボタンが getCurrentPosition(一度きりの高精度測位)に依存して
+    // 端末次第で遅延・失敗し無反応に見える。そこで watchPosition を常時動かして位置だけ
+    // を更新し(カメラは動かさない)、ボタンはその最新位置へ一度きり寄せる方式にする。
     const userLocationEl = document.createElement('div');
     userLocationEl.className = 'cmb-user-location';
     const userLocationMarker = new maplibregl.Marker({
       element: userLocationEl,
     });
     let userLocationAdded = false;
+    let lastUserLngLat: [number, number] | null = null;
+    // ボタン押下時にまだ未測位だった場合、初回測位で一度だけ寄せるためのフラグ。
+    let centerOnNextFix = false;
     let geoWatchId: number | null = null;
+
+    const recenterToUser = (lngLat: [number, number]) => {
+      map.easeTo({
+        center: lngLat,
+        zoom: Math.max(map.getZoom(), 16),
+        duration: 800,
+      });
+    };
 
     const startUserLocationWatch = () => {
       if (geoWatchId !== null || !navigator.geolocation) return;
       geoWatchId = navigator.geolocation.watchPosition(
         (pos) => {
-          userLocationMarker.setLngLat([
-            pos.coords.longitude,
-            pos.coords.latitude,
-          ]);
+          lastUserLngLat = [pos.coords.longitude, pos.coords.latitude];
+          userLocationMarker.setLngLat(lastUserLngLat);
           // 初回測位でマーカーを地図に載せる(以降は位置のみ更新)。
           if (!userLocationAdded) {
             userLocationMarker.addTo(map);
             userLocationAdded = true;
           }
+          // ボタンを押した時点で未測位だった場合は、初回測位で一度だけ寄せる。
+          if (centerOnNextFix) {
+            centerOnNextFix = false;
+            recenterToUser(lastUserLngLat);
+          }
         },
         () => {
-          // 取得失敗時はドットを更新しないだけ(手動操作に任せる)。
+          // ボタン操作に対する測位失敗のときだけ通知する。
+          if (centerOnNextFix) {
+            centerOnNextFix = false;
+            toast.error(
+              '現在地を取得できませんでした。ブラウザの位置情報設定をご確認ください。'
+            );
+          }
         },
         { enableHighAccuracy: true }
       );
     };
 
-    // 現在地ボタンは「押したときだけ現在地へ寄せる」挙動にする。trackUserLocation を
-    // false にすることで一度きりのカメラ移動になり、操作中に引き戻されない。ドットは
-    // 自前で描くため showUserLocation は無効。
-    const geolocate = new maplibregl.GeolocateControl({
-      positionOptions: { enableHighAccuracy: true },
-      trackUserLocation: false,
-      showUserLocation: false,
-    });
-    map.addControl(geolocate, 'top-right');
-    geolocate.on('error', () => {
-      toast.error(
-        '現在地を取得できませんでした。ブラウザの位置情報設定をご確認ください。'
-      );
-    });
-    // ボタン経由で許可された場合も、以降は現在地ドットを表示し続ける。
-    geolocate.on('geolocate', startUserLocationWatch);
+    // 現在地ボタン(自前)。押したときだけ watch の最新位置へ一度きり寄せる(追従しない)。
+    // 未測位ならまず watch を開始し(未許可なら許可ダイアログ)、初回測位で寄せる。
+    const handleRecenterClick = () => {
+      startUserLocationWatch();
+      if (lastUserLngLat) {
+        recenterToUser(lastUserLngLat);
+      } else {
+        centerOnNextFix = true;
+      }
+    };
+
+    // MapLibre 既定の現在地ボタンと同じ見た目になるよう、同じクラスを再利用する。
+    const geolocateButton = document.createElement('button');
+    geolocateButton.type = 'button';
+    geolocateButton.className = 'maplibregl-ctrl-geolocate';
+    geolocateButton.title = '現在地へ移動';
+    geolocateButton.setAttribute('aria-label', '現在地へ移動');
+    const geolocateIcon = document.createElement('span');
+    geolocateIcon.className = 'maplibregl-ctrl-icon';
+    geolocateIcon.setAttribute('aria-hidden', 'true');
+    geolocateButton.appendChild(geolocateIcon);
+    geolocateButton.addEventListener('click', handleRecenterClick);
+
+    const geolocateControl: maplibregl.IControl = {
+      onAdd: () => {
+        const container = document.createElement('div');
+        container.className = 'maplibregl-ctrl maplibregl-ctrl-group';
+        container.appendChild(geolocateButton);
+        return container;
+      },
+      onRemove: () => {
+        geolocateButton.removeEventListener('click', handleRecenterClick);
+      },
+    };
+    map.addControl(geolocateControl, 'top-right');
 
     // 位置情報を許可済みのユーザーは、ロード時点から現在地ドットを表示する
     // (カメラは動かさない)。未許可(prompt)の状態では勝手に許可ダイアログを出さない
