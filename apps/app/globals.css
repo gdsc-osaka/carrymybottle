@@ -246,23 +246,12 @@
 }
 
 /*
- * 現在地の精度サークル・ドットは MapLibre が DOM マーカーとして描画し、
- * 給水ピンより後に追加されるため上に重なってクリックを奪う。装飾用途なので
- * ポインタイベントを無効化し、円の上からでも給水ピンを押せるようにする。
- * 自前の現在地ドット(.cmb-user-location)も同様にクリックを透過させる。
- */
-.maplibregl-user-location-accuracy-circle,
-.maplibregl-user-location-dot,
-.cmb-user-location {
-  pointer-events: none;
-}
-
-/*
  * 自前の現在地ドット。MapLibre 既定の追従(trackUserLocation)はカメラを動かして
  * 地図操作の邪魔になるため使わず、watchPosition で位置だけを更新するマーカーを
  * 自前で描く。給水ピン(ティール)と区別できるよう青系にする。ドットの周りに
  * box-shadow のリングを広げる鼓動(パルス)アニメを付ける。リングはドットの外側に
- * 広がるためドットを覆わず、pointer-events:none なので給水ピンのクリックも奪わない。
+ * 広がるためドットを覆わず、給水ピン(後から重なる DOM マーカー)より上に来ても
+ * pointer-events:none でクリックを奪わない。
  */
 .cmb-user-location {
   width: 18px;
@@ -271,6 +260,7 @@
   background: #1f6fc4;
   border: 3px solid #ffffff;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
   animation: cmb-user-location-pulse 2.2s ease-out infinite;
 }
 
