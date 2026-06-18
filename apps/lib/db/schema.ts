@@ -151,6 +151,21 @@ export const emergencyContacts = sqliteTable('emergency_contacts', {
   deletedAt: integer('deleted_at', { mode: 'timestamp' }),
 });
 
+export const inquiries = sqliteTable('inquiries', {
+  id: text('id').primaryKey(),
+  category: text('category', {
+    enum: ['general', 'installation_request', 'feedback', 'other'],
+  }).notNull(),
+  name: text('name'),
+  message: text('message').notNull(),
+  reporterEmail: text('reporter_email').notNull(),
+  adminEmailSentAt: integer('admin_email_sent_at', { mode: 'timestamp' }),
+  autoReplySentAt: integer('auto_reply_sent_at', { mode: 'timestamp' }),
+  autoReplyError: text('auto_reply_error'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  deletedAt: integer('deleted_at', { mode: 'timestamp' }),
+});
+
 export const analyticsEvents = sqliteTable('analytics_events', {
   id: text('id').primaryKey(),
   eventName: text('event_name').notNull(),

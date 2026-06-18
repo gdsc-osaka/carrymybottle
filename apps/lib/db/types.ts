@@ -5,6 +5,7 @@ import type {
   buildings,
   campuses,
   emergencyContacts,
+  inquiries,
   installationComments,
   installationTargets,
   installationVotes,
@@ -42,6 +43,9 @@ export type NewInstallationComment = InferInsertModel<
 
 export type EmergencyContact = InferSelectModel<typeof emergencyContacts>;
 export type NewEmergencyContact = InferInsertModel<typeof emergencyContacts>;
+
+export type Inquiry = InferSelectModel<typeof inquiries>;
+export type NewInquiry = InferInsertModel<typeof inquiries>;
 
 export type AnalyticsEvent = InferSelectModel<typeof analyticsEvents>;
 export type NewAnalyticsEvent = InferInsertModel<typeof analyticsEvents>;
