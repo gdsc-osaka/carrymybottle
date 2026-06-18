@@ -1,4 +1,14 @@
-import { and, asc, count, desc, eq, inArray, isNull, or, sql } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  inArray,
+  isNull,
+  or,
+  sql,
+} from 'drizzle-orm';
 import type { DB } from '@/lib/db/client';
 import {
   adminAuditEvents,
@@ -177,8 +187,14 @@ export async function logAuditEvent(
 }
 
 export async function getQrAnalytics(db: DB, environment: string) {
-  const scanCount = sql<number>`SUM(CASE WHEN ${analyticsEvents.eventName} = 'qr_code_scanned' THEN 1 ELSE 0 END)`.mapWith(Number);
-  const viewCount = sql<number>`SUM(CASE WHEN ${analyticsEvents.eventName} = 'water_station_detail_viewed' THEN 1 ELSE 0 END)`.mapWith(Number);
+  const scanCount =
+    sql<number>`SUM(CASE WHEN ${analyticsEvents.eventName} = 'qr_code_scanned' THEN 1 ELSE 0 END)`.mapWith(
+      Number
+    );
+  const viewCount =
+    sql<number>`SUM(CASE WHEN ${analyticsEvents.eventName} = 'water_station_detail_viewed' THEN 1 ELSE 0 END)`.mapWith(
+      Number
+    );
 
   return db
     .select({
