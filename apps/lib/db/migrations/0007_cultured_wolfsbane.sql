@@ -1,0 +1,1 @@
+ALTER TABLE `stations` ADD `image_key` text;
