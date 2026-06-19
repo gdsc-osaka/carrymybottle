@@ -14,7 +14,11 @@ import {
 } from '@/lib/auth/session';
 import { stationSchema } from './validation';
 import { logAuditEvent } from './queries';
-import { installationComments, emergencyContacts } from '@/lib/db/schema';
+import {
+  installationComments,
+  emergencyContacts,
+  inquiries,
+} from '@/lib/db/schema';
 import { enforceRateLimit } from '@/lib/rate-limit';
 
 async function getEnv() {
@@ -263,5 +267,23 @@ export async function deleteEmergencyContactAction(
 
   await logAuditEvent(db, 'delete', 'emergency_contact', contactId);
   revalidatePath('/admin/contacts');
+  return { success: true, data: undefined };
+}
+
+// #205 お問い合わせ削除（論理削除）
+export async function deleteInquiryAction(
+  inquiryId: string
+): Promise<ActionResult> {
+  await requireAdminSession();
+  const env = await getEnv();
+  const db = getDb(env.DB);
+
+  await db
+    .update(inquiries)
+    .set({ deletedAt: new Date() })
+    .where(eq(inquiries.id, inquiryId));
+
+  await logAuditEvent(db, 'delete', 'inquiry', inquiryId);
+  revalidatePath('/admin/inquiries');
   return { success: true, data: undefined };
 }
