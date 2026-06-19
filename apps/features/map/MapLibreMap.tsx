@@ -4,9 +4,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { Crosshair, Search, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { CAMPUSES, type CampusId } from '@/lib/constants/campuses';
 import { StationPin } from './StationPin';
@@ -28,7 +27,7 @@ interface Props {
 
 const STYLE_URL = '/map-style/style.json';
 
-/** 「ここで探す」で表示する近接建物の最大件数。 */
+/** タップ地点の周辺で表示する近接建物の最大件数。 */
 const NEARBY_LIMIT = 5;
 
 // 投票モード切替ボタンのアイコン（lucide MapPin と同等）。MapLibre のコントロールは
@@ -71,7 +70,7 @@ export default function MapLibreMap({
   // --- 設置希望の投票モード ---------------------------------------------------
   const [voteMode, setVoteMode] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
-  // 「ここで探す」で抽出した近接候補(建物ID + 中心からの距離)。票数は
+  // タップ地点で抽出した近接候補(建物ID + タップ地点からの距離)。票数は
   // effectiveBuildings から都度引くため、ここには保持しない。
   const [candidateRefs, setCandidateRefs] = useState<
     { buildingId: string; distanceMeters: number }[]
@@ -85,6 +84,11 @@ export default function MapLibreMap({
   // 初期化 useEffect は一度きり実行のため、最新のトグル関数を ref 経由で参照する。
   const voteToggleButtonRef = useRef<HTMLButtonElement | null>(null);
   const toggleVoteModeRef = useRef<() => void>(() => {});
+  // タップ時の近接抽出に使う建物一覧の最新値。タップ用 effect を貼り直さずに
+  // 参照するため ref に保持する(座標はキャンパス内で安定)。
+  const voteBuildingsRef = useRef(voteBuildings);
+  // タップ地点に置くマーカー(選択位置の明示)。投票モードを抜けるときに撤去する。
+  const tapMarkerRef = useRef<maplibregl.Marker | null>(null);
 
   // Initialise the map once. The initial center is read from a ref so changing
   // the campus prop animates (flyTo effect) instead of re-creating the map.
@@ -353,24 +357,52 @@ export default function MapLibreMap({
     button.setAttribute('aria-pressed', voteMode ? 'true' : 'false');
   }, [voteMode]);
 
-  // 「ここで探す」: 地図中央(クロスヘア)に近い建物を距離順に抽出してシートを開く。
-  const handleSearchHere = () => {
+  // タップ用 effect から最新の建物一覧を参照できるよう ref を更新する。
+  useEffect(() => {
+    voteBuildingsRef.current = voteBuildings;
+  }, [voteBuildings]);
+
+  // 投票モード中は地図タップで地点を指定する。タップ地点の近接建物を距離順に
+  // 抽出してボトムシートを開く。MapLibre の 'click' はドラッグ(パン)中は発火
+  // しないため、タップとパンは標準挙動で区別される。ピン(DOMマーカー)上の
+  // クリックは map の 'click' を発火しないので、給水機詳細への遷移を妨げない。
+  useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
-    const center = map.getCenter();
-    const nearby = nearestBuildings(
-      { latitude: center.lat, longitude: center.lng },
-      effectiveBuildings,
-      NEARBY_LIMIT
-    );
-    setCandidateRefs(
-      nearby.map((b) => ({
-        buildingId: b.buildingId,
-        distanceMeters: b.distanceMeters,
-      }))
-    );
-    setSheetOpen(true);
-  };
+    if (!map || !voteMode) return;
+
+    const canvas = map.getCanvas();
+    const prevCursor = canvas.style.cursor;
+    canvas.style.cursor = 'crosshair';
+
+    const handleClick = (e: maplibregl.MapMouseEvent) => {
+      // タップ地点にマーカーを表示(選択位置の明示)。
+      if (!tapMarkerRef.current) {
+        tapMarkerRef.current = new maplibregl.Marker({ color: '#1f6fc4' });
+      }
+      tapMarkerRef.current.setLngLat(e.lngLat).addTo(map);
+
+      const nearby = nearestBuildings(
+        { latitude: e.lngLat.lat, longitude: e.lngLat.lng },
+        voteBuildingsRef.current,
+        NEARBY_LIMIT
+      );
+      setCandidateRefs(
+        nearby.map((b) => ({
+          buildingId: b.buildingId,
+          distanceMeters: b.distanceMeters,
+        }))
+      );
+      setSheetOpen(true);
+    };
+
+    map.on('click', handleClick);
+
+    return () => {
+      map.off('click', handleClick);
+      canvas.style.cursor = prevCursor;
+      tapMarkerRef.current?.remove();
+    };
+  }, [voteMode, mapReady]);
 
   // 投票成功時、該当建物の最新票数を記録する(effectiveBuildings 経由で表示更新)。
   const handleVoted = (buildingId: string, voteCount: number) => {
@@ -445,48 +477,25 @@ export default function MapLibreMap({
           station.id
         )
       )}
-      {/* 投票モードのオーバーレイ: 中央クロスヘア + 案内バナー + 「ここで探す」。
-          地図のパン/ズームを妨げないよう、クロスヘアは pointer-events-none。 */}
+      {/* 投票モードの案内バナー。地図タップで地点を指定する。地図操作(パン/ズーム)は
+          妨げないよう、バナーのみを上部に重ねる。 */}
       {voteMode && (
-        <>
-          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
-            {/* 照準の中心を地図コンテナの幾何中心(= map.getCenter() がサンプルする
-                位置)に正確に合わせる。Crosshair は上下対称なので平行移動しない。 */}
-            <Crosshair
-              className="size-10 text-[#1f6fc4] drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)]"
-              aria-hidden="true"
-            />
-          </div>
-          <div className="absolute inset-x-0 top-0 z-20 flex justify-center px-4 pt-3">
-            <div
-              role="status"
-              className="flex items-center gap-2 rounded-full border border-[#1f6fc4]/20 bg-white/90 px-4 py-2 text-sm font-medium text-[#23566e] shadow-md backdrop-blur"
+        <div className="absolute inset-x-0 top-0 z-20 flex justify-center px-4 pt-3">
+          <div
+            role="status"
+            className="flex items-center gap-2 rounded-full border border-[#1f6fc4]/20 bg-white/90 px-4 py-2 text-sm font-medium text-[#23566e] shadow-md backdrop-blur"
+          >
+            地図をタップして投票する場所を選んでください
+            <button
+              type="button"
+              onClick={() => updateVoteMode(false)}
+              aria-label="投票モードを終了"
+              className="-mr-1 ml-1 flex size-6 items-center justify-center rounded-full text-[#5a6b6a] transition-colors hover:bg-muted"
             >
-              投票したい場所に地図を合わせてください
-              <button
-                type="button"
-                onClick={() => updateVoteMode(false)}
-                aria-label="投票モードを終了"
-                className="-mr-1 ml-1 flex size-6 items-center justify-center rounded-full text-[#5a6b6a] transition-colors hover:bg-muted"
-              >
-                <X className="size-4" aria-hidden="true" />
-              </button>
-            </div>
+              <X className="size-4" aria-hidden="true" />
+            </button>
           </div>
-          {!sheetOpen && (
-            <div className="absolute inset-x-0 bottom-0 z-20 flex justify-center px-4 pb-6">
-              <Button
-                type="button"
-                size="lg"
-                onClick={handleSearchHere}
-                className="h-12 rounded-full bg-gradient-to-r from-[#0f897f] to-[#1f6fc4] px-6 text-base text-white shadow-lg hover:opacity-90"
-              >
-                <Search className="size-5" aria-hidden="true" />
-                ここで探す
-              </Button>
-            </div>
-          )}
-        </>
+        </div>
       )}
 
       <NearbyBuildingsDrawer
