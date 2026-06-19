@@ -4,7 +4,7 @@
 -- 保育園(childcare/kindergarten)は対象外として既存行を削除する。
 -- Source: OpenStreetMap via Overpass API. © OpenStreetMap contributors (ODbL).
 -- Run: wrangler d1 execute DB --remote --file=lib/db/seed/osm_buildings.sql
--- Counts: {"minoh":1,"suita":132,"toyonaka":50}
+-- Counts: {"minoh":1,"suita":134,"toyonaka":50}
 -- INSERT OR IGNORE keeps existing rows (and the unique(campus_id, name) index
 -- prevents name collisions with legacy seeds); the UPDATE refreshes coordinates
 -- for OSM-sourced rows so re-running stays safe and converges.
@@ -116,6 +116,7 @@ VALUES
   ('suita_osm_389996262', 'suita', '情報科学研究科C棟', 0, 34.818438, 135.52162, strftime('%s','now'), strftime('%s','now')),
   ('suita_osm_378258248', 'suita', '職員会館', 0, 34.824754, 135.521721, strftime('%s','now'), strftime('%s','now')),
   ('suita_osm_446898800', 'suita', '人間科学部・人間科学研究科', 0, 34.817818, 135.525918, strftime('%s','now'), strftime('%s','now')),
+  ('suita_osm_491558076', 'suita', '吹田キャンパスグラウンド', 0, 34.815947, 135.524039, strftime('%s','now'), strftime('%s','now')),
   ('suita_osm_378255691', 'suita', '吹田福利会館', 0, 34.823284, 135.522076, strftime('%s','now'), strftime('%s','now')),
   ('suita_osm_378258253', 'suita', '生物工学国際交流センター', 0, 34.824095, 135.520214, strftime('%s','now'), strftime('%s','now')),
   ('suita_osm_379514187', 'suita', '生命科学図書館', 0, 34.818957, 135.525729, strftime('%s','now'), strftime('%s','now')),
@@ -125,6 +126,7 @@ VALUES
   ('suita_osm_389996281', 'suita', '生命機能研究科 生命システム棟', 0, 34.817067, 135.52729, strftime('%s','now'), strftime('%s','now')),
   ('suita_osm_379513538', 'suita', '接合科学研究所', 0, 34.825204, 135.526388, strftime('%s','now'), strftime('%s','now')),
   ('suita_osm_379513542', 'suita', '接合研実験棟', 0, 34.824948, 135.526711, strftime('%s','now'), strftime('%s','now')),
+  ('suita_osm_530704512', 'suita', '多目的ピッチ', 0, 34.820764, 135.521583, strftime('%s','now'), strftime('%s','now')),
   ('suita_osm_378254214', 'suita', '体育館', 0, 34.817592, 135.523132, strftime('%s','now'), strftime('%s','now')),
   ('suita_osm_505704346', 'suita', '大阪大学 国際交流会館吹田分館', 0, 34.824431, 135.51829, strftime('%s','now'), strftime('%s','now')),
   ('suita_osm_545978079', 'suita', '大阪大学 産業科学研究所 フットサルコート', 0, 34.824559, 135.52224, strftime('%s','now'), strftime('%s','now')),
@@ -300,6 +302,7 @@ UPDATE buildings SET name = '情報科学研究科B棟', latitude = 34.818003, l
 UPDATE buildings SET name = '情報科学研究科C棟', latitude = 34.818438, longitude = 135.52162 WHERE id = 'suita_osm_389996262';
 UPDATE buildings SET name = '職員会館', latitude = 34.824754, longitude = 135.521721 WHERE id = 'suita_osm_378258248';
 UPDATE buildings SET name = '人間科学部・人間科学研究科', latitude = 34.817818, longitude = 135.525918 WHERE id = 'suita_osm_446898800';
+UPDATE buildings SET name = '吹田キャンパスグラウンド', latitude = 34.815947, longitude = 135.524039 WHERE id = 'suita_osm_491558076';
 UPDATE buildings SET name = '吹田福利会館', latitude = 34.823284, longitude = 135.522076 WHERE id = 'suita_osm_378255691';
 UPDATE buildings SET name = '生物工学国際交流センター', latitude = 34.824095, longitude = 135.520214 WHERE id = 'suita_osm_378258253';
 UPDATE buildings SET name = '生命科学図書館', latitude = 34.818957, longitude = 135.525729 WHERE id = 'suita_osm_379514187';
@@ -309,6 +312,7 @@ UPDATE buildings SET name = '生命機能研究科 細胞棟', latitude = 34.817
 UPDATE buildings SET name = '生命機能研究科 生命システム棟', latitude = 34.817067, longitude = 135.52729 WHERE id = 'suita_osm_389996281';
 UPDATE buildings SET name = '接合科学研究所', latitude = 34.825204, longitude = 135.526388 WHERE id = 'suita_osm_379513538';
 UPDATE buildings SET name = '接合研実験棟', latitude = 34.824948, longitude = 135.526711 WHERE id = 'suita_osm_379513542';
+UPDATE buildings SET name = '多目的ピッチ', latitude = 34.820764, longitude = 135.521583 WHERE id = 'suita_osm_530704512';
 UPDATE buildings SET name = '体育館', latitude = 34.817592, longitude = 135.523132 WHERE id = 'suita_osm_378254214';
 UPDATE buildings SET name = '大阪大学 国際交流会館吹田分館', latitude = 34.824431, longitude = 135.51829 WHERE id = 'suita_osm_505704346';
 UPDATE buildings SET name = '大阪大学 産業科学研究所 フットサルコート', latitude = 34.824559, longitude = 135.52224 WHERE id = 'suita_osm_545978079';

@@ -86,6 +86,33 @@ const NAME_OVERRIDES: Record<number, string> = {
   378258112: '工学部/工学研究科 A13棟',
 };
 
+/**
+ * OSM に存在するが name が無く自動取得できない施設に、名前を付けて取り込む。
+ * id は OSM 要素に紐づけ（後で OSM 側に name が付いても同一 id で収束する）。
+ * 座標は OSM の center を用いる。
+ *
+ * - 吹田キャンパスグラウンド: アーチェリー場のすぐ南東の多目的グラウンド
+ *   （OSM way/491558076, leisure=pitch sport=multi, 無名）。
+ * - 多目的ピッチ: 吹田キャンパス内のもう一つの多目的ピッチ
+ *   （OSM way/530704512, leisure=pitch sport=multi, 無名）。
+ */
+const MANUAL_FACILITIES: BuildingRow[] = [
+  {
+    id: 'suita_osm_491558076',
+    campusId: 'suita',
+    name: '吹田キャンパスグラウンド',
+    latitude: 34.815947,
+    longitude: 135.524039,
+  },
+  {
+    id: 'suita_osm_530704512',
+    campusId: 'suita',
+    name: '多目的ピッチ',
+    latitude: 34.820764,
+    longitude: 135.521583,
+  },
+];
+
 /** 全角英数字・全角スペースを半角化し、空白を整理する。 */
 function normalizeName(raw: string): string {
   const halfWidth = raw.replace(/[！-～]/g, (ch) =>
@@ -165,6 +192,14 @@ async function main() {
   // 保育園など給水機の対象外で、既存 building 行として登録済みのものを削除するための id。
   const deleteIds = new Set<string>();
 
+  // 手動施設を先に投入し、同名・同 id の OSM 要素は手動を優先してスキップする。
+  const manualIds = new Set<string>();
+  for (const f of MANUAL_FACILITIES) {
+    rows.push(f);
+    seen.add(`${f.campusId}::${f.name}`);
+    manualIds.add(f.id);
+  }
+
   for (const el of data.elements) {
     const center =
       el.center ?? (el.lat && el.lon ? { lat: el.lat, lon: el.lon } : null);
@@ -180,6 +215,9 @@ async function main() {
       el.type === 'way'
         ? `${campusId}_osm_${el.id}`
         : `${campusId}_osm_${el.type[0]}${el.id}`;
+
+    // 手動施設で先に投入済みの要素は OSM 側をスキップ（名前・座標は手動を優先）。
+    if (manualIds.has(id)) continue;
 
     // 保育園（childcare / kindergarten）は給水機の対象外。新規に入れないだけでなく、
     // 既存 building 行（過去 seed で登録済み）を削除対象にする。箕面は触らない。
