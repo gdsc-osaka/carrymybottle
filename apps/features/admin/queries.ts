@@ -1,4 +1,15 @@
-import { and, asc, count, desc, eq, inArray, isNull } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  gt,
+  inArray,
+  isNull,
+  or,
+  sql,
+} from 'drizzle-orm';
 import type { DB } from '@/lib/db/client';
 import {
   adminAuditEvents,
@@ -9,6 +20,7 @@ import {
   installationTargets,
   stationTemperatures,
   stations,
+  analyticsEvents,
 } from '@/lib/db/schema';
 
 export async function getAllStations(db: DB) {
@@ -173,4 +185,45 @@ export async function logAuditEvent(
       error,
     });
   }
+}
+
+export async function getQrAnalytics(db: DB, environment: string) {
+  const scanCount =
+    sql<number>`SUM(CASE WHEN ${analyticsEvents.eventName} = 'qr_code_scanned' THEN 1 ELSE 0 END)`.mapWith(
+      Number
+    );
+  const viewCount =
+    sql<number>`SUM(CASE WHEN ${analyticsEvents.eventName} = 'water_station_detail_viewed' THEN 1 ELSE 0 END)`.mapWith(
+      Number
+    );
+
+  return db
+    .select({
+      stationId: stations.id,
+      stationName: stations.name,
+      campusName: campuses.name,
+      buildingName: buildings.name,
+      scanCount,
+      viewCount,
+    })
+    .from(stations)
+    .leftJoin(campuses, eq(stations.campusId, campuses.id))
+    .leftJoin(buildings, eq(stations.buildingId, buildings.id))
+    .leftJoin(
+      analyticsEvents,
+      and(
+        eq(analyticsEvents.stationId, stations.id),
+        eq(analyticsEvents.environment, environment),
+        or(
+          eq(analyticsEvents.eventName, 'qr_code_scanned'),
+          and(
+            eq(analyticsEvents.eventName, 'water_station_detail_viewed'),
+            eq(analyticsEvents.source, 'qr')
+          )
+        )
+      )
+    )
+    .groupBy(stations.id, stations.name, campuses.name, buildings.name)
+    .having(or(gt(scanCount, 0), gt(viewCount, 0)))
+    .orderBy(desc(scanCount), desc(viewCount));
 }

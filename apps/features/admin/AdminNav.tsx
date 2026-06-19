@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   AlertTriangle,
+  BarChart,
   Droplets,
   LayoutDashboard,
   MapPin,
@@ -29,6 +30,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/admin/stations', label: '給水機', icon: Droplets },
   { href: '/admin/requests', label: '設置希望', icon: MapPin },
   { href: '/admin/contacts', label: '緊急連絡', icon: AlertTriangle },
+  { href: '/admin/analytics', label: '分析', icon: BarChart },
 ];
 
 export function AdminNav() {
