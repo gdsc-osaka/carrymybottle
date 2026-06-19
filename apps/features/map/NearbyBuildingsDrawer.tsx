@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Building2, CheckCircle2, MapPin, Vote } from 'lucide-react';
+import { ArrowLeft, Building2, CheckCircle2, MapPin, Vote } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,8 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Spinner } from '@/components/ui/spinner';
 import { voteInstallationRequestAction } from '@/features/requests/actions';
 import { formatDistance } from './voting';
@@ -30,9 +32,14 @@ interface Props {
 }
 
 /**
- * 投票モードで「ここで探す」を押したときに表示する、近接建物のボトムシート。
- * 各建物からその場で設置希望に投票できる（既存の voteInstallationRequestAction
- * を再利用：建物単位集約・7日クールダウン・vote-token Cookie・レート制限）。
+ * 投票モードで地図をタップしたときに表示する、近接建物のボトムシート。
+ * 建物の「投票」を押すとコメント入力ステップに切り替わり、コメント（任意）を
+ * 添えて投票できる（既存の voteInstallationRequestAction を再利用：建物単位集約・
+ * 7日クールダウン・vote-token Cookie・レート制限）。
+ *
+ * コメント入力は別ダイアログをネストせず、ドロワー内のステップ切替で実装する
+ * （vaul ドロワー内に Radix Dialog をネストすると外側クリック判定でドロワーが
+ * 閉じる競合を避けるため）。
  */
 export function NearbyBuildingsDrawer({
   open,
@@ -41,119 +48,196 @@ export function NearbyBuildingsDrawer({
   onVoted,
   votedBuildingIds,
 }: Props) {
-  const [submittingId, setSubmittingId] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  // コメント入力ステップの対象建物。null のときは一覧を表示する。
+  const [commentTarget, setCommentTarget] = useState<NearbyVoteBuilding | null>(
+    null
+  );
+  const [comment, setComment] = useState('');
 
-  async function handleVote(building: NearbyVoteBuilding) {
+  function openCommentStep(building: NearbyVoteBuilding) {
     // 設置済み・投票済みは投票不可（UI でも無効化しているが二重ガード）。
-    if (
-      submittingId ||
-      building.hasStation ||
-      votedBuildingIds.has(building.buildingId)
-    ) {
+    if (building.hasStation || votedBuildingIds.has(building.buildingId)) {
       return;
     }
-    setSubmittingId(building.buildingId);
+    setComment('');
+    setCommentTarget(building);
+  }
+
+  function backToList() {
+    if (submitting) return;
+    setCommentTarget(null);
+    setComment('');
+  }
+
+  async function handleVote() {
+    const building = commentTarget;
+    if (!building || submitting) {
+      return;
+    }
+    setSubmitting(true);
 
     const formData = new FormData();
     formData.set('campusId', building.campusId);
     formData.set('buildingId', building.buildingId);
+    if (comment.trim()) {
+      formData.set('comment', comment.trim());
+    }
 
     try {
       const result = await voteInstallationRequestAction(formData);
       if (result.success) {
         toast.success(`${building.buildingName} に投票しました`);
         onVoted(building.buildingId, result.data.voteCount);
+        setCommentTarget(null);
+        setComment('');
       } else {
         toast.error(result.error);
       }
     } catch {
       toast.error('投票に失敗しました。時間をおいて再試行してください。');
     } finally {
-      setSubmittingId(null);
+      setSubmitting(false);
     }
   }
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent>
-        <DrawerHeader>
-          <DrawerTitle className="flex items-center justify-center gap-2">
-            <MapPin className="size-4 text-[#0f897f]" aria-hidden="true" />
-            近くの建物に投票
-          </DrawerTitle>
-          <DrawerDescription>
-            設置してほしい建物を選んで投票しましょう
-          </DrawerDescription>
-        </DrawerHeader>
+        {commentTarget ? (
+          // コメント入力ステップ
+          <>
+            <DrawerHeader>
+              <DrawerTitle className="flex items-center justify-center gap-2">
+                <Vote className="size-4 text-[#0f897f]" aria-hidden="true" />
+                {commentTarget.buildingName} に投票
+              </DrawerTitle>
+              <DrawerDescription>
+                コメント（任意）を添えて投票できます
+              </DrawerDescription>
+            </DrawerHeader>
 
-        <div className="overflow-y-auto px-4 pb-6">
-          {candidates.length > 0 ? (
-            <ul className="flex flex-col gap-2">
-              {candidates.map((building) => {
-                const isSubmitting = submittingId === building.buildingId;
-                const isVoted = votedBuildingIds.has(building.buildingId);
-                return (
-                  <li
-                    key={building.buildingId}
-                    className="flex items-center gap-3 rounded-xl border border-[#0f897f]/15 bg-white p-3 shadow-sm"
-                  >
-                    <span className="flex min-w-0 flex-1 flex-col gap-1">
-                      <span className="flex items-center gap-2 font-medium">
-                        <Building2
-                          className="size-4 shrink-0 text-muted-foreground"
-                          aria-hidden="true"
-                        />
-                        <span className="truncate">
-                          {building.buildingName}
+            <div className="flex flex-col gap-3 px-4 pb-6">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="map-vote-comment">コメント（任意）</Label>
+                <Textarea
+                  id="map-vote-comment"
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  maxLength={1000}
+                  rows={3}
+                  placeholder="例: 階数や設置してほしい場所の希望など"
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 flex-1 sm:h-10"
+                  onClick={backToList}
+                  disabled={submitting}
+                >
+                  <ArrowLeft className="size-4" aria-hidden="true" />
+                  戻る
+                </Button>
+                <Button
+                  type="button"
+                  className="h-11 flex-1 bg-gradient-to-r from-[#0f897f] to-[#1f6fc4] text-white shadow-sm hover:opacity-90 sm:h-10"
+                  onClick={handleVote}
+                  disabled={submitting}
+                >
+                  {submitting ? (
+                    <Spinner className="size-4" />
+                  ) : (
+                    <Vote className="size-4" aria-hidden="true" />
+                  )}
+                  {submitting ? '投票中...' : '投票する'}
+                </Button>
+              </div>
+            </div>
+          </>
+        ) : (
+          // 近接建物の一覧ステップ
+          <>
+            <DrawerHeader>
+              <DrawerTitle className="flex items-center justify-center gap-2">
+                <MapPin className="size-4 text-[#0f897f]" aria-hidden="true" />
+                近くの建物に投票
+              </DrawerTitle>
+              <DrawerDescription>
+                設置してほしい建物を選んで投票しましょう
+              </DrawerDescription>
+            </DrawerHeader>
+
+            <div className="overflow-y-auto px-4 pb-6">
+              {candidates.length > 0 ? (
+                <ul className="flex flex-col gap-2">
+                  {candidates.map((building) => {
+                    const isVoted = votedBuildingIds.has(building.buildingId);
+                    return (
+                      <li
+                        key={building.buildingId}
+                        className="flex items-center gap-3 rounded-xl border border-[#0f897f]/15 bg-white p-3 shadow-sm"
+                      >
+                        <span className="flex min-w-0 flex-1 flex-col gap-1">
+                          <span className="flex items-center gap-2 font-medium">
+                            <Building2
+                              className="size-4 shrink-0 text-muted-foreground"
+                              aria-hidden="true"
+                            />
+                            <span className="truncate">
+                              {building.buildingName}
+                            </span>
+                          </span>
+                          <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <span>
+                              {formatDistance(building.distanceMeters)}
+                            </span>
+                            <Badge variant="outline" className="shrink-0">
+                              {building.voteCount}票
+                            </Badge>
+                          </span>
                         </span>
-                      </span>
-                      <span className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span>{formatDistance(building.distanceMeters)}</span>
-                        <Badge variant="outline" className="shrink-0">
-                          {building.voteCount}票
-                        </Badge>
-                      </span>
-                    </span>
-                    {building.hasStation ? (
-                      // 給水機が設置済みの建物は設置希望の対象外。
-                      <Badge
-                        variant="secondary"
-                        className="h-9 shrink-0 rounded-md px-3"
-                      >
-                        設置済み
-                      </Badge>
-                    ) : (
-                      <Button
-                        type="button"
-                        size="sm"
-                        className="h-10 shrink-0 bg-gradient-to-r from-[#0f897f] to-[#1f6fc4] text-white shadow-sm hover:opacity-90 sm:h-9"
-                        disabled={isSubmitting || isVoted}
-                        onClick={() => handleVote(building)}
-                      >
-                        {isSubmitting ? (
-                          <Spinner className="size-4" />
-                        ) : isVoted ? (
-                          <CheckCircle2 className="size-4" aria-hidden="true" />
+                        {building.hasStation ? (
+                          // 給水機が設置済みの建物は設置希望の対象外。
+                          <Badge
+                            variant="secondary"
+                            className="h-9 shrink-0 rounded-md px-3"
+                          >
+                            設置済み
+                          </Badge>
                         ) : (
-                          <Vote className="size-4" aria-hidden="true" />
+                          <Button
+                            type="button"
+                            size="sm"
+                            className="h-10 shrink-0 bg-gradient-to-r from-[#0f897f] to-[#1f6fc4] text-white shadow-sm hover:opacity-90 sm:h-9"
+                            disabled={isVoted}
+                            onClick={() => openCommentStep(building)}
+                          >
+                            {isVoted ? (
+                              <CheckCircle2
+                                className="size-4"
+                                aria-hidden="true"
+                              />
+                            ) : (
+                              <Vote className="size-4" aria-hidden="true" />
+                            )}
+                            {isVoted ? '投票済み' : '投票'}
+                          </Button>
                         )}
-                        {isSubmitting
-                          ? '投票中...'
-                          : isVoted
-                            ? '投票済み'
-                            : '投票'}
-                      </Button>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          ) : (
-            <p className="py-8 text-center text-sm text-muted-foreground">
-              この地点の近くに登録された建物がありません。地図を動かして別の場所を試してください。
-            </p>
-          )}
-        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p className="py-8 text-center text-sm text-muted-foreground">
+                  この地点の近くに登録された建物がありません。地図を動かして別の場所を試してください。
+                </p>
+              )}
+            </div>
+          </>
+        )}
       </DrawerContent>
     </Drawer>
   );

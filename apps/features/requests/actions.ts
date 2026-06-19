@@ -11,7 +11,7 @@ import { saveInstallationComment, voteForInstallationTarget } from './queries';
 import {
   type SaveInstallationCommentInput,
   saveInstallationCommentSchema,
-  voteInstallationRequestSchema,
+  voteWithCommentSchema,
 } from './validation';
 import type {
   SaveInstallationCommentError,
@@ -33,6 +33,8 @@ function extractVoteFormData(formData: FormData) {
   return {
     campusId: formData.get('campusId'),
     buildingId: formData.get('buildingId'),
+    // 任意コメント。未入力(null)は undefined に寄せて optional 検証に通す。
+    comment: formData.get('comment') ?? undefined,
   };
 }
 
@@ -62,9 +64,7 @@ export async function voteInstallationRequestAction(
     };
   }
 
-  const parsed = voteInstallationRequestSchema.safeParse(
-    extractVoteFormData(formData)
-  );
+  const parsed = voteWithCommentSchema.safeParse(extractVoteFormData(formData));
 
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0].message };
@@ -99,6 +99,27 @@ export async function voteInstallationRequestAction(
     campusId: voteResult.value.campusId,
     buildingId: voteResult.value.buildingId,
   });
+
+  // コメントが入力されていれば投票成功後に保存する。コメントは任意の付帯情報で、
+  // 保存失敗(クールダウン等)は投票の成否に影響させない(ベストエフォート)。
+  if (parsed.data.comment) {
+    const commentResult = await saveInstallationComment(
+      db,
+      {
+        campusId: parsed.data.campusId,
+        buildingId: parsed.data.buildingId,
+        comment: parsed.data.comment,
+      },
+      tokenHashResult.value
+    );
+    if (commentResult.isOk()) {
+      await trackEvent({
+        eventName: 'installation_request_commented',
+        campusId: commentResult.value.campusId,
+        buildingId: commentResult.value.buildingId,
+      });
+    }
+  }
 
   revalidatePath('/requests');
   revalidatePath('/admin/requests');
