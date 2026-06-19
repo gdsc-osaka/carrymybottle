@@ -30,6 +30,10 @@ export const buildings = sqliteTable(
       .references(() => campuses.id),
     name: text('name').notNull(),
     sortOrder: integer('sort_order').notNull().default(0),
+    // 地図上の絶対座標（緯度・経度）。地図タップ地点の近接建物抽出（設置希望投票）
+    // に使う。座標未設定の建物は近接候補から除外される。
+    latitude: real('latitude'),
+    longitude: real('longitude'),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
   },

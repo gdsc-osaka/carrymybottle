@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "6f723188-d269-4bd2-81bf-bc4504e89d83",
-  "prevId": "91f2b014-a1f2-4681-933f-a349958ae168",
+  "id": "5412a48d-df6a-4c7e-b52a-35cefcf22cad",
+  "prevId": "6f723188-d269-4bd2-81bf-bc4504e89d83",
   "tables": {
     "admin_audit_events": {
       "name": "admin_audit_events",
@@ -795,6 +795,13 @@
         },
         "short_link_url": {
           "name": "short_link_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "image_key": {
+          "name": "image_key",
           "type": "text",
           "primaryKey": false,
           "notNull": false,

@@ -7,6 +7,7 @@ import {
   BarChart,
   Droplets,
   LayoutDashboard,
+  Mail,
   MapPin,
   type LucideIcon,
 } from 'lucide-react';
@@ -30,6 +31,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/admin/stations', label: '給水機', icon: Droplets },
   { href: '/admin/requests', label: '設置希望', icon: MapPin },
   { href: '/admin/contacts', label: '緊急連絡', icon: AlertTriangle },
+  { href: '/admin/inquiries', label: 'お問い合わせ', icon: Mail },
   { href: '/admin/analytics', label: '分析', icon: BarChart },
 ];
 
