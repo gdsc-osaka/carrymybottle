@@ -23,7 +23,7 @@ const STATUS_LABEL: Record<StationWithRelations['status'], string> = {
  */
 const TEMPERATURE_FILL = {
   cold: '#38bdf8', // sky-400（水色）
-  normal: '#22c55e', // green-500（緑）
+  normal: '#14FF31', // 鮮やかな緑
 } as const;
 
 /** `cold` / `normal` のどちらにも該当しない場合（`hot` のみ・水温情報なし）の塗り色。 */
