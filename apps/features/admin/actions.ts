@@ -130,31 +130,40 @@ export async function createStationAction(
 
   // D1 は対話的トランザクション(BEGIN/COMMIT)を持たないため、複数文の
   // アトミック実行は db.batch() を使う。
-  await db.batch([
-    db.insert(stations).values({
-      id,
-      campusId: input.campusId,
-      buildingId: input.buildingId,
-      name: input.name,
-      description: input.description,
-      latitude: input.latitude,
-      longitude: input.longitude,
-      status: input.status,
-      isPublic: input.isPublic,
-      shortLinkId: input.shortLinkId,
-      shortLinkUrl: input.shortLinkUrl || null,
-      imageKey,
-      createdAt: now,
-      updatedAt: now,
-    }),
-    db.insert(stationTemperatures).values(
-      input.temperatures.map((t) => ({
-        stationId: id,
-        temperatureType: t,
+  try {
+    await db.batch([
+      db.insert(stations).values({
+        id,
+        campusId: input.campusId,
+        buildingId: input.buildingId,
+        name: input.name,
+        description: input.description,
+        latitude: input.latitude,
+        longitude: input.longitude,
+        status: input.status,
+        isPublic: input.isPublic,
+        shortLinkId: input.shortLinkId,
+        shortLinkUrl: input.shortLinkUrl || null,
+        imageKey,
         createdAt: now,
-      }))
-    ),
-  ]);
+        updatedAt: now,
+      }),
+      db.insert(stationTemperatures).values(
+        input.temperatures.map((t) => ({
+          stationId: id,
+          temperatureType: t,
+          createdAt: now,
+        }))
+      ),
+    ]);
+  } catch (e) {
+    // insert 失敗時はアップロード済みオブジェクトを補償削除し、孤児を残さない
+    // （update/delete と対称にする）。削除失敗は握りつぶし、元の例外を伝播する。
+    if (imageKey) {
+      await deleteStationImage(env.STATION_IMAGES, imageKey).catch(() => {});
+    }
+    throw e;
+  }
   await logAuditEvent(db, 'create', 'station', id);
   revalidatePath('/admin/stations');
   return { success: true, data: undefined };
