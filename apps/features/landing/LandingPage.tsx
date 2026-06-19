@@ -633,18 +633,18 @@ export function LandingPage() {
             <div className="mb-20 grid grid-cols-1 gap-4 md:grid-cols-3">
               {[
                 {
-                  alt: '給水する学生',
-                  src: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCsPp_eFu7p-3qhZr6Gz_Tmp7OAgeYVOeenO0bVhqcdv-UO7-Gi51hkNRHas_z7vUIxgFNGgUGrR2a8wyFetrKg2wA3ni9jFKeUz7PYcZ4Yj6ixc85CX7d4g0dnwqB2y98uwwr-g2qqZeY1iCEoLL3bDNp5FfpKTjQzN5afLyRTO6l39ZNOpFcRVaNCzxgIQd4eM_W71SP884UMgXyJwWiz909Yft2j-5l-T1rOQgO_C6QytE0iR8RdvNf_fycBDjgWFM-AoyeL3xA',
+                  alt: 'UOsaka マイボトルと給水機（ウォータースタンド）',
+                  src: '/images/gallery-dispenser.webp',
                   offset: false,
                 },
                 {
-                  alt: '大阪大学のキャンパス',
-                  src: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBi3iWDIZYnPv0jXPqfT7jFCUvqp6KGsqOWz0BZrao0Ksy1lEumVaAEkXTZCyU_UOjlrlEjOoyta_HKXRsAIgwgvU3ayhG_4qlwdA4gJevctAVJq6TdgpAU_IBOe1YSqGG65BZRANC5nNN130LsNNvK0_pVS8ZxiCLuAMokpZRGtJLa7z_RCx_dTOHxbMT4Jrz3m8wHlu7Rprexsi9tBz0uR5XnbQIoHzJuJ3IeN3Fcdc6NawAJU8nVp9Psgcn7eKd045KgSG9V1DQ',
+                  alt: '大阪大学のキャンパスに並ぶ UOsaka マイボトル',
+                  src: '/images/gallery-campus.webp',
                   offset: true,
                 },
                 {
-                  alt: '冷たい水',
-                  src: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD6sWDCu8qpDvUaXabnuDL2WabnWBGoO8Vs2BX0CrKqfMCxzNzseevvjQdKDOO6z2rcw15NoJINU0EftkGGe7EhXbL3rdhl7jAgIzETfuvBeB88bUOhCHbNPD8adPvFxA5XQp9Z_vrG1UhewF7xD7U7SD5FE5tJTcFIFXh_dTZcDKiHrMZoRN9Tm0Ay5dNQ-G0lYDW3WLix_WUXeCCYKuOTanZOrlAvJYB8LSUq8j_8-CvtiAPL3_HMpS2xqCJ7iQZ4nvpV7ytEA9k',
+                  alt: '給水機でマイボトルに給水する様子',
+                  src: '/images/gallery-filling.webp',
                   offset: false,
                 },
               ].map((img, i) => (
@@ -655,11 +655,18 @@ export function LandingPage() {
                   className={img.offset ? 'md:translate-y-8' : undefined}
                 >
                   <div className="group aspect-square overflow-hidden rounded-[1.5rem] shadow-md">
+                    {/* 自前ホストの WebP を配信。Cloudflare Workers(OpenNext) 上で
+                        next/image の最適化エンドポイントに依存しないため、ヒーロー
+                        画像と同様にプレーンな img を使う。 */}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       alt={img.alt}
                       className="h-full w-full transform object-cover transition-transform duration-700 group-hover:scale-110"
                       src={img.src}
+                      width={1080}
+                      height={1080}
+                      loading="lazy"
+                      decoding="async"
                     />
                   </div>
                 </Reveal>
