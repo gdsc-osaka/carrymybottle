@@ -1,11 +1,16 @@
 'use server';
 
 import { getCloudflareContext } from '@opennextjs/cloudflare';
-import { eq } from 'drizzle-orm';
+import { count, eq } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { getDb } from '@/lib/db/client';
-import { buildings, stationTemperatures, stations } from '@/lib/db/schema';
+import {
+  buildings,
+  stationTemperatures,
+  stations,
+  installationTargets,
+} from '@/lib/db/schema';
 import { verifyPassword } from '@/lib/auth/password';
 import {
   createSession,
@@ -332,6 +337,43 @@ export async function updateBuildingAction(
   await logAuditEvent(db, 'update', 'building', buildingId);
   revalidatePath('/admin/buildings');
   // 地図の近接抽出は建物座標を使うため、座標更新を /map にも反映させる。
+  revalidatePath('/map');
+  return { success: true, data: undefined };
+}
+
+// 建物削除（物理削除）。給水機・設置希望から参照されている場合は不整合を避けるため
+// 削除を拒否する（D1 の FK 強制に依存せず、明示的に依存をチェックする）。
+export async function deleteBuildingAction(
+  buildingId: string
+): Promise<ActionResult> {
+  await requireAdminSession();
+  const env = await getEnv();
+  const db = getDb(env.DB);
+
+  const [stationRows, targetRows] = await Promise.all([
+    db
+      .select({ count: count() })
+      .from(stations)
+      .where(eq(stations.buildingId, buildingId)),
+    db
+      .select({ count: count() })
+      .from(installationTargets)
+      .where(eq(installationTargets.buildingId, buildingId)),
+  ]);
+  const dependentStations = stationRows[0].count;
+  const dependentTargets = targetRows[0].count;
+  if (dependentStations > 0 || dependentTargets > 0) {
+    return {
+      success: false,
+      error: `この建物は給水機 ${dependentStations} 件・設置希望 ${dependentTargets} 件から参照されているため削除できません。先にそれらを削除してください。`,
+    };
+  }
+
+  await db.delete(buildings).where(eq(buildings.id, buildingId));
+
+  await logAuditEvent(db, 'delete', 'building', buildingId);
+  revalidatePath('/admin/buildings');
+  // 地図の近接抽出は建物座標を使うため、削除を /map にも反映させる。
   revalidatePath('/map');
   return { success: true, data: undefined };
 }
