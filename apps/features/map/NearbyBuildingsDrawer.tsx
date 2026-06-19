@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Building2, MapPin, Vote } from 'lucide-react';
+import { Building2, CheckCircle2, MapPin, Vote } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -25,6 +25,8 @@ interface Props {
   candidates: NearbyVoteBuilding[];
   /** 投票成功時に親へ最新の投票数を通知し、表示を更新させる。 */
   onVoted: (buildingId: string, voteCount: number) => void;
+  /** この操作で投票済みの建物ID。「投票済み」表示にして再投票を抑止する。 */
+  votedBuildingIds: Set<string>;
 }
 
 /**
@@ -37,11 +39,19 @@ export function NearbyBuildingsDrawer({
   onOpenChange,
   candidates,
   onVoted,
+  votedBuildingIds,
 }: Props) {
   const [submittingId, setSubmittingId] = useState<string | null>(null);
 
   async function handleVote(building: NearbyVoteBuilding) {
-    if (submittingId) return;
+    // 設置済み・投票済みは投票不可（UI でも無効化しているが二重ガード）。
+    if (
+      submittingId ||
+      building.hasStation ||
+      votedBuildingIds.has(building.buildingId)
+    ) {
+      return;
+    }
     setSubmittingId(building.buildingId);
 
     const formData = new FormData();
@@ -81,6 +91,7 @@ export function NearbyBuildingsDrawer({
             <ul className="flex flex-col gap-2">
               {candidates.map((building) => {
                 const isSubmitting = submittingId === building.buildingId;
+                const isVoted = votedBuildingIds.has(building.buildingId);
                 return (
                   <li
                     key={building.buildingId}
@@ -103,20 +114,36 @@ export function NearbyBuildingsDrawer({
                         </Badge>
                       </span>
                     </span>
-                    <Button
-                      type="button"
-                      size="sm"
-                      className="h-10 shrink-0 bg-gradient-to-r from-[#0f897f] to-[#1f6fc4] text-white shadow-sm hover:opacity-90 sm:h-9"
-                      disabled={isSubmitting}
-                      onClick={() => handleVote(building)}
-                    >
-                      {isSubmitting ? (
-                        <Spinner className="size-4" />
-                      ) : (
-                        <Vote className="size-4" aria-hidden="true" />
-                      )}
-                      {isSubmitting ? '投票中...' : '投票'}
-                    </Button>
+                    {building.hasStation ? (
+                      // 給水機が設置済みの建物は設置希望の対象外。
+                      <Badge
+                        variant="secondary"
+                        className="h-9 shrink-0 rounded-md px-3"
+                      >
+                        設置済み
+                      </Badge>
+                    ) : (
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="h-10 shrink-0 bg-gradient-to-r from-[#0f897f] to-[#1f6fc4] text-white shadow-sm hover:opacity-90 sm:h-9"
+                        disabled={isSubmitting || isVoted}
+                        onClick={() => handleVote(building)}
+                      >
+                        {isSubmitting ? (
+                          <Spinner className="size-4" />
+                        ) : isVoted ? (
+                          <CheckCircle2 className="size-4" aria-hidden="true" />
+                        ) : (
+                          <Vote className="size-4" aria-hidden="true" />
+                        )}
+                        {isSubmitting
+                          ? '投票中...'
+                          : isVoted
+                            ? '投票済み'
+                            : '投票'}
+                      </Button>
+                    )}
                   </li>
                 );
               })}

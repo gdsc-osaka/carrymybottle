@@ -41,6 +41,8 @@ export interface MapVoteBuilding {
   latitude: number;
   longitude: number;
   voteCount: number;
+  /** その建物に給水機が登録済みか。設置済みは設置希望の対象外（投票不可）。 */
+  hasStation: boolean;
 }
 
 /**
@@ -75,6 +77,17 @@ export async function getMapVoteBuildings(
     .where(eq(buildings.campusId, campusId))
     .orderBy(asc(buildings.sortOrder), asc(buildings.name));
 
+  // 給水機が登録済みの建物ID集合。設置済みの建物は設置希望の対象外にするため、
+  // 建物に対する「設置済み」フラグを付与する（公開/非公開・稼働状態は問わず、
+  // レコードが存在すれば設置済みとみなす）。
+  const stationBuildingRows = await db
+    .selectDistinct({ buildingId: stations.buildingId })
+    .from(stations)
+    .where(eq(stations.campusId, campusId));
+  const buildingIdsWithStation = new Set(
+    stationBuildingRows.map((r) => r.buildingId)
+  );
+
   return rows.flatMap((row) =>
     row.latitude != null && row.longitude != null
       ? [
@@ -85,6 +98,7 @@ export async function getMapVoteBuildings(
             latitude: row.latitude,
             longitude: row.longitude,
             voteCount: row.voteCount ?? 0,
+            hasStation: buildingIdsWithStation.has(row.buildingId),
           },
         ]
       : []
