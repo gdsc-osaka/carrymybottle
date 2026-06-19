@@ -171,7 +171,7 @@ function WaterDropEmblem({ className }: { className?: string }) {
   );
 }
 
-const HERO_IMAGE = '/images/hero-water.png';
+const HERO_IMAGE = '/images/hero-water.webp';
 
 function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
