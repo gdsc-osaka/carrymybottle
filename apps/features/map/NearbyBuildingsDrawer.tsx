@@ -55,6 +55,16 @@ export function NearbyBuildingsDrawer({
   );
   const [comment, setComment] = useState('');
 
+  // ドロワーの開閉が切り替わるたびにステップを一覧へ戻す。これにより、コメント入力
+  // 中に閉じてからピンを立て直しても、新しい地点の候補一覧から再開できる
+  // （React 推奨の「前回値と比較してレンダー中に state を補正する」パターン）。
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (prevOpen !== open) {
+    setPrevOpen(open);
+    setCommentTarget(null);
+    setComment('');
+  }
+
   function openCommentStep(building: NearbyVoteBuilding) {
     // 設置済み・投票済みは投票不可（UI でも無効化しているが二重ガード）。
     if (building.hasStation || votedBuildingIds.has(building.buildingId)) {
