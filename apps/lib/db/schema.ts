@@ -65,6 +65,10 @@ export const stations = sqliteTable(
     // 給水機写真の R2 オブジェクトキー。未登録時は null（フォールバック表示）。
     // アップロード/差し替え/削除は管理画面の Server Action で行う（#190）。
     imageKey: text('image_key'),
+    // 写真の寸法（px）。詳細ページで aspect-ratio 枠を確保して画像ロード時の
+    // レイアウトシフト（CLS）を防ぐために使う。未登録時は null。
+    imageWidth: integer('image_width'),
+    imageHeight: integer('image_height'),
     isPublic: integer('is_public', { mode: 'boolean' }).notNull().default(true),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
