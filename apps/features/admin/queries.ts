@@ -4,6 +4,7 @@ import {
   count,
   desc,
   eq,
+  gt,
   inArray,
   isNull,
   or,
@@ -223,8 +224,6 @@ export async function getQrAnalytics(db: DB, environment: string) {
       )
     )
     .groupBy(stations.id, stations.name, campuses.name, buildings.name)
-    .having(
-      sql`SUM(CASE WHEN ${analyticsEvents.eventName} = 'qr_code_scanned' THEN 1 ELSE 0 END) > 0 OR SUM(CASE WHEN ${analyticsEvents.eventName} = 'water_station_detail_viewed' THEN 1 ELSE 0 END) > 0`
-    )
+    .having(or(gt(scanCount, 0), gt(viewCount, 0)))
     .orderBy(desc(scanCount), desc(viewCount));
 }
