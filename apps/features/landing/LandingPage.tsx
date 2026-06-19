@@ -29,6 +29,7 @@ import {
   ScrollText,
   Snowflake,
   Thermometer,
+  X,
   Zap,
 } from 'lucide-react';
 
@@ -71,13 +72,15 @@ function Reveal({
   delay?: number;
   y?: number;
 }) {
+  const reduce = useReducedMotion();
   return (
     <motion.div
       className={className}
-      initial={{ opacity: 0, y }}
-      whileInView={{ opacity: 1, y: 0 }}
+      // prefers-reduced-motion 時はスクロール演出を無効化し、最終状態で即表示する。
+      initial={reduce ? false : { opacity: 0, y }}
+      whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.25 }}
-      transition={{ duration: 0.7, ease: EASE_OUT, delay }}
+      transition={reduce ? undefined : { duration: 0.7, ease: EASE_OUT, delay }}
     >
       {children}
     </motion.div>
@@ -350,14 +353,15 @@ function Hero() {
 
 export function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const reduce = useReducedMotion();
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#f7f9fb] font-[family-name:var(--font-inter)] text-[#191c1e] antialiased">
       {/* TopAppBar */}
       <motion.header
-        initial={{ y: -100, opacity: 0 }}
+        initial={reduce ? false : { y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.6, ease: EASE_OUT }}
+        transition={reduce ? undefined : { duration: 0.6, ease: EASE_OUT }}
         className="fixed top-0 z-50 h-20 w-full border-b border-white/20 bg-white/70 shadow-sm backdrop-blur-md"
       >
         <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-5 md:px-16">
@@ -399,20 +403,26 @@ export function LandingPage() {
           </nav>
           <button
             type="button"
-            aria-label="メニューを開く"
+            aria-label={menuOpen ? 'メニューを閉じる' : 'メニューを開く'}
             aria-expanded={menuOpen}
+            aria-controls="mobile-menu"
             className="text-[#0f897f] md:hidden"
             onClick={() => setMenuOpen((v) => !v)}
           >
-            <Menu className="h-8 w-8" />
+            {menuOpen ? (
+              <X className="h-8 w-8" />
+            ) : (
+              <Menu className="h-8 w-8" />
+            )}
           </button>
         </div>
         {/* Mobile menu */}
         {menuOpen && (
           <motion.nav
-            initial={{ opacity: 0, y: -10 }}
+            id="mobile-menu"
+            initial={reduce ? false : { opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25, ease: EASE_OUT }}
+            transition={reduce ? undefined : { duration: 0.25, ease: EASE_OUT }}
             className="border-b border-white/20 bg-white/90 px-5 py-4 backdrop-blur-md md:hidden"
           >
             <ul className="flex flex-col gap-4">
