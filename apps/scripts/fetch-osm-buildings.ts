@@ -84,6 +84,9 @@ way(${SUITA_WAY}); map_to_area->.suitaA;
 const NAME_OVERRIDES: Record<number, string> = {
   // https://www.openstreetmap.org/way/378258112
   378258112: '工学部/工学研究科 A13棟',
+  // https://www.openstreetmap.org/way/311504482
+  // 豊中の体育館は第二体育館と区別するため管理画面で「第一体育館」に改名済み。
+  311504482: '第一体育館',
 };
 
 /**
