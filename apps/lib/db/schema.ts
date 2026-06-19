@@ -62,6 +62,9 @@ export const stations = sqliteTable(
       .default('available'),
     shortLinkId: text('short_link_id'),
     shortLinkUrl: text('short_link_url'),
+    // 給水機写真の R2 オブジェクトキー。未登録時は null（フォールバック表示）。
+    // アップロード/差し替え/削除は管理画面の Server Action で行う（#190）。
+    imageKey: text('image_key'),
     isPublic: integer('is_public', { mode: 'boolean' }).notNull().default(true),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),

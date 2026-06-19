@@ -57,6 +57,13 @@
       "when": 1781863335834,
       "tag": "0007_long_vargas",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1781867423567,
+      "tag": "0008_yielding_gravity",
+      "breakpoints": true
     }
   ]
 }
