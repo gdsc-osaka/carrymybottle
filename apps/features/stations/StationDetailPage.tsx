@@ -115,7 +115,9 @@ export async function StationDetailPage({
               <img
                 src={imageUrl}
                 alt={`${station.name}の写真`}
-                className="mb-5 aspect-video w-full rounded-2xl border border-[#0f897f]/10 object-cover lg:mb-6"
+                // 縦幅は固定せず、画像本来の縦横比のまま全体を表示する（上下の
+                // トリミングを避ける）。横幅はカードに合わせ、高さは自動。
+                className="mb-5 h-auto w-full rounded-2xl border border-[#0f897f]/10 lg:mb-6"
               />
             ) : null}
 
