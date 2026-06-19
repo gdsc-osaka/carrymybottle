@@ -31,8 +31,36 @@ export const stationSchema = z.object({
     .or(z.literal('')),
 });
 
+/**
+ * 建物編集スキーマ。緯度・経度は nullable（座標未設定の建物は地図の近接候補から
+ * 除外される仕様）だが、設定する場合は緯度・経度を必ず両方そろえる。
+ */
+export const buildingSchema = z
+  .object({
+    name: z.string().min(1, '建物名を入力してください'),
+    sortOrder: z
+      .number({ message: '並び順を入力してください' })
+      .int('並び順は整数で入力してください')
+      .min(0, '並び順は0以上で入力してください'),
+    latitude: z
+      .number()
+      .min(-90, '緯度は -90〜90 の範囲で入力してください')
+      .max(90, '緯度は -90〜90 の範囲で入力してください')
+      .nullable(),
+    longitude: z
+      .number()
+      .min(-180, '経度は -180〜180 の範囲で入力してください')
+      .max(180, '経度は -180〜180 の範囲で入力してください')
+      .nullable(),
+  })
+  .refine((v) => (v.latitude == null) === (v.longitude == null), {
+    message: '緯度と経度は両方入力するか、両方空にしてください',
+    path: ['latitude'],
+  });
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type StationInput = z.infer<typeof stationSchema>;
+export type BuildingInput = z.infer<typeof buildingSchema>;
 
 export const STATUS_LABELS: Record<string, string> = {
   available: '利用可能',
