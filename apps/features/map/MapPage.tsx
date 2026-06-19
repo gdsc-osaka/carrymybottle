@@ -3,7 +3,7 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { getDb } from '@/lib/db/client';
 import { trackEvent } from '@/lib/analytics/events';
 import { isPrefetchRequest } from '@/lib/analytics/isPrefetchRequest';
-import { getStationsByCampus } from './queries';
+import { getMapVoteBuildings, getStationsByCampus } from './queries';
 import { MapClient } from './MapClient';
 
 export async function MapPage({ campusId }: { campusId: string }) {
@@ -12,12 +12,13 @@ export async function MapPage({ campusId }: { campusId: string }) {
 
   const isPrefetch = await isPrefetchRequest();
 
-  const [stations] = await Promise.all([
+  const [stations, voteBuildings] = await Promise.all([
     getStationsByCampus(db, campusId),
+    getMapVoteBuildings(db, campusId),
     isPrefetch
       ? Promise.resolve()
       : trackEvent({ eventName: 'map_viewed', campusId }),
   ]);
 
-  return <MapClient stations={stations} />;
+  return <MapClient stations={stations} voteBuildings={voteBuildings} />;
 }

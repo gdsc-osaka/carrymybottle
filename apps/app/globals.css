@@ -304,3 +304,29 @@
     height: 44px;
   }
 }
+
+/*
+ * 設置希望の投票モード切替ボタン。現在地ボタンの下(同じ top-right グループ)に
+ * 並べ、見た目は他の MapLibre コントロールに合わせる。アクティブ時は青系で
+ * 塗り、押下状態を明示する。
+ */
+.cmb-vote-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #23566e;
+}
+
+.cmb-vote-toggle svg {
+  width: 18px;
+  height: 18px;
+}
+
+.cmb-vote-toggle-active {
+  background: linear-gradient(135deg, #0f897f, #1f6fc4);
+  color: #ffffff;
+}
+
+.cmb-vote-toggle-active:hover {
+  background: linear-gradient(135deg, #0d7a71, #1c63b0);
+}
