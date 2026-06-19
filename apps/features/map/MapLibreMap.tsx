@@ -14,7 +14,7 @@ import {
   NearbyBuildingsDrawer,
   type NearbyVoteBuilding,
 } from './NearbyBuildingsDrawer';
-import { formatDistance, nearestBuildings } from './voting';
+import { nearestBuildings } from './voting';
 import type { MapVoteBuilding } from './queries';
 import type { StationWithRelations } from './types';
 
@@ -450,8 +450,10 @@ export default function MapLibreMap({
       {voteMode && (
         <>
           <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+            {/* 照準の中心を地図コンテナの幾何中心(= map.getCenter() がサンプルする
+                位置)に正確に合わせる。Crosshair は上下対称なので平行移動しない。 */}
             <Crosshair
-              className="size-10 -translate-y-1 text-[#1f6fc4] drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)]"
+              className="size-10 text-[#1f6fc4] drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)]"
               aria-hidden="true"
             />
           </div>
@@ -492,7 +494,6 @@ export default function MapLibreMap({
         onOpenChange={setSheetOpen}
         candidates={candidates}
         onVoted={handleVoted}
-        formatDistance={formatDistance}
       />
 
       {/* 地図タイルとピンの両方が揃うまでオーバーレイで覆う。 */}

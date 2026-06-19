@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/drawer';
 import { Spinner } from '@/components/ui/spinner';
 import { voteInstallationRequestAction } from '@/features/requests/actions';
+import { formatDistance } from './voting';
 import type { MapVoteBuilding } from './queries';
 
 export type NearbyVoteBuilding = MapVoteBuilding & { distanceMeters: number };
@@ -24,7 +25,6 @@ interface Props {
   candidates: NearbyVoteBuilding[];
   /** 投票成功時に親へ最新の投票数を通知し、表示を更新させる。 */
   onVoted: (buildingId: string, voteCount: number) => void;
-  formatDistance: (meters: number) => string;
 }
 
 /**
@@ -37,7 +37,6 @@ export function NearbyBuildingsDrawer({
   onOpenChange,
   candidates,
   onVoted,
-  formatDistance,
 }: Props) {
   const [submittingId, setSubmittingId] = useState<string | null>(null);
 
