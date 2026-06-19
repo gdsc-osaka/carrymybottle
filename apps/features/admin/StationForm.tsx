@@ -1,11 +1,12 @@
 'use client';
 
-import { useActionState, useState, useCallback } from 'react';
+import { useActionState, useState, useCallback, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { stationImageUrl } from '@/lib/storage/station-images';
 import {
   Select,
   SelectContent,
@@ -28,6 +29,8 @@ interface Props {
   campuses: Campus[];
   buildings: Building[];
   station?: StationWithRelations;
+  /** 画像の公開配信ベースURL（既存画像プレビュー用）。 */
+  imageBaseUrl?: string;
   onSuccess?: () => void;
 }
 
@@ -35,9 +38,28 @@ export function StationForm({
   campuses,
   buildings,
   station,
+  imageBaseUrl,
   onSuccess,
 }: Props) {
   const isEdit = !!station;
+
+  const existingImageUrl = stationImageUrl(imageBaseUrl, station?.imageKey);
+  const [removeImage, setRemoveImage] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  // 選択中ファイルの object URL はアンマウント時に解放する（リーク防止）。
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
+
+  function handleImageChange(file: File | null) {
+    // 直前のプレビューURLを解放してから新しいものに差し替える。
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(file ? URL.createObjectURL(file) : null);
+    if (file) setRemoveImage(false);
+  }
 
   const [campusId, setCampusId] = useState(station?.campusId ?? '');
   const [buildingId, setBuildingId] = useState(station?.buildingId ?? '');
@@ -62,6 +84,7 @@ export function StationForm({
     async (_prev: { error?: string } | null, formData: FormData) => {
       formData.set('latitude', latitude == null ? '' : String(latitude));
       formData.set('longitude', longitude == null ? '' : String(longitude));
+      formData.set('removeImage', String(removeImage));
       temperatures.forEach((t) => formData.append('temperatures', t));
 
       const result = isEdit
@@ -185,6 +208,63 @@ export function StationForm({
               defaultValue={station?.description ?? ''}
               rows={2}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="image">画像</Label>
+
+            {/* 新規選択のプレビュー（優先表示） */}
+            {previewUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={previewUrl}
+                alt="選択中の画像プレビュー"
+                className="h-32 w-full rounded border object-cover"
+              />
+            ) : existingImageUrl && !removeImage ? (
+              // 既存画像のプレビュー
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={existingImageUrl}
+                alt="現在の画像"
+                className="h-32 w-full rounded border object-cover"
+              />
+            ) : null}
+
+            {removeImage && !previewUrl ? (
+              <p className="text-sm text-muted-foreground">
+                画像を削除します。
+                <button
+                  type="button"
+                  className="ml-2 underline"
+                  onClick={() => setRemoveImage(false)}
+                >
+                  取り消す
+                </button>
+              </p>
+            ) : null}
+
+            <Input
+              id="image"
+              name="image"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={(e) => handleImageChange(e.target.files?.[0] ?? null)}
+            />
+            <p className="text-xs text-muted-foreground">
+              JPEG / PNG / WebP・5MBまで
+            </p>
+
+            {isEdit && existingImageUrl && !removeImage && !previewUrl ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setRemoveImage(true)}
+              >
+                画像を削除
+              </Button>
+            ) : null}
           </div>
         </div>
 

@@ -15,6 +15,7 @@ import {
   STATION_TEMPERATURE_LABELS,
   STATION_TEMPERATURE_ORDER,
 } from '@/lib/constants/stations';
+import { stationImageUrl } from '@/lib/storage/station-images';
 import { getPublicStationDetail } from './queries';
 
 interface StationDetailPageProps {
@@ -41,6 +42,9 @@ export async function StationDetailPage({
   if (!station) {
     notFound();
   }
+
+  // 給水機写真（#190）。未登録 or 配信URL未設定なら表示しない（フォールバック）。
+  const imageUrl = stationImageUrl(env.IMAGE_PUBLIC_BASE_URL, station.imageKey);
 
   // QR コード経由アクセスの検出（DesignDoc §3.4 / §11.3）。
   const isQrAccess = source === 'qr';
@@ -104,6 +108,17 @@ export async function StationDetailPage({
         <div className="flex flex-1 flex-col gap-5 lg:grid lg:grid-cols-[1.7fr_1fr] lg:items-start lg:gap-8">
           {/* 詳細カード（ランディングの給水機カードに合わせたデザイン）。 */}
           <div className="rounded-[1.5rem] border border-[#0f897f]/15 bg-white p-6 shadow-sm lg:p-8">
+            {imageUrl ? (
+              // 配信は公開バケット直リンク。Cloudflare 固有の最適化に依存しないため
+              // 通常の <img> を使う（AGENTS.md / Next.js 16 Cloudflare 制約）。
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={imageUrl}
+                alt={`${station.name}の写真`}
+                className="mb-5 aspect-video w-full rounded-2xl border border-[#0f897f]/10 object-cover lg:mb-6"
+              />
+            ) : null}
+
             <header className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <span className="inline-block rounded bg-[#00685f]/10 px-2 py-1 text-xs font-bold tracking-widest text-[#00685f]">

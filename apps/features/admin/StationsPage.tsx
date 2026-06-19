@@ -46,9 +46,16 @@ interface Props {
   stations: StationWithRelations[];
   campuses: Campus[];
   buildings: Building[];
+  /** 画像の公開配信ベースURL（既存画像プレビュー用）。 */
+  imageBaseUrl?: string;
 }
 
-export function StationsPage({ stations, campuses, buildings }: Props) {
+export function StationsPage({
+  stations,
+  campuses,
+  buildings,
+  imageBaseUrl,
+}: Props) {
   const [open, setOpen] = useState(false);
   const [editStation, setEditStation] = useState<
     StationWithRelations | undefined
@@ -115,6 +122,7 @@ export function StationsPage({ stations, campuses, buildings }: Props) {
               campuses={campuses}
               buildings={buildings}
               station={editStation}
+              imageBaseUrl={imageBaseUrl}
               onSuccess={() => setOpen(false)}
             />
           </DialogContent>

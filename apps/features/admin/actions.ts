@@ -13,7 +13,12 @@ import {
   requireAdminSession,
 } from '@/lib/auth/session';
 import { buildingSchema, stationSchema } from './validation';
-import { logAuditEvent } from './queries';
+import { logAuditEvent, getStationImageKey } from './queries';
+import {
+  uploadStationImage,
+  deleteStationImage,
+  validateStationImage,
+} from '@/lib/storage/station-images';
 import {
   installationComments,
   emergencyContacts,
@@ -90,6 +95,13 @@ function extractStationFormData(formData: FormData) {
   };
 }
 
+/** フォームの画像ファイルを取り出す。未選択（空ファイル）なら null。 */
+function extractImageFile(formData: FormData): File | null {
+  const value = formData.get('image');
+  if (value instanceof File && value.size > 0) return value;
+  return null;
+}
+
 // #88 給水機追加
 export async function createStationAction(
   formData: FormData
@@ -107,6 +119,15 @@ export async function createStationAction(
   const id = `station_${crypto.randomUUID().replace(/-/g, '').slice(0, 8)}`;
   const now = new Date();
 
+  // 画像は任意。選択時のみ検証し、R2 へアップロードしてキーを保存する。
+  const imageFile = extractImageFile(formData);
+  let imageKey: string | null = null;
+  if (imageFile) {
+    const imageError = validateStationImage(imageFile);
+    if (imageError) return { success: false, error: imageError };
+    imageKey = await uploadStationImage(env.STATION_IMAGES, id, imageFile);
+  }
+
   // D1 は対話的トランザクション(BEGIN/COMMIT)を持たないため、複数文の
   // アトミック実行は db.batch() を使う。
   await db.batch([
@@ -122,6 +143,7 @@ export async function createStationAction(
       isPublic: input.isPublic,
       shortLinkId: input.shortLinkId,
       shortLinkUrl: input.shortLinkUrl || null,
+      imageKey,
       createdAt: now,
       updatedAt: now,
     }),
@@ -155,6 +177,30 @@ export async function updateStationAction(
   const db = getDb(env.DB);
   const now = new Date();
 
+  // 画像の差し替え / 削除 / 据え置きを判定する。
+  // - removeImage=true: 画像を外す（旧オブジェクトは削除）
+  // - 新しいファイルあり: 差し替え（アップロード後、旧オブジェクトは削除）
+  // - いずれもなし: 現状維持（imageKey は変更しない）
+  const currentImageKey = await getStationImageKey(db, stationId);
+  const removeImage = formData.get('removeImage') === 'true';
+  const imageFile = extractImageFile(formData);
+
+  let imageKey: string | null = currentImageKey;
+  let imageKeyToDelete: string | null = null;
+  if (removeImage) {
+    imageKey = null;
+    imageKeyToDelete = currentImageKey;
+  } else if (imageFile) {
+    const imageError = validateStationImage(imageFile);
+    if (imageError) return { success: false, error: imageError };
+    imageKey = await uploadStationImage(
+      env.STATION_IMAGES,
+      stationId,
+      imageFile
+    );
+    imageKeyToDelete = currentImageKey;
+  }
+
   // D1 は対話的トランザクション(BEGIN/COMMIT)を持たないため、複数文の
   // アトミック実行は db.batch() を使う。
   await db.batch([
@@ -171,6 +217,7 @@ export async function updateStationAction(
         isPublic: input.isPublic,
         shortLinkId: input.shortLinkId,
         shortLinkUrl: input.shortLinkUrl || null,
+        imageKey,
         updatedAt: now,
       })
       .where(eq(stations.id, stationId)),
@@ -185,6 +232,14 @@ export async function updateStationAction(
       }))
     ),
   ]);
+
+  // DB 更新成功後に旧オブジェクトを削除（孤児を残さない）。失敗は致命的でない。
+  if (imageKeyToDelete && imageKeyToDelete !== imageKey) {
+    await deleteStationImage(env.STATION_IMAGES, imageKeyToDelete).catch(
+      () => {}
+    );
+  }
+
   await logAuditEvent(db, 'update', 'station', stationId);
   revalidatePath('/admin/stations');
   return { success: true, data: undefined };
@@ -271,6 +326,9 @@ export async function deleteStationAction(
   const env = await getEnv();
   const db = getDb(env.DB);
 
+  // 削除対象の画像キーを先に取得しておく（行削除後は参照できないため）。
+  const imageKey = await getStationImageKey(db, stationId);
+
   const now = new Date();
   // D1 は対話的トランザクション(BEGIN/COMMIT)を持たないため、複数文の
   // アトミック実行は db.batch() を使う。
@@ -284,6 +342,12 @@ export async function deleteStationAction(
       .where(eq(stationTemperatures.stationId, stationId)),
     db.delete(stations).where(eq(stations.id, stationId)),
   ]);
+
+  // DB 削除成功後に R2 オブジェクトを削除（孤児を残さない）。失敗は致命的でない。
+  if (imageKey) {
+    await deleteStationImage(env.STATION_IMAGES, imageKey).catch(() => {});
+  }
+
   await logAuditEvent(db, 'delete', 'station', stationId);
   revalidatePath('/admin/stations');
   return { success: true, data: undefined };

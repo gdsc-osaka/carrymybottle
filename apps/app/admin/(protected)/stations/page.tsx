@@ -20,6 +20,7 @@ export default async function Page() {
       stations={stations}
       campuses={campuses}
       buildings={buildings}
+      imageBaseUrl={env.IMAGE_PUBLIC_BASE_URL}
     />
   );
 }
