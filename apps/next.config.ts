@@ -2,7 +2,15 @@ import type { NextConfig } from 'next';
 import { initOpenNextCloudflareForDev } from '@opennextjs/cloudflare';
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  experimental: {
+    serverActions: {
+      // Server Action のリクエストボディ上限はデフォルト 1MB。給水機画像
+      // （STATION_IMAGE_MAX_BYTES = 5MB / lib/storage/station-images.ts）の
+      // アップロードがフォーム検証より手前で弾かれないよう、5MB + 他フォーム
+      // 項目の余裕をみて引き上げる。
+      bodySizeLimit: '6mb',
+    },
+  },
 };
 
 // `next dev` 用に Cloudflare バインディング(D1 の DB など)を起動時に一度だけ
