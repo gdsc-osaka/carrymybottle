@@ -58,9 +58,6 @@ export function BuildingsPage({ buildings, campuses }: Props) {
                 キャンパス
               </TableHead>
               <TableHead className="font-semibold text-slate-700">
-                並び順
-              </TableHead>
-              <TableHead className="font-semibold text-slate-700">
                 座標（緯度, 経度）
               </TableHead>
               <TableHead className="text-right font-semibold text-slate-700">
@@ -72,7 +69,7 @@ export function BuildingsPage({ buildings, campuses }: Props) {
             {buildings.length === 0 && (
               <TableRow>
                 <TableCell
-                  colSpan={5}
+                  colSpan={4}
                   className="py-10 text-center text-slate-400"
                 >
                   建物がありません
@@ -89,9 +86,6 @@ export function BuildingsPage({ buildings, campuses }: Props) {
                   </TableCell>
                   <TableCell className="text-slate-600">
                     {campusName(building.campusId)}
-                  </TableCell>
-                  <TableCell className="text-slate-600">
-                    {building.sortOrder}
                   </TableCell>
                   <TableCell className="text-slate-600">
                     {hasCoord ? (

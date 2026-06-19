@@ -76,18 +76,6 @@ export function BuildingForm({ building, campus, onSuccess }: Props) {
               required
             />
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="sortOrder">並び順</Label>
-            <Input
-              id="sortOrder"
-              name="sortOrder"
-              type="number"
-              step="1"
-              min="0"
-              defaultValue={building.sortOrder}
-            />
-          </div>
         </div>
 
         {/* 右カラム: 座標 */}

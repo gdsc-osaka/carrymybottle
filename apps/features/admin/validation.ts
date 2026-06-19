@@ -38,10 +38,6 @@ export const stationSchema = z.object({
 export const buildingSchema = z
   .object({
     name: z.string().min(1, '建物名を入力してください'),
-    sortOrder: z
-      .number({ message: '並び順を入力してください' })
-      .int('並び順は整数で入力してください')
-      .min(0, '並び順は0以上で入力してください'),
     latitude: z
       .number()
       .min(-90, '緯度は -90〜90 の範囲で入力してください')

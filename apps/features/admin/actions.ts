@@ -260,16 +260,9 @@ function parseNullableCoord(value: FormDataEntryValue | null): number | null {
   return Number(value);
 }
 
-// 空欄や非数値は NaN にして Zod に弾かせる（0 などへ暗黙変換させない）。
-function parseIntField(value: FormDataEntryValue | null): number {
-  if (typeof value !== 'string' || value.trim() === '') return Number.NaN;
-  return Number(value);
-}
-
 function extractBuildingFormData(formData: FormData) {
   return {
     name: formData.get('name'),
-    sortOrder: parseIntField(formData.get('sortOrder')),
     latitude: parseNullableCoord(formData.get('latitude')),
     longitude: parseNullableCoord(formData.get('longitude')),
   };
@@ -295,7 +288,6 @@ export async function updateBuildingAction(
     .update(buildings)
     .set({
       name: input.name,
-      sortOrder: input.sortOrder,
       latitude: input.latitude,
       longitude: input.longitude,
       updatedAt: new Date(),
