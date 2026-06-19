@@ -9,7 +9,7 @@
  * `RATE_LIMIT_*` variables declared in worker-configuration.d.ts.
  */
 
-export type RateLimitAction = 'contact' | 'vote' | 'admin_login';
+export type RateLimitAction = 'contact' | 'inquiry' | 'vote' | 'admin_login';
 
 export type RateLimitConfig = {
   /** Maximum allowed requests within the window. */
@@ -20,6 +20,7 @@ export type RateLimitConfig = {
 
 const DEFAULTS: Record<RateLimitAction, RateLimitConfig> = {
   contact: { max: 5, windowSec: 600 },
+  inquiry: { max: 5, windowSec: 600 },
   vote: { max: 20, windowSec: 600 },
   admin_login: { max: 10, windowSec: 600 },
 };
@@ -27,6 +28,8 @@ const DEFAULTS: Record<RateLimitAction, RateLimitConfig> = {
 type RateLimitEnvKey =
   | 'RATE_LIMIT_CONTACT_MAX'
   | 'RATE_LIMIT_CONTACT_WINDOW_SEC'
+  | 'RATE_LIMIT_INQUIRY_MAX'
+  | 'RATE_LIMIT_INQUIRY_WINDOW_SEC'
   | 'RATE_LIMIT_VOTE_MAX'
   | 'RATE_LIMIT_VOTE_WINDOW_SEC'
   | 'RATE_LIMIT_ADMIN_LOGIN_MAX'
@@ -39,6 +42,10 @@ const ENV_KEYS: Record<
   contact: {
     max: 'RATE_LIMIT_CONTACT_MAX',
     window: 'RATE_LIMIT_CONTACT_WINDOW_SEC',
+  },
+  inquiry: {
+    max: 'RATE_LIMIT_INQUIRY_MAX',
+    window: 'RATE_LIMIT_INQUIRY_WINDOW_SEC',
   },
   vote: {
     max: 'RATE_LIMIT_VOTE_MAX',
