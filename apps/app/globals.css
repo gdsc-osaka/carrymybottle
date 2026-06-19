@@ -310,7 +310,12 @@
  * 並べ、見た目は他の MapLibre コントロールに合わせる。アクティブ時は青系で
  * 塗り、押下状態を明示する。
  */
-.cmb-vote-toggle {
+/*
+ * MapLibre の `.maplibregl-ctrl-group button { display: block }`（詳細度が上）に
+ * 上書きされてアイコンが左寄りになるため、ボタン名を含む詳細度の高いセレクタで
+ * flex 中央寄せを効かせる。
+ */
+.maplibregl-ctrl-group button.cmb-vote-toggle {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -318,8 +323,8 @@
 }
 
 .cmb-vote-toggle svg {
-  width: 15px;
-  height: 15px;
+  width: 19.5px;
+  height: 19.5px;
 }
 
 .cmb-vote-toggle-active {
