@@ -11,6 +11,9 @@ interface CloudflareEnv {
   EMERGENCY_CONTACT_TO: string;
   EMERGENCY_CONTACT_FROM: string;
   VOTE_TOKEN_SECRET: string;
+  // 給水機写真の保存（R2 バインディング）と公開配信ベースURL（#190）。
+  STATION_IMAGES: R2Bucket;
+  IMAGE_PUBLIC_BASE_URL: string;
   // Optional rate-limit overrides. When unset, the defaults in
   // lib/rate-limit/config.ts apply.
   RATE_LIMIT_CONTACT_MAX?: string;
