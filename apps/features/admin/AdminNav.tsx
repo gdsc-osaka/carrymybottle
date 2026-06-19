@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import {
   AlertTriangle,
   BarChart,
+  Building2,
   Droplets,
   LayoutDashboard,
   Mail,
@@ -29,6 +30,7 @@ const NAV_ITEMS: NavItem[] = [
     exact: true,
   },
   { href: '/admin/stations', label: '給水機', icon: Droplets },
+  { href: '/admin/buildings', label: '建物', icon: Building2 },
   { href: '/admin/requests', label: '設置希望', icon: MapPin },
   { href: '/admin/contacts', label: '緊急連絡', icon: AlertTriangle },
   { href: '/admin/inquiries', label: 'お問い合わせ', icon: Mail },

@@ -5,14 +5,14 @@ import { eq } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { getDb } from '@/lib/db/client';
-import { stationTemperatures, stations } from '@/lib/db/schema';
+import { buildings, stationTemperatures, stations } from '@/lib/db/schema';
 import { verifyPassword } from '@/lib/auth/password';
 import {
   createSession,
   deleteSession,
   requireAdminSession,
 } from '@/lib/auth/session';
-import { stationSchema } from './validation';
+import { buildingSchema, stationSchema } from './validation';
 import { logAuditEvent } from './queries';
 import {
   installationComments,
@@ -187,6 +187,61 @@ export async function updateStationAction(
   ]);
   await logAuditEvent(db, 'update', 'station', stationId);
   revalidatePath('/admin/stations');
+  return { success: true, data: undefined };
+}
+
+// 建物座標は任意（未設定可）。空欄は null、それ以外は数値化して Zod に委ねる。
+function parseNullableCoord(value: FormDataEntryValue | null): number | null {
+  if (typeof value !== 'string' || value.trim() === '') return null;
+  return Number(value);
+}
+
+// 空欄や非数値は NaN にして Zod に弾かせる（0 などへ暗黙変換させない）。
+function parseIntField(value: FormDataEntryValue | null): number {
+  if (typeof value !== 'string' || value.trim() === '') return Number.NaN;
+  return Number(value);
+}
+
+function extractBuildingFormData(formData: FormData) {
+  return {
+    name: formData.get('name'),
+    sortOrder: parseIntField(formData.get('sortOrder')),
+    latitude: parseNullableCoord(formData.get('latitude')),
+    longitude: parseNullableCoord(formData.get('longitude')),
+  };
+}
+
+// #233 建物更新（座標補正）
+export async function updateBuildingAction(
+  buildingId: string,
+  formData: FormData
+): Promise<ActionResult> {
+  await requireAdminSession();
+
+  const result = buildingSchema.safeParse(extractBuildingFormData(formData));
+  if (!result.success) {
+    return { success: false, error: result.error.issues[0].message };
+  }
+
+  const input = result.data;
+  const env = await getEnv();
+  const db = getDb(env.DB);
+
+  await db
+    .update(buildings)
+    .set({
+      name: input.name,
+      sortOrder: input.sortOrder,
+      latitude: input.latitude,
+      longitude: input.longitude,
+      updatedAt: new Date(),
+    })
+    .where(eq(buildings.id, buildingId));
+
+  await logAuditEvent(db, 'update', 'building', buildingId);
+  revalidatePath('/admin/buildings');
+  // 地図の近接抽出は建物座標を使うため、座標更新を /map にも反映させる。
+  revalidatePath('/map');
   return { success: true, data: undefined };
 }
 
