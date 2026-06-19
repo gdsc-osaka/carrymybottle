@@ -1,0 +1,134 @@
+'use client';
+
+import { useState } from 'react';
+import { Building2, MapPin, Vote } from 'lucide-react';
+import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer';
+import { Spinner } from '@/components/ui/spinner';
+import { voteInstallationRequestAction } from '@/features/requests/actions';
+import type { MapVoteBuilding } from './queries';
+
+export type NearbyVoteBuilding = MapVoteBuilding & { distanceMeters: number };
+
+interface Props {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  candidates: NearbyVoteBuilding[];
+  /** 投票成功時に親へ最新の投票数を通知し、表示を更新させる。 */
+  onVoted: (buildingId: string, voteCount: number) => void;
+  formatDistance: (meters: number) => string;
+}
+
+/**
+ * 投票モードで「ここで探す」を押したときに表示する、近接建物のボトムシート。
+ * 各建物からその場で設置希望に投票できる（既存の voteInstallationRequestAction
+ * を再利用：建物単位集約・7日クールダウン・vote-token Cookie・レート制限）。
+ */
+export function NearbyBuildingsDrawer({
+  open,
+  onOpenChange,
+  candidates,
+  onVoted,
+  formatDistance,
+}: Props) {
+  const [submittingId, setSubmittingId] = useState<string | null>(null);
+
+  async function handleVote(building: NearbyVoteBuilding) {
+    if (submittingId) return;
+    setSubmittingId(building.buildingId);
+
+    const formData = new FormData();
+    formData.set('campusId', building.campusId);
+    formData.set('buildingId', building.buildingId);
+
+    try {
+      const result = await voteInstallationRequestAction(formData);
+      if (result.success) {
+        toast.success(`${building.buildingName} に投票しました`);
+        onVoted(building.buildingId, result.data.voteCount);
+      } else {
+        toast.error(result.error);
+      }
+    } catch {
+      toast.error('投票に失敗しました。時間をおいて再試行してください。');
+    } finally {
+      setSubmittingId(null);
+    }
+  }
+
+  return (
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent>
+        <DrawerHeader>
+          <DrawerTitle className="flex items-center justify-center gap-2">
+            <MapPin className="size-4 text-[#0f897f]" aria-hidden="true" />
+            近くの建物に投票
+          </DrawerTitle>
+          <DrawerDescription>
+            設置してほしい建物を選んで投票しましょう
+          </DrawerDescription>
+        </DrawerHeader>
+
+        <div className="overflow-y-auto px-4 pb-6">
+          {candidates.length > 0 ? (
+            <ul className="flex flex-col gap-2">
+              {candidates.map((building) => {
+                const isSubmitting = submittingId === building.buildingId;
+                return (
+                  <li
+                    key={building.buildingId}
+                    className="flex items-center gap-3 rounded-xl border border-[#0f897f]/15 bg-white p-3 shadow-sm"
+                  >
+                    <span className="flex min-w-0 flex-1 flex-col gap-1">
+                      <span className="flex items-center gap-2 font-medium">
+                        <Building2
+                          className="size-4 shrink-0 text-muted-foreground"
+                          aria-hidden="true"
+                        />
+                        <span className="truncate">
+                          {building.buildingName}
+                        </span>
+                      </span>
+                      <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span>{formatDistance(building.distanceMeters)}</span>
+                        <Badge variant="outline" className="shrink-0">
+                          {building.voteCount}票
+                        </Badge>
+                      </span>
+                    </span>
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="h-10 shrink-0 bg-gradient-to-r from-[#0f897f] to-[#1f6fc4] text-white shadow-sm hover:opacity-90 sm:h-9"
+                      disabled={isSubmitting}
+                      onClick={() => handleVote(building)}
+                    >
+                      {isSubmitting ? (
+                        <Spinner className="size-4" />
+                      ) : (
+                        <Vote className="size-4" aria-hidden="true" />
+                      )}
+                      {isSubmitting ? '投票中...' : '投票'}
+                    </Button>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              この地点の近くに登録された建物がありません。地図を動かして別の場所を試してください。
+            </p>
+          )}
+        </div>
+      </DrawerContent>
+    </Drawer>
+  );
+}

@@ -1,22 +1,40 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { Crosshair, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { CAMPUSES, type CampusId } from '@/lib/constants/campuses';
 import { StationPin } from './StationPin';
+import {
+  NearbyBuildingsDrawer,
+  type NearbyVoteBuilding,
+} from './NearbyBuildingsDrawer';
+import { formatDistance, nearestBuildings } from './voting';
+import type { MapVoteBuilding } from './queries';
 import type { StationWithRelations } from './types';
 
 interface Props {
   stations: StationWithRelations[];
   campusId: CampusId;
+  /** 投票モードで近接抽出する、座標付きの建物一覧（投票数つき）。 */
+  voteBuildings: MapVoteBuilding[];
   onStationClick?: (station: StationWithRelations) => void;
 }
 
 const STYLE_URL = '/map-style/style.json';
+
+/** 「ここで探す」で表示する近接建物の最大件数。 */
+const NEARBY_LIMIT = 5;
+
+// 投票モード切替ボタンのアイコン（lucide MapPin と同等）。MapLibre のコントロールは
+// 命令的 DOM のため、React コンポーネントではなくインライン SVG で描画する。
+const VOTE_TOGGLE_ICON_SVG =
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>';
 
 /**
  * Renders the campus map with MapLibre GL + OpenFreeMap vector tiles.
@@ -33,6 +51,7 @@ const STYLE_URL = '/map-style/style.json';
 export default function MapLibreMap({
   stations,
   campusId,
+  voteBuildings,
   onStationClick,
 }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -48,6 +67,24 @@ export default function MapLibreMap({
   const [pins, setPins] = useState<
     { station: StationWithRelations; el: HTMLElement }[]
   >([]);
+
+  // --- 設置希望の投票モード ---------------------------------------------------
+  const [voteMode, setVoteMode] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  // 「ここで探す」で抽出した近接候補(建物ID + 中心からの距離)。票数は
+  // effectiveBuildings から都度引くため、ここには保持しない。
+  const [candidateRefs, setCandidateRefs] = useState<
+    { buildingId: string; distanceMeters: number }[]
+  >([]);
+  // 投票後の最新票数(建物ID→票数)。サーバー由来の voteBuildings へ合成することで、
+  // prop を state にコピーせず(=同期 effect 不要で)その場更新を反映する。
+  const [voteOverrides, setVoteOverrides] = useState<Record<string, number>>(
+    {}
+  );
+  // 投票モード切替ボタン(MapLibre コントロール)を React 状態へ橋渡しするための ref。
+  // 初期化 useEffect は一度きり実行のため、最新のトグル関数を ref 経由で参照する。
+  const voteToggleButtonRef = useRef<HTMLButtonElement | null>(null);
+  const toggleVoteModeRef = useRef<() => void>(() => {});
 
   // Initialise the map once. The initial center is read from a ref so changing
   // the campus prop animates (flyTo effect) instead of re-creating the map.
@@ -202,6 +239,36 @@ export default function MapLibreMap({
     };
     map.addControl(geolocateControl, 'top-right');
 
+    // 投票モード切替ボタン。現在地ボタンの下(同じ top-right グループ)に並べる。
+    // 押下で投票モードのオン/オフを切り替える(実体は React 状態)。
+    const voteToggleButton = document.createElement('button');
+    voteToggleButton.type = 'button';
+    voteToggleButton.className = 'cmb-vote-toggle';
+    voteToggleButton.title = '投票モード';
+    voteToggleButton.setAttribute(
+      'aria-label',
+      '設置希望の投票モードを切り替える'
+    );
+    voteToggleButton.setAttribute('aria-pressed', 'false');
+    voteToggleButton.innerHTML = VOTE_TOGGLE_ICON_SVG;
+    voteToggleButtonRef.current = voteToggleButton;
+
+    const handleVoteToggleClick = () => toggleVoteModeRef.current();
+    voteToggleButton.addEventListener('click', handleVoteToggleClick);
+
+    const voteToggleControl: maplibregl.IControl = {
+      onAdd: () => {
+        const container = document.createElement('div');
+        container.className = 'maplibregl-ctrl maplibregl-ctrl-group';
+        container.appendChild(voteToggleButton);
+        return container;
+      },
+      onRemove: () => {
+        voteToggleButton.removeEventListener('click', handleVoteToggleClick);
+      },
+    };
+    map.addControl(voteToggleControl, 'top-right');
+
     // 位置情報を許可済みのユーザーは、ロード時点から現在地ドットを表示する
     // (カメラは動かさない)。未許可(prompt)の状態では勝手に許可ダイアログを出さない
     // よう、Permissions API で 'granted' を確認できたときだけ watch を開始する。
@@ -233,9 +300,82 @@ export default function MapLibreMap({
       userLocationMarker.remove();
       map.remove();
       mapRef.current = null;
+      voteToggleButtonRef.current = null;
       markers.clear();
     };
   }, []);
+
+  // サーバー由来の建物に、投票後の最新票数(voteOverrides)を合成した実効リスト。
+  // 建物IDはキャンパス内で一意のため、キャンパス切替で残った無関係な override は
+  // 単に無視され、prop の state コピー(同期 effect)を不要にできる。
+  const effectiveBuildings = useMemo<MapVoteBuilding[]>(
+    () =>
+      voteBuildings.map((b) =>
+        b.buildingId in voteOverrides
+          ? { ...b, voteCount: voteOverrides[b.buildingId] }
+          : b
+      ),
+    [voteBuildings, voteOverrides]
+  );
+
+  // ボトムシートへ渡す候補。距離は抽出時のスナップショット、票数は実効リストから
+  // 都度引くので、投票後も最新票数が反映される。
+  const candidates = useMemo<NearbyVoteBuilding[]>(
+    () =>
+      candidateRefs.flatMap((ref) => {
+        const building = effectiveBuildings.find(
+          (b) => b.buildingId === ref.buildingId
+        );
+        return building
+          ? [{ ...building, distanceMeters: ref.distanceMeters }]
+          : [];
+      }),
+    [candidateRefs, effectiveBuildings]
+  );
+
+  // 投票モードの ON/OFF を切り替える。OFF にするときはボトムシートも閉じる。
+  const updateVoteMode = (next: boolean) => {
+    setVoteMode(next);
+    if (!next) setSheetOpen(false);
+  };
+
+  // 投票モードのトグル関数を最新の状態で ref に保持する(初期化 useEffect から参照)。
+  // effect 本体は ref への代入のみで、setState を同期実行しない。
+  useEffect(() => {
+    toggleVoteModeRef.current = () => updateVoteMode(!voteMode);
+  });
+
+  // 投票モードの状態をトグルボタンの見た目(アクティブ表示)へ反映する。
+  useEffect(() => {
+    const button = voteToggleButtonRef.current;
+    if (!button) return;
+    button.classList.toggle('cmb-vote-toggle-active', voteMode);
+    button.setAttribute('aria-pressed', voteMode ? 'true' : 'false');
+  }, [voteMode]);
+
+  // 「ここで探す」: 地図中央(クロスヘア)に近い建物を距離順に抽出してシートを開く。
+  const handleSearchHere = () => {
+    const map = mapRef.current;
+    if (!map) return;
+    const center = map.getCenter();
+    const nearby = nearestBuildings(
+      { latitude: center.lat, longitude: center.lng },
+      effectiveBuildings,
+      NEARBY_LIMIT
+    );
+    setCandidateRefs(
+      nearby.map((b) => ({
+        buildingId: b.buildingId,
+        distanceMeters: b.distanceMeters,
+      }))
+    );
+    setSheetOpen(true);
+  };
+
+  // 投票成功時、該当建物の最新票数を記録する(effectiveBuildings 経由で表示更新)。
+  const handleVoted = (buildingId: string, voteCount: number) => {
+    setVoteOverrides((prev) => ({ ...prev, [buildingId]: voteCount }));
+  };
 
   // Animate to the selected campus on tab change (skip the initial mount).
   useEffect(() => {
@@ -305,6 +445,56 @@ export default function MapLibreMap({
           station.id
         )
       )}
+      {/* 投票モードのオーバーレイ: 中央クロスヘア + 案内バナー + 「ここで探す」。
+          地図のパン/ズームを妨げないよう、クロスヘアは pointer-events-none。 */}
+      {voteMode && (
+        <>
+          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+            <Crosshair
+              className="size-10 -translate-y-1 text-[#1f6fc4] drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)]"
+              aria-hidden="true"
+            />
+          </div>
+          <div className="absolute inset-x-0 top-0 z-20 flex justify-center px-4 pt-3">
+            <div
+              role="status"
+              className="flex items-center gap-2 rounded-full border border-[#1f6fc4]/20 bg-white/90 px-4 py-2 text-sm font-medium text-[#23566e] shadow-md backdrop-blur"
+            >
+              投票したい場所に地図を合わせてください
+              <button
+                type="button"
+                onClick={() => updateVoteMode(false)}
+                aria-label="投票モードを終了"
+                className="-mr-1 ml-1 flex size-6 items-center justify-center rounded-full text-[#5a6b6a] transition-colors hover:bg-muted"
+              >
+                <X className="size-4" aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+          {!sheetOpen && (
+            <div className="absolute inset-x-0 bottom-0 z-20 flex justify-center px-4 pb-6">
+              <Button
+                type="button"
+                size="lg"
+                onClick={handleSearchHere}
+                className="h-12 rounded-full bg-gradient-to-r from-[#0f897f] to-[#1f6fc4] px-6 text-base text-white shadow-lg hover:opacity-90"
+              >
+                <Search className="size-5" aria-hidden="true" />
+                ここで探す
+              </Button>
+            </div>
+          )}
+        </>
+      )}
+
+      <NearbyBuildingsDrawer
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        candidates={candidates}
+        onVoted={handleVoted}
+        formatDistance={formatDistance}
+      />
+
       {/* 地図タイルとピンの両方が揃うまでオーバーレイで覆う。 */}
       {loading && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-muted">

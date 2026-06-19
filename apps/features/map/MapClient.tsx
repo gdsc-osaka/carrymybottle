@@ -9,6 +9,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { CAMPUSES, type CampusId } from '@/lib/constants/campuses';
+import type { MapVoteBuilding } from './queries';
 import type { StationWithRelations } from './types';
 
 /** マップヘッダーのナビゲーションリンク。 */
@@ -31,7 +32,13 @@ function isCampusId(value: string | null): value is CampusId {
   return value !== null && CAMPUSES.some((c) => c.id === value);
 }
 
-function MapContent({ stations }: { stations: StationWithRelations[] }) {
+function MapContent({
+  stations,
+  voteBuildings,
+}: {
+  stations: StationWithRelations[];
+  voteBuildings: MapVoteBuilding[];
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -150,6 +157,7 @@ function MapContent({ stations }: { stations: StationWithRelations[] }) {
         <MapLibreMap
           campusId={selectedCampusId}
           stations={stations}
+          voteBuildings={voteBuildings}
           onStationClick={(station) => {
             router.push(`/stations/${station.id}`);
           }}
@@ -159,7 +167,13 @@ function MapContent({ stations }: { stations: StationWithRelations[] }) {
   );
 }
 
-export function MapClient({ stations }: { stations: StationWithRelations[] }) {
+export function MapClient({
+  stations,
+  voteBuildings,
+}: {
+  stations: StationWithRelations[];
+  voteBuildings: MapVoteBuilding[];
+}) {
   return (
     <Suspense
       fallback={
@@ -168,7 +182,7 @@ export function MapClient({ stations }: { stations: StationWithRelations[] }) {
         </div>
       }
     >
-      <MapContent stations={stations} />
+      <MapContent stations={stations} voteBuildings={voteBuildings} />
     </Suspense>
   );
 }
