@@ -2,13 +2,14 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Droplet } from 'lucide-react';
+import { ArrowLeft, Clock, Droplet } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { trackEvent } from '@/lib/analytics/events';
 import { isPrefetchRequest } from '@/lib/analytics/isPrefetchRequest';
 import { getDb } from '@/lib/db/client';
 import {
+  STATION_AVAILABLE_HOURS,
   STATION_STATUS_BADGE_VARIANT,
   STATION_STATUS_LABELS,
   STATION_TEMPERATURE_LABELS,
@@ -77,6 +78,9 @@ export async function StationDetailPage({
     station.temperatures.some((t) => t.temperatureType === type)
   );
 
+  // 利用可能時間（#213）。未登録の給水機では表示しない。
+  const availableHours = STATION_AVAILABLE_HOURS[station.id];
+
   return (
     <main
       className="min-h-[100dvh] bg-[#f7f9fb]"
@@ -139,6 +143,24 @@ export async function StationDetailPage({
                 </Badge>
               ))}
             </section>
+
+            {availableHours ? (
+              <section
+                aria-label="利用可能時間"
+                className="mt-5 rounded-2xl bg-[#0f897f]/5 p-4 lg:mt-6"
+              >
+                <h2 className="flex items-center gap-1.5 text-sm font-semibold text-[#00685f]">
+                  <Clock className="size-4" aria-hidden="true" />
+                  利用可能時間
+                </h2>
+                <p className="mt-2 text-base font-bold text-[#191c1e]">
+                  平日 {availableHours.weekdayHours}
+                </p>
+                <p className="mt-1 text-sm leading-relaxed text-[#46595a]">
+                  {availableHours.note}
+                </p>
+              </section>
+            ) : null}
           </div>
 
           {/* アクション: モバイルは画面下部、PC はサイドのカードに収める。 */}

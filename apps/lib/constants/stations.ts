@@ -36,3 +36,40 @@ export const STATION_TEMPERATURE_ORDER: readonly TemperatureType[] = [
   'normal',
   'hot',
 ];
+
+/** 給水機の利用可能時間（#213）。時間帯はすべて平日。 */
+export interface StationAvailableHours {
+  /** 利用可能な時間帯（平日）。例: `10:00〜17:30`。 */
+  weekdayHours: string;
+  /** 営業時間外・土日の扱いなどの補足文言。 */
+  note: string;
+}
+
+/**
+ * 給水機ごとの利用可能時間（#213）。給水機 ID（`real_stations.sql`）をキーとする。
+ * すべて平日の時間帯。一覧に無い給水機は利用可能時間を表示しない（未確定）。
+ *
+ * 給水機 ID と通称の対応:
+ * - `toyonaka_fukuri_coop`  … 豊中福利会館（生協コンビニ）
+ * - `toyonaka_zengaku_a`    … 共通棟（全学教育推進機構 管理・講義A棟 / ピロティ正面）
+ * - `suita_coop_honbumae`   … 吹田福利会館（生協コンビニ本部前店）
+ * - `suita_m3_212`          … M3棟（212講義室前）
+ */
+export const STATION_AVAILABLE_HOURS: Record<string, StationAvailableHours> = {
+  toyonaka_fukuri_coop: {
+    weekdayHours: '10:00〜17:30',
+    note: '営業時間外はご利用いただけません。',
+  },
+  toyonaka_zengaku_a: {
+    weekdayHours: '8:00〜20:00',
+    note: '土日は建物が開いている際にはご利用いただける場合がございます。',
+  },
+  suita_coop_honbumae: {
+    weekdayHours: '10:00〜17:00',
+    note: '営業時間外はご利用いただけません。',
+  },
+  suita_m3_212: {
+    weekdayHours: '8:00〜20:00',
+    note: '土日は建物が開いている際にはご利用いただける場合がございます。',
+  },
+};
