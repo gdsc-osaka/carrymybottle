@@ -793,10 +793,12 @@ export function LandingPage() {
               © 2024 Carry My Bottle. 大阪大学サステナビリティプロジェクト ／
               阪大マイボトル推進プロジェクト.
             </p>
-            {/* TODO(#166): 正式なキャリボトのコンタクトメールに置き換える */}
-            <p className="text-sm font-medium text-[#00685f]">
-              contact@cariboto.osaka-u.ac.jp
-            </p>
+            <a
+              href="mailto:carry.my.bottle@gmail.com"
+              className="text-sm font-medium text-[#00685f] transition-colors hover:text-[#004d46]"
+            >
+              carry.my.bottle@gmail.com
+            </a>
           </div>
           <div className="flex flex-wrap justify-center gap-8">
             <a
