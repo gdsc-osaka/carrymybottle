@@ -57,20 +57,35 @@ way(${SUITA_WAY}); map_to_area->.suitaA;
 .minoh out tags center;
 `;
 
+/**
+ * OSM の name タグに対する個別補正（規則で推測できない一点もの）。OSM の way ID で
+ * 引く。再生成のたびに自動適用され、レビュー可能な形でコードに残す。OSM 本体の
+ * 誤りはここで上書きする（例: 「A工学部/工学研究科 13棟」は「A」の位置誤り）。
+ */
+const NAME_OVERRIDES: Record<number, string> = {
+  // https://www.openstreetmap.org/way/378258112
+  378258112: '工学部/工学研究科 A13棟',
+};
+
 /** 全角英数字・全角スペースを半角化し、空白を整理する。 */
 function normalizeName(raw: string): string {
   const halfWidth = raw.replace(/[！-～]/g, (ch) =>
     String.fromCharCode(ch.charCodeAt(0) - 0xfee0)
   );
-  return (
-    halfWidth
-      .replace(/　/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-      // 末尾の ASCII のみの括弧書き（ローマ字訳）を除去。例: 「待兼山会館 (Machikaneyama Facility)」
-      // → 「待兼山会館」。中身に非 ASCII を含む括弧（例: 「(Σホール)」）は残す。
-      .replace(/\s*\([\x20-\x7E]+\)\s*$/, '')
-      .trim()
+  const cleaned = halfWidth
+    .replace(/　/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    // 末尾の ASCII のみの括弧書き（ローマ字訳）を除去。例: 「待兼山会館 (Machikaneyama Facility)」
+    // → 「待兼山会館」。中身に非 ASCII を含む括弧（例: 「(Σホール)」）は残す。
+    .replace(/\s*\([\x20-\x7E]+\)\s*$/, '')
+    .trim();
+
+  // 棟コードの小文字化ゆれだけを安全に大文字化する。全体が「英字+数字+棟」の
+  // ときに限定するため、固有名（例: 「IFReC動物実験棟」）は対象外。
+  return cleaned.replace(
+    /^([a-z]{1,3})(\d+棟)$/,
+    (_, letters, rest) => `${(letters as string).toUpperCase()}${rest}`
   );
 }
 
@@ -135,7 +150,7 @@ async function main() {
     const rawName = el.tags?.name;
     if (!center || !rawName) continue;
 
-    const name = normalizeName(rawName);
+    const name = NAME_OVERRIDES[el.id] ?? normalizeName(rawName);
     if (!name) continue;
 
     const campusId = nearestCampus(center.lat, center.lon);
@@ -194,10 +209,13 @@ VALUES
     )
     .join(',\n');
 
+  // name も UPDATE 対象にすることで、既に投入済みの行（id は OSM way ID で安定）も
+  // 補正後の名称・座標へ収束する。INSERT OR IGNORE は既存 id を更新しないため、
+  // 表記ゆれ修正を再適用で反映させるにはこの UPDATE が必要。
   const updates = rows
     .map(
       (r) =>
-        `UPDATE buildings SET latitude = ${r.latitude}, longitude = ${r.longitude} WHERE id = ${sqlString(r.id)};`
+        `UPDATE buildings SET name = ${sqlString(r.name)}, latitude = ${r.latitude}, longitude = ${r.longitude} WHERE id = ${sqlString(r.id)};`
     )
     .join('\n');
 
