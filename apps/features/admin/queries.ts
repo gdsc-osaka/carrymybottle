@@ -16,6 +16,7 @@ import {
   buildings,
   campuses,
   emergencyContacts,
+  inquiries,
   installationComments,
   installationTargets,
   stationTemperatures,
@@ -144,19 +145,32 @@ export async function getEmergencyContacts(db: DB) {
   }));
 }
 
+export async function getInquiries(db: DB) {
+  return db
+    .select()
+    .from(inquiries)
+    .where(isNull(inquiries.deletedAt))
+    .orderBy(desc(inquiries.createdAt));
+}
+
 export async function getAdminStats(db: DB) {
-  const [stationRow, targetRow, contactRow] = await Promise.all([
+  const [stationRow, targetRow, contactRow, inquiryRow] = await Promise.all([
     db.select({ count: count() }).from(stations),
     db.select({ count: count() }).from(installationTargets),
     db
       .select({ count: count() })
       .from(emergencyContacts)
       .where(isNull(emergencyContacts.deletedAt)),
+    db
+      .select({ count: count() })
+      .from(inquiries)
+      .where(isNull(inquiries.deletedAt)),
   ]);
   return {
     stationCount: stationRow[0].count,
     targetCount: targetRow[0].count,
     contactCount: contactRow[0].count,
+    inquiryCount: inquiryRow[0].count,
   };
 }
 
