@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { Search } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -9,6 +10,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -20,6 +29,8 @@ import {
 import { BuildingForm } from './BuildingForm';
 import type { Building, Campus } from '@/lib/db/types';
 
+type CoordFilter = 'all' | 'set' | 'unset';
+
 interface Props {
   buildings: Building[];
   campuses: Campus[];
@@ -29,8 +40,32 @@ export function BuildingsPage({ buildings, campuses }: Props) {
   const [open, setOpen] = useState(false);
   const [editBuilding, setEditBuilding] = useState<Building | undefined>();
 
+  const [query, setQuery] = useState('');
+  const [campusFilter, setCampusFilter] = useState<string>('all');
+  const [coordFilter, setCoordFilter] = useState<CoordFilter>('all');
+
   const campusName = (id: string) =>
     campuses.find((c) => c.id === id)?.name ?? id;
+
+  // 名前の部分一致・キャンパス・座標設定状況でクライアント側に絞り込む。
+  const filteredBuildings = useMemo(() => {
+    const normalized = query.trim().toLowerCase();
+    return buildings.filter((building) => {
+      if (normalized && !building.name.toLowerCase().includes(normalized)) {
+        return false;
+      }
+      if (campusFilter !== 'all' && building.campusId !== campusFilter) {
+        return false;
+      }
+      if (coordFilter !== 'all') {
+        const hasCoord =
+          building.latitude != null && building.longitude != null;
+        if (coordFilter === 'set' && !hasCoord) return false;
+        if (coordFilter === 'unset' && hasCoord) return false;
+      }
+      return true;
+    });
+  }, [buildings, query, campusFilter, coordFilter]);
 
   function openEdit(building: Building) {
     setEditBuilding(building);
@@ -46,6 +81,56 @@ export function BuildingsPage({ buildings, campuses }: Props) {
           件。座標は地図の設置希望投票（近接建物の抽出）に使われます。
         </p>
       </div>
+
+      {/* 検索・フィルタ */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="relative sm:max-w-xs sm:flex-1">
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400"
+            aria-hidden="true"
+          />
+          <Input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="建物名で検索"
+            className="pl-9"
+            aria-label="建物名で検索"
+          />
+        </div>
+
+        <Select value={campusFilter} onValueChange={setCampusFilter}>
+          <SelectTrigger className="sm:w-44" aria-label="キャンパスで絞り込み">
+            <SelectValue placeholder="キャンパス" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">すべてのキャンパス</SelectItem>
+            {campuses.map((campus) => (
+              <SelectItem key={campus.id} value={campus.id}>
+                {campus.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select
+          value={coordFilter}
+          onValueChange={(value) => setCoordFilter(value as CoordFilter)}
+        >
+          <SelectTrigger className="sm:w-36" aria-label="座標で絞り込み">
+            <SelectValue placeholder="座標" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">座標：すべて</SelectItem>
+            <SelectItem value="set">座標：設定済み</SelectItem>
+            <SelectItem value="unset">座標：未設定</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <p className="text-xs text-slate-500">
+        {filteredBuildings.length} 件を表示（全 {buildings.length} 件）
+      </p>
 
       <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
         <Table>
@@ -66,17 +151,19 @@ export function BuildingsPage({ buildings, campuses }: Props) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {buildings.length === 0 && (
+            {filteredBuildings.length === 0 && (
               <TableRow>
                 <TableCell
                   colSpan={4}
                   className="py-10 text-center text-slate-400"
                 >
-                  建物がありません
+                  {buildings.length === 0
+                    ? '建物がありません'
+                    : '条件に一致する建物がありません'}
                 </TableCell>
               </TableRow>
             )}
-            {buildings.map((building) => {
+            {filteredBuildings.map((building) => {
               const hasCoord =
                 building.latitude != null && building.longitude != null;
               return (
