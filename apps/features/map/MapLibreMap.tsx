@@ -337,6 +337,13 @@ export default function MapLibreMap({
     [candidateRefs, effectiveBuildings]
   );
 
+  // この操作で投票済みの建物ID(voteOverrides のキー)。ボトムシートで「投票済み」
+  // 表示にして再投票を抑止する。
+  const votedBuildingIds = useMemo(
+    () => new Set(Object.keys(voteOverrides)),
+    [voteOverrides]
+  );
+
   // 投票モードの ON/OFF を切り替える。OFF にするときはボトムシートも閉じる。
   const updateVoteMode = (next: boolean) => {
     setVoteMode(next);
@@ -503,6 +510,7 @@ export default function MapLibreMap({
         onOpenChange={setSheetOpen}
         candidates={candidates}
         onVoted={handleVoted}
+        votedBuildingIds={votedBuildingIds}
       />
 
       {/* 地図タイルとピンの両方が揃うまでオーバーレイで覆う。 */}
