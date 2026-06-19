@@ -12,6 +12,16 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Spinner } from '@/components/ui/spinner';
 import { voteInstallationRequestAction } from '@/features/requests/actions';
 import { formatDistance } from './voting';
@@ -42,14 +52,24 @@ export function NearbyBuildingsDrawer({
   votedBuildingIds,
 }: Props) {
   const [submittingId, setSubmittingId] = useState<string | null>(null);
+  // 投票確認モーダルの対象建物（コメント入力用）。null のとき非表示。
+  const [commentTarget, setCommentTarget] = useState<NearbyVoteBuilding | null>(
+    null
+  );
+  const [comment, setComment] = useState('');
 
-  async function handleVote(building: NearbyVoteBuilding) {
+  function openVoteDialog(building: NearbyVoteBuilding) {
     // 設置済み・投票済みは投票不可（UI でも無効化しているが二重ガード）。
-    if (
-      submittingId ||
-      building.hasStation ||
-      votedBuildingIds.has(building.buildingId)
-    ) {
+    if (building.hasStation || votedBuildingIds.has(building.buildingId)) {
+      return;
+    }
+    setComment('');
+    setCommentTarget(building);
+  }
+
+  async function handleVote() {
+    const building = commentTarget;
+    if (!building || submittingId) {
       return;
     }
     setSubmittingId(building.buildingId);
@@ -57,12 +77,16 @@ export function NearbyBuildingsDrawer({
     const formData = new FormData();
     formData.set('campusId', building.campusId);
     formData.set('buildingId', building.buildingId);
+    if (comment.trim()) {
+      formData.set('comment', comment.trim());
+    }
 
     try {
       const result = await voteInstallationRequestAction(formData);
       if (result.success) {
         toast.success(`${building.buildingName} に投票しました`);
         onVoted(building.buildingId, result.data.voteCount);
+        setCommentTarget(null);
       } else {
         toast.error(result.error);
       }
@@ -128,7 +152,7 @@ export function NearbyBuildingsDrawer({
                         size="sm"
                         className="h-10 shrink-0 bg-gradient-to-r from-[#0f897f] to-[#1f6fc4] text-white shadow-sm hover:opacity-90 sm:h-9"
                         disabled={isSubmitting || isVoted}
-                        onClick={() => handleVote(building)}
+                        onClick={() => openVoteDialog(building)}
                       >
                         {isSubmitting ? (
                           <Spinner className="size-4" />
@@ -155,6 +179,62 @@ export function NearbyBuildingsDrawer({
           )}
         </div>
       </DrawerContent>
+
+      {/* 投票確認モーダル：コメント（任意）を入力して投票を確定する。 */}
+      <Dialog
+        open={commentTarget !== null}
+        onOpenChange={(next) => {
+          if (!next) setCommentTarget(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Vote className="size-4 text-[#0f897f]" aria-hidden="true" />
+              {commentTarget?.buildingName} に投票
+            </DialogTitle>
+            <DialogDescription>
+              この建物への設置希望に投票します。コメント（任意）を添えられます。
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="map-vote-comment">コメント（任意）</Label>
+            <Textarea
+              id="map-vote-comment"
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              maxLength={1000}
+              rows={3}
+              placeholder="例: 階数や設置してほしい場所の希望など"
+            />
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setCommentTarget(null)}
+              disabled={submittingId !== null}
+            >
+              キャンセル
+            </Button>
+            <Button
+              type="button"
+              className="bg-gradient-to-r from-[#0f897f] to-[#1f6fc4] text-white hover:opacity-90"
+              onClick={handleVote}
+              disabled={submittingId !== null}
+            >
+              {submittingId !== null ? (
+                <Spinner className="size-4" />
+              ) : (
+                <Vote className="size-4" aria-hidden="true" />
+              )}
+              {submittingId !== null ? '投票中...' : '投票する'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Drawer>
   );
 }
