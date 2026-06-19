@@ -17,11 +17,21 @@ APP_ENV = "development"
 APP_BASE_URL = "http://localhost:3000"
 EMERGENCY_CONTACT_TO = "carry.my.bottle@gmail.com"
 EMERGENCY_CONTACT_FROM = "noreply@gdgoc-osaka.jp"
+# 給水機画像の公開配信ベースURL（#190）。バケットの公開アクセス（dev は r2.dev
+# マネージドURL）を有効化したあと、その URL を設定する。末尾スラッシュなし。
+# 例: https://pub-xxxxxxxx.r2.dev
+# TODO: terraform apply 後に r2.dev 公開URLを有効化し、ここに設定する。
+IMAGE_PUBLIC_BASE_URL = ""
 
 [[d1_databases]]
 binding = "DB"
 database_name = "carrymybottle-dev"
 database_id = "e0af63ef-25c0-48b3-8459-9875e1d87814"
+
+# 給水機写真用 R2 バケット（#190）。アップロード（PUT）にこのバインディングを使う。
+[[r2_buckets]]
+binding = "STATION_IMAGES"
+bucket_name = "carrymybottle-station-images-dev"
 
 [env.production]
 [env.production.vars]
@@ -30,9 +40,16 @@ APP_ENV = "production"
 APP_BASE_URL = "https://carrymybottle.gdsc-osaka.workers.dev"
 EMERGENCY_CONTACT_TO = "carry.my.bottle@gmail.com"
 EMERGENCY_CONTACT_FROM = "noreply@example.com"
+# TODO: prod は公開バケットにカスタムドメインを接続し、その URL を設定する。
+IMAGE_PUBLIC_BASE_URL = ""
 
 [[env.production.d1_databases]]
 binding = "DB"
 database_name = "carrymybottle-prod"
 # TODO: replace with the production D1 database_id created via Terraform
 database_id = "placeholder-replace-with-actual-id"
+
+# prod 用バケットは environments/prod 作成時に Terraform で作成する。
+[[env.production.r2_buckets]]
+binding = "STATION_IMAGES"
+bucket_name = "carrymybottle-station-images-prod"
