@@ -3,6 +3,7 @@ import {
   AlertTriangle,
   ArrowRight,
   Droplets,
+  Mail,
   MapPin,
   type LucideIcon,
 } from 'lucide-react';
@@ -10,7 +11,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 interface Props {
-  stats: { stationCount: number; targetCount: number; contactCount: number };
+  stats: {
+    stationCount: number;
+    targetCount: number;
+    contactCount: number;
+    inquiryCount: number;
+  };
 }
 
 interface StatCard {
@@ -49,6 +55,14 @@ export function AdminDashboardPage({ stats }: Props) {
       icon: AlertTriangle,
       accent: 'bg-rose-50 text-rose-600',
     },
+    {
+      href: '/admin/inquiries',
+      title: 'お問い合わせ',
+      cta: 'お問い合わせを確認する',
+      value: stats.inquiryCount,
+      icon: Mail,
+      accent: 'bg-violet-50 text-violet-600',
+    },
   ];
 
   return (
@@ -62,7 +76,7 @@ export function AdminDashboardPage({ stats }: Props) {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map(({ href, title, cta, value, icon: Icon, accent }) => (
           <Link key={href} href={href} className="group">
             <Card className="border-slate-200 transition-all hover:-translate-y-0.5 hover:border-teal-300 hover:shadow-md">
