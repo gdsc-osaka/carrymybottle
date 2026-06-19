@@ -29,6 +29,10 @@ type CampusOption = (typeof CAMPUSES)[number];
 const RANKING_MIN_VOTES = 2;
 const SUGGESTION_LIMIT = 8;
 
+// 実質的に建物が1つだけのキャンパス（箕面など）。建物検索を省き、その唯一の建物を
+// 固定選択してコメント投票に集中できるようにする。
+const SINGLE_BUILDING_CAMPUS_IDS = new Set<CampusId>(['minoh']);
+
 interface RequestsPageProps {
   campuses: readonly CampusOption[];
   selectedCampusId: CampusId;
@@ -60,6 +64,13 @@ export function RequestsPage({
   const selectedBuilding =
     buildings.find((building) => building.buildingId === selectedBuildingId) ??
     null;
+
+  // 箕面など建物が1つだけのキャンパスでは、その建物を固定選択する（検索は出さない）。
+  const isSingleBuildingCampus =
+    SINGLE_BUILDING_CAMPUS_IDS.has(selectedCampusId) && buildings.length === 1;
+  const fixedBuilding = isSingleBuildingCampus ? (buildings[0] ?? null) : null;
+  // 固定建物があればそれを、なければ検索で選んだ建物を投票対象にする。
+  const activeBuilding = fixedBuilding ?? selectedBuilding;
 
   // 入力に部分一致する建物をサジェスト（最大 SUGGESTION_LIMIT 件）。
   const suggestions = useMemo(() => {
@@ -115,7 +126,7 @@ export function RequestsPage({
 
   async function handleVote(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!selectedBuilding || isVoting) {
+    if (!activeBuilding || isVoting) {
       return;
     }
 
@@ -132,7 +143,7 @@ export function RequestsPage({
 
       setMessage({
         type: 'success',
-        text: `${selectedBuilding.buildingName} に投票しました`,
+        text: `${activeBuilding.buildingName} に投票しました`,
       });
       setComment('');
       router.refresh();
@@ -212,105 +223,115 @@ export function RequestsPage({
         {/* モバイルは縦積み、PC は「建物選択 + 投票」と「ランキング」の 2 カラム。 */}
         <div className="mt-5 flex flex-col gap-5 lg:mt-6 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6">
           <div className="flex flex-col gap-5">
-            <section className="rounded-[1.25rem] border border-[#0f897f]/15 bg-white p-4 shadow-sm">
-              <div className="mb-3 flex items-center gap-2">
-                <MapPin className="size-4 shrink-0 text-[#0f897f]" />
-                <h2 className="truncate text-base font-semibold">
-                  {selectedCampus?.name ?? 'キャンパス'}の建物を検索
-                </h2>
-              </div>
-
-              <div className="relative">
-                <div className="relative">
-                  <Search
-                    className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-                    aria-hidden="true"
-                  />
-                  <Input
-                    type="text"
-                    value={query}
-                    onChange={(e) => {
-                      setQuery(e.target.value);
-                      setListOpen(true);
-                      setSelectedBuildingId('');
-                    }}
-                    onFocus={() => setListOpen(true)}
-                    onBlur={() =>
-                      // クリック確定を待ってから閉じる。
-                      setTimeout(() => setListOpen(false), 150)
-                    }
-                    placeholder="建物名を入力（部分一致）"
-                    className="h-11 pl-9 sm:h-10"
-                    aria-label="建物名で検索"
-                  />
+            {!isSingleBuildingCampus ? (
+              <section className="rounded-[1.25rem] border border-[#0f897f]/15 bg-white p-4 shadow-sm">
+                <div className="mb-3 flex items-center gap-2">
+                  <MapPin className="size-4 shrink-0 text-[#0f897f]" />
+                  <h2 className="truncate text-base font-semibold">
+                    {selectedCampus?.name ?? 'キャンパス'}の建物を検索
+                  </h2>
                 </div>
 
-                {listOpen && suggestions.length > 0 ? (
-                  <ul
-                    className="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-xl border border-[#0f897f]/15 bg-white py-1 shadow-lg"
-                    role="listbox"
-                    aria-label="建物の候補"
-                  >
-                    {suggestions.map((building) => (
-                      <li key={building.buildingId}>
-                        <button
-                          type="button"
-                          role="option"
-                          aria-selected={
-                            selectedBuildingId === building.buildingId
-                          }
-                          // onBlur より先に発火させるため onMouseDown を使う。
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            selectBuilding(building);
-                          }}
-                          className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left hover:bg-muted"
-                        >
-                          <span className="flex min-w-0 items-center gap-2">
-                            <Building2
-                              className="size-4 shrink-0 text-muted-foreground"
-                              aria-hidden="true"
-                            />
-                            <span className="truncate text-sm font-medium">
-                              {building.buildingName}
-                            </span>
-                          </span>
-                          <Badge variant="outline" className="shrink-0">
-                            {building.voteCount}票
-                          </Badge>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-
-                {listOpen &&
-                query.trim().length > 0 &&
-                suggestions.length === 0 ? (
-                  <div className="absolute z-20 mt-1 w-full rounded-xl border border-[#0f897f]/15 bg-white px-3 py-3 text-sm text-muted-foreground shadow-lg">
-                    一致する建物がありません
+                <div className="relative">
+                  <div className="relative">
+                    <Search
+                      className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                      aria-hidden="true"
+                    />
+                    <Input
+                      type="text"
+                      value={query}
+                      onChange={(e) => {
+                        setQuery(e.target.value);
+                        setListOpen(true);
+                        setSelectedBuildingId('');
+                      }}
+                      onFocus={() => setListOpen(true)}
+                      onBlur={() =>
+                        // クリック確定を待ってから閉じる。
+                        setTimeout(() => setListOpen(false), 150)
+                      }
+                      placeholder="建物名を入力（部分一致）"
+                      className="h-11 pl-9 sm:h-10"
+                      aria-label="建物名で検索"
+                    />
                   </div>
-                ) : null}
-              </div>
 
-              <p className="mt-2 text-xs text-muted-foreground">
-                建物名を入力すると候補が表示されます。
-              </p>
-            </section>
+                  {listOpen && suggestions.length > 0 ? (
+                    <ul
+                      className="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-xl border border-[#0f897f]/15 bg-white py-1 shadow-lg"
+                      role="listbox"
+                      aria-label="建物の候補"
+                    >
+                      {suggestions.map((building) => (
+                        <li key={building.buildingId}>
+                          <button
+                            type="button"
+                            role="option"
+                            aria-selected={
+                              selectedBuildingId === building.buildingId
+                            }
+                            // onBlur より先に発火させるため onMouseDown を使う。
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              selectBuilding(building);
+                            }}
+                            className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left hover:bg-muted"
+                          >
+                            <span className="flex min-w-0 items-center gap-2">
+                              <Building2
+                                className="size-4 shrink-0 text-muted-foreground"
+                                aria-hidden="true"
+                              />
+                              <span className="truncate text-sm font-medium">
+                                {building.buildingName}
+                              </span>
+                            </span>
+                            <Badge variant="outline" className="shrink-0">
+                              {building.voteCount}票
+                            </Badge>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
 
-            {selectedBuilding ? (
+                  {listOpen &&
+                  query.trim().length > 0 &&
+                  suggestions.length === 0 ? (
+                    <div className="absolute z-20 mt-1 w-full rounded-xl border border-[#0f897f]/15 bg-white px-3 py-3 text-sm text-muted-foreground shadow-lg">
+                      一致する建物がありません
+                    </div>
+                  ) : null}
+                </div>
+
+                <p className="mt-2 text-xs text-muted-foreground">
+                  建物名を入力すると候補が表示されます。
+                </p>
+              </section>
+            ) : null}
+
+            {activeBuilding ? (
               <section className="rounded-[1.25rem] border border-[#0f897f]/15 bg-white p-4 shadow-sm">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="text-xs font-medium text-muted-foreground">
-                      選択中の建物
+                      {isSingleBuildingCampus
+                        ? '投票対象の建物'
+                        : '選択中の建物'}
                     </p>
                     <h2 className="mt-1 text-lg font-semibold">
-                      {selectedBuilding.buildingName}
+                      {activeBuilding.buildingName}
                     </h2>
+                    {isSingleBuildingCampus ? (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {selectedCampus?.name ?? 'このキャンパス'}
+                        は建物が1つのため固定されています。コメントを添えて投票できます。
+                      </p>
+                    ) : null}
                   </div>
                   <Badge className="shrink-0 bg-[#0f897f] text-white">
-                    {selectedBuilding.voteCount}票
+                    {activeBuilding.voteCount}票
                   </Badge>
                 </div>
 
@@ -321,12 +342,12 @@ export function RequestsPage({
                   <input
                     type="hidden"
                     name="campusId"
-                    value={selectedBuilding.campusId}
+                    value={activeBuilding.campusId}
                   />
                   <input
                     type="hidden"
                     name="buildingId"
-                    value={selectedBuilding.buildingId}
+                    value={activeBuilding.buildingId}
                   />
 
                   <div className="flex flex-col gap-2">
