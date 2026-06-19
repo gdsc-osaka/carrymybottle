@@ -13,6 +13,7 @@ import {
   type Variants,
 } from 'motion/react';
 import { WaterRippleCanvas, type RipplePointer } from './WaterRippleCanvas';
+import { InquiryForm } from '@/features/inquiry/InquiryForm';
 import {
   ArrowRight,
   BadgeCheck,
@@ -35,6 +36,7 @@ const NAV_LINKS = [
   { href: '#about', label: 'サービスについて' },
   { href: '#features', label: '機能' },
   { href: '#impact', label: '環境への貢献' },
+  { href: '#contact', label: 'お問い合わせ' },
 ];
 
 const EASE_OUT = [0.22, 1, 0.36, 1] as const;
@@ -746,6 +748,24 @@ export function LandingPage() {
               </Link>
             </motion.div>
           </Reveal>
+        </section>
+
+        {/* Contact Section */}
+        <section className="px-5 py-20 md:px-16" id="contact">
+          <div className="mx-auto max-w-4xl">
+            <Reveal className="mb-12 text-center">
+              <h2 className="mb-4 text-3xl font-bold text-[#00685f] md:text-4xl">
+                お問い合わせ
+              </h2>
+              <div className="mx-auto mb-5 h-1 w-16 rounded-full bg-[#6bd8cb]" />
+              <p className="mx-auto max-w-xl text-[#3d4947]">
+                ご質問・給水機の設置リクエスト・ご意見などをお寄せください。確認次第、ご記入のメールアドレスへご返信いたします。
+              </p>
+            </Reveal>
+            <Reveal y={40}>
+              <InquiryForm />
+            </Reveal>
+          </div>
         </section>
       </main>
 
