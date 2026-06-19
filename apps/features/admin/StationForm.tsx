@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { stationImageUrl } from '@/lib/storage/station-images';
+import { convertImageToWebp } from '@/lib/storage/convert-image-to-webp';
 import {
   Select,
   SelectContent,
@@ -107,6 +108,13 @@ export function StationForm({
       formData.set('longitude', longitude == null ? '' : String(longitude));
       formData.set('removeImage', String(removeImage));
       temperatures.forEach((t) => formData.append('temperatures', t));
+
+      // JPEG / PNG はアップロード前にクライアント側で WebP へ変換・縮小する。
+      // 変換対象外・失敗時は元ファイルのまま送られる（フォールバック）。
+      const rawImage = formData.get('image');
+      if (rawImage instanceof File && rawImage.size > 0) {
+        formData.set('image', await convertImageToWebp(rawImage));
+      }
 
       const result = isEdit
         ? await updateStationAction(station.id, formData)
@@ -273,7 +281,8 @@ export function StationForm({
               onChange={(e) => handleImageChange(e.target.files?.[0] ?? null)}
             />
             <p className="text-xs text-muted-foreground">
-              JPEG / PNG / WebP・5MBまで
+              JPEG / PNG / WebP・5MBまで（JPEG・PNG は自動で WebP
+              に変換・縮小されます）
             </p>
 
             {isEdit && existingImageUrl && !removeImage && !previewUrl ? (
