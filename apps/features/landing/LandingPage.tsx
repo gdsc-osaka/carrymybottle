@@ -259,10 +259,10 @@ function Hero() {
           {/* Wordmark */}
           <h1 className="font-[family-name:var(--font-display)] font-medium">
             <span className="block text-3xl tracking-[0.18em] text-[#3a8d85] sm:text-4xl md:text-5xl">
-              carry my
+              Carry My
             </span>
             <span className="block bg-gradient-to-r from-[#3aa597] to-[#2670c2] bg-clip-text pb-[0.1em] text-6xl tracking-[0.1em] text-transparent sm:text-7xl md:text-8xl">
-              bottle
+              Bottle
             </span>
           </h1>
 
@@ -367,8 +367,8 @@ export function LandingPage() {
             >
               <Droplet className="h-8 w-8 fill-[#1f8f87] text-[#1f8f87]" />
             </motion.span>
-            <span className="bg-gradient-to-r from-[#0f897f] to-[#1f6fc4] bg-clip-text font-[family-name:var(--font-display)] text-2xl font-bold lowercase tracking-tight text-transparent">
-              carry my bottle
+            <span className="bg-gradient-to-r from-[#0f897f] to-[#1f6fc4] bg-clip-text font-[family-name:var(--font-display)] text-2xl font-bold tracking-tight text-transparent">
+              Carry My Bottle
             </span>
           </Link>
           <nav className="hidden items-center gap-8 md:flex">
@@ -580,6 +580,9 @@ export function LandingPage() {
                 </Link>
                 <div className="absolute top-0 left-0 -z-10 h-full w-full scale-150 rounded-full bg-[#00685f]/5 blur-3xl" />
               </motion.div>
+              <p className="mx-auto mt-4 max-w-sm text-center text-xs text-[#5a6b6a] lg:ml-auto lg:text-right">
+                画像はイメージ図であり、実際に設置されている場所ではない可能性があります。
+              </p>
             </Reveal>
           </div>
         </section>
@@ -596,10 +599,15 @@ export function LandingPage() {
               </h2>
               <div className="space-y-4 text-lg text-[#3d4947]">
                 <p>
-                  キャリボトは、「給水場所が見つからず、重いペットボトルを持ち歩いたり、自動販売機に頼らざるを得ない」という学生の日常的な悩みから生まれました。
-                </p>
-                <p>
-                  広大な大阪大学のキャンパス内には、人目につかない廊下や研究棟の中に多くの給水スポットが隠れています。私たちはこれら「隠れたオアシス」をマップ化することで、より快適でサステナブルなキャンパスライフを実現したいと考えました。
+                  キャリボトとは
+                  <strong className="font-bold text-[#00685f]">
+                    PETボトルごみ問題
+                  </strong>
+                  に着目し、「
+                  <strong className="font-bold text-[#00685f]">
+                    地球にも市民にもやさしい生活をマイボトルで！
+                  </strong>
+                  」という理念のもと、マイボトルを使いやすい環境づくりとマイボトルを使うような意識づくりを推進している学生団体である。すでに設置されている給水機の存在を知らない学生がいるという問題を解決するべく、素早く給水できる環境を作りたいという思いからこのアプリが誕生した。
                 </p>
               </div>
             </div>
@@ -657,7 +665,7 @@ export function LandingPage() {
                     地球のために
                   </h3>
                   <p className="text-lg text-[#3d4947]">
-                    1回の給水が、1本のプラスチックゴミ削減につながります。阪大全体で1学期あたり10万本以上の削減を目指しましょう。
+                    マイボトルへの給水を通して、環境問題へアクションをしてみませんか？
                   </p>
                 </motion.div>
               </Reveal>
@@ -672,7 +680,7 @@ export function LandingPage() {
                     お財布のために
                   </h3>
                   <p className="text-lg text-[#3d4947]">
-                    自販機の飲み物は1本160円以上。1日2回給水すれば、年間で約32,000円の節約になります。賢く水分補給しましょう。
+                    マイボトルを使うと120円のペットボトルを毎日購入した時と比較して4年間で約10万円節約に！！
                   </p>
                 </motion.div>
               </Reveal>
@@ -684,10 +692,10 @@ export function LandingPage() {
         <section className="bg-[#00685f]/5 px-5 py-20 text-center md:px-16">
           <Reveal className="mx-auto max-w-2xl">
             <h2 className="mb-6 text-3xl font-bold text-[#00685f] md:text-4xl">
-              QRコードでクイックアクセス
+              QRコードで素早くアクセス可能
             </h2>
             <p className="mb-10 text-lg text-[#3d4947]">
-              キャンパス内の給水器にあるキャリボトのステッカーを探してください。コードをスキャンするだけで不具合の報告やメンテナンス履歴を確認できます。
+              給水機にあるQRコードから不具合の報告やメンテナンス履歴を確認できます。
             </p>
             <div className="lp-glass-card inline-block rounded-[1.5rem] border-2 border-dashed border-[#00685f]/30 p-6">
               <div className="flex h-48 w-48 items-center justify-center rounded-[1rem] bg-white p-4">
@@ -752,7 +760,8 @@ export function LandingPage() {
               </span>
             </div>
             <p className="text-sm opacity-70">
-              © 2024 Carry My Bottle. 大阪大学サステナビリティプロジェクト.
+              © 2024 Carry My Bottle. 大阪大学サステナビリティプロジェクト ／
+              阪大マイボトル推進プロジェクト.
             </p>
             {/* TODO(#166): 正式なキャリボトのコンタクトメールに置き換える */}
             <p className="text-sm font-medium text-[#00685f]">
