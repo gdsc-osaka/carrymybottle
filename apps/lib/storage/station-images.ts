@@ -5,6 +5,7 @@
  * 読み取りは公開バケット + カスタムドメイン（prod）/ r2.dev（dev）の直リンクで、
  * Worker を経由しない。URL は `IMAGE_PUBLIC_BASE_URL` + オブジェクトキーで組み立てる。
  */
+import { z } from 'zod';
 
 /** アップロードを許可する MIME タイプ。 */
 export const STATION_IMAGE_MIME_TYPES = [
@@ -29,17 +30,26 @@ function isStationImageMimeType(type: string): type is StationImageMimeType {
 }
 
 /**
+ * アップロード画像の Zod スキーマ（MIME・サイズを Server Action 境界で検証する。
+ * AGENTS.md §9 / #190）。空ファイル（未選択）は呼び出し側で除外する想定。
+ */
+export const stationImageSchema = z
+  .instanceof(File)
+  .refine(
+    (file) => isStationImageMimeType(file.type),
+    'JPEG / PNG / WebP のいずれかの画像を選択してください'
+  )
+  .refine(
+    (file) => file.size <= STATION_IMAGE_MAX_BYTES,
+    '画像サイズは5MB以内にしてください'
+  );
+
+/**
  * 画像ファイルを検証する。問題があればエラーメッセージ、なければ null を返す。
- * 空ファイル（未選択）は呼び出し側で除外する想定。
  */
 export function validateStationImage(file: File): string | null {
-  if (!isStationImageMimeType(file.type)) {
-    return 'JPEG / PNG / WebP のいずれかの画像を選択してください';
-  }
-  if (file.size > STATION_IMAGE_MAX_BYTES) {
-    return '画像サイズは5MB以内にしてください';
-  }
-  return null;
+  const result = stationImageSchema.safeParse(file);
+  return result.success ? null : result.error.issues[0].message;
 }
 
 /** 給水機写真の R2 オブジェクトキーを生成する。 */
