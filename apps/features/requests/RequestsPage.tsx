@@ -108,6 +108,8 @@ export function RequestsPage({
     setSelectedBuildingId(building.buildingId);
     setQuery(building.buildingName);
     setListOpen(false);
+    // 別の建物に切り替えたら、前の建物向けに入力したコメントは持ち越さない。
+    setComment('');
     setMessage(null);
   }
 
