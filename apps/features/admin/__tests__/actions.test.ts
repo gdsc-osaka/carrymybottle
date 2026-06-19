@@ -27,6 +27,7 @@ vi.mock('../queries', () => ({
   logAuditEvent: vi.fn().mockResolvedValue(undefined),
   getAllStations: vi.fn(),
   getStationById: vi.fn(),
+  getStationImageKey: vi.fn().mockResolvedValue(null),
 }));
 
 describe('createStationAction', () => {
@@ -42,6 +43,33 @@ describe('createStationAction', () => {
     await expect(createStationAction(formData)).rejects.toThrow(
       'NEXT_REDIRECT'
     );
+  });
+
+  it('許可されない画像形式は保存前にエラーを返す', async () => {
+    vi.mocked(requireAdminSession).mockResolvedValue(undefined);
+    const mockBatch = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(getDb).mockReturnValue({ batch: mockBatch } as unknown as DB);
+
+    const formData = new FormData();
+    formData.set('name', 'テスト給水機');
+    formData.set('campusId', 'campus_1');
+    formData.set('buildingId', 'building_1');
+    formData.set('status', 'available');
+    formData.append('temperatures', 'cold');
+    formData.set('latitude', '34.8');
+    formData.set('longitude', '135.5');
+    formData.set('isPublic', 'true');
+    // GIF は許可外
+    formData.set(
+      'image',
+      new File([new Uint8Array(16)], 'a.gif', { type: 'image/gif' })
+    );
+
+    const result = await createStationAction(formData);
+
+    expect(result).toMatchObject({ success: false, error: expect.any(String) });
+    // 検証失敗時は DB 書き込みを行わない
+    expect(mockBatch).not.toHaveBeenCalled();
   });
 });
 

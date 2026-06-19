@@ -72,6 +72,19 @@ export async function getStationById(db: DB, id: string) {
   };
 }
 
+/** 給水機の現在の画像キーのみを取得する（差し替え・削除時の旧オブジェクト削除に使う）。 */
+export async function getStationImageKey(
+  db: DB,
+  id: string
+): Promise<string | null> {
+  const [row] = await db
+    .select({ imageKey: stations.imageKey })
+    .from(stations)
+    .where(eq(stations.id, id))
+    .limit(1);
+  return row?.imageKey ?? null;
+}
+
 export async function getAllCampuses(db: DB) {
   return db.select().from(campuses).orderBy(asc(campuses.name));
 }
