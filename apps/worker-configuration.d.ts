@@ -15,6 +15,8 @@ interface CloudflareEnv {
   // lib/rate-limit/config.ts apply.
   RATE_LIMIT_CONTACT_MAX?: string;
   RATE_LIMIT_CONTACT_WINDOW_SEC?: string;
+  RATE_LIMIT_INQUIRY_MAX?: string;
+  RATE_LIMIT_INQUIRY_WINDOW_SEC?: string;
   RATE_LIMIT_VOTE_MAX?: string;
   RATE_LIMIT_VOTE_WINDOW_SEC?: string;
   RATE_LIMIT_ADMIN_LOGIN_MAX?: string;
