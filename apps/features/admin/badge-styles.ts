@@ -6,6 +6,7 @@
  * className で重ねて使う想定。
  */
 import type { Station, StationTemperature } from '@/lib/db/types';
+import type { InquiryCategory } from '@/lib/constants/inquiries';
 
 type StatusType = Station['status'];
 type TemperatureType = StationTemperature['temperatureType'];
@@ -42,5 +43,13 @@ export const ISSUE_BADGE_CLASS: Record<IssueType, string> = {
   stopped: 'border-amber-200 bg-amber-50 text-amber-700',
   no_water: 'border-orange-200 bg-orange-50 text-orange-700',
   leak_or_abnormal: 'border-rose-200 bg-rose-50 text-rose-700',
+  other: 'border-slate-200 bg-slate-50 text-slate-600',
+};
+
+/** お問い合わせ種別の色。 */
+export const INQUIRY_CATEGORY_BADGE_CLASS: Record<InquiryCategory, string> = {
+  general: 'border-sky-200 bg-sky-50 text-sky-700',
+  installation_request: 'border-teal-200 bg-teal-50 text-teal-700',
+  feedback: 'border-violet-200 bg-violet-50 text-violet-700',
   other: 'border-slate-200 bg-slate-50 text-slate-600',
 };
