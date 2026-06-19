@@ -9,6 +9,8 @@ import {
   uniqueIndex,
 } from 'drizzle-orm/sqlite-core';
 
+import { INQUIRY_CATEGORIES } from '@/lib/constants/inquiries';
+
 export const campuses = sqliteTable('campuses', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
@@ -153,9 +155,7 @@ export const emergencyContacts = sqliteTable('emergency_contacts', {
 
 export const inquiries = sqliteTable('inquiries', {
   id: text('id').primaryKey(),
-  category: text('category', {
-    enum: ['general', 'installation_request', 'feedback', 'other'],
-  }).notNull(),
+  category: text('category', { enum: INQUIRY_CATEGORIES }).notNull(),
   name: text('name'),
   message: text('message').notNull(),
   reporterEmail: text('reporter_email').notNull(),
