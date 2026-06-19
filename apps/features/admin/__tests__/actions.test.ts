@@ -7,12 +7,16 @@ import {
 import { requireAdminSession } from '@/lib/auth/session';
 import { getDb, type DB } from '@/lib/db/client';
 import { logAuditEvent } from '../queries';
+import {
+  uploadStationImage,
+  deleteStationImage,
+} from '@/lib/storage/station-images';
 
 vi.mock('next/navigation', () => ({ redirect: vi.fn() }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 vi.mock('@opennextjs/cloudflare', () => ({
   getCloudflareContext: vi.fn().mockResolvedValue({
-    env: { DB: {} },
+    env: { DB: {}, STATION_IMAGES: {} },
   }),
 }));
 vi.mock('@/lib/db/client', () => ({
@@ -29,6 +33,16 @@ vi.mock('../queries', () => ({
   getStationById: vi.fn(),
   getStationImageKey: vi.fn().mockResolvedValue(null),
 }));
+// R2 への put/delete のみモックし、検証ロジック（validateStationImage）は実物を使う。
+vi.mock('@/lib/storage/station-images', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('@/lib/storage/station-images')>();
+  return {
+    ...actual,
+    uploadStationImage: vi.fn().mockResolvedValue('stations/x/y.jpg'),
+    deleteStationImage: vi.fn().mockResolvedValue(undefined),
+  };
+});
 
 describe('createStationAction', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -70,6 +84,41 @@ describe('createStationAction', () => {
     expect(result).toMatchObject({ success: false, error: expect.any(String) });
     // 検証失敗時は DB 書き込みを行わない
     expect(mockBatch).not.toHaveBeenCalled();
+  });
+
+  it('画像アップロード後に DB insert が失敗したら R2 オブジェクトを補償削除する', async () => {
+    vi.mocked(requireAdminSession).mockResolvedValue(undefined);
+    vi.mocked(uploadStationImage).mockResolvedValue('stations/x/y.jpg');
+    // db.batch に渡す配列は db.insert(...).values(...) で構築されるため両方モックする。
+    const mockInsert = vi.fn().mockReturnValue({ values: vi.fn() });
+    const mockBatch = vi.fn().mockRejectedValue(new Error('D1 insert failed'));
+    vi.mocked(getDb).mockReturnValue({
+      insert: mockInsert,
+      batch: mockBatch,
+    } as unknown as DB);
+
+    const formData = new FormData();
+    formData.set('name', 'テスト給水機');
+    formData.set('campusId', 'campus_1');
+    formData.set('buildingId', 'building_1');
+    formData.set('status', 'available');
+    formData.append('temperatures', 'cold');
+    formData.set('latitude', '34.8');
+    formData.set('longitude', '135.5');
+    formData.set('isPublic', 'true');
+    formData.set(
+      'image',
+      new File([new Uint8Array(16)], 'a.jpg', { type: 'image/jpeg' })
+    );
+
+    await expect(createStationAction(formData)).rejects.toThrow(
+      'D1 insert failed'
+    );
+    // 孤児を残さないよう、アップロード済みオブジェクトを削除する
+    expect(vi.mocked(deleteStationImage)).toHaveBeenCalledWith(
+      expect.anything(),
+      'stations/x/y.jpg'
+    );
   });
 });
 
