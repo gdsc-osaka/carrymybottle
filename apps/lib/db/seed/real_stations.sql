@@ -16,7 +16,8 @@ VALUES
 INSERT OR IGNORE INTO buildings (id, campus_id, name, sort_order, latitude, longitude, created_at, updated_at)
 VALUES
   ('toyonaka_bldg_fukuri',    'toyonaka', '福利会館',                   10, 34.804468, 135.452892, strftime('%s','now'), strftime('%s','now')),
-  ('toyonaka_bldg_zengaku_a', 'toyonaka', '全学教育推進機構 管理・講義A棟', 20, 34.805906, 135.454308, strftime('%s','now'), strftime('%s','now')),
+  -- ピロティ側入り口の給水機が入る建物（OSM 由来。下のステーションの FK 用に冪等投入）。
+  ('toyonaka_osm_225710189',  'toyonaka', '共通教育A棟',                 0,  34.806164, 135.454339, strftime('%s','now'), strftime('%s','now')),
   ('suita_bldg_coop_honbumae','suita',    '生協コンビニ本部前店',        10, 34.819203, 135.524713, strftime('%s','now'), strftime('%s','now')),
   ('suita_bldg_m3',           'suita',    'M3棟',                       20, 34.822129, 135.521282, strftime('%s','now'), strftime('%s','now'));
 
@@ -24,7 +25,6 @@ VALUES
 -- columns existed (INSERT OR IGNORE above is a no-op for existing ids). Safe to
 -- re-run: the UPDATE simply re-sets the same values.
 UPDATE buildings SET latitude = 34.804468, longitude = 135.452892 WHERE id = 'toyonaka_bldg_fukuri';
-UPDATE buildings SET latitude = 34.805906, longitude = 135.454308 WHERE id = 'toyonaka_bldg_zengaku_a';
 UPDATE buildings SET latitude = 34.819203, longitude = 135.524713 WHERE id = 'suita_bldg_coop_honbumae';
 UPDATE buildings SET latitude = 34.822129, longitude = 135.521282 WHERE id = 'suita_bldg_m3';
 
@@ -40,10 +40,10 @@ VALUES
    '入口入ってすぐ右。コーヒーなどの機械の端。',
    34.8036, 135.4554, 0.40, 0.45, 'available', 1, strftime('%s','now'), strftime('%s','now')),
 
-  ('toyonaka_zengaku_a', 'toyonaka', 'toyonaka_bldg_zengaku_a',
-   'ピロティ正面',
+  ('toyonaka_zengaku_a', 'toyonaka', 'toyonaka_osm_225710189',
+   'ピロティ側入り口',
    '共通棟ピロティから入って正面。階段近くの壁際。',
-   34.8067, 135.4537, 0.55, 0.55, 'available', 1, strftime('%s','now'), strftime('%s','now')),
+   34.806029, 135.454468, 0.55, 0.55, 'available', 1, strftime('%s','now'), strftime('%s','now')),
 
   ('suita_coop_honbumae', 'suita', 'suita_bldg_coop_honbumae',
    'コンビニ入口',
@@ -59,7 +59,8 @@ VALUES
 -- columns existed (INSERT OR IGNORE above is a no-op for existing ids). Safe to
 -- re-run: the UPDATE simply re-sets the same values.
 UPDATE stations SET latitude = 34.8036, longitude = 135.4554 WHERE id = 'toyonaka_fukuri_coop';
-UPDATE stations SET latitude = 34.8067, longitude = 135.4537 WHERE id = 'toyonaka_zengaku_a';
+-- 給水機を共通教育A棟へ移設し名称も変更済み。既存行にも収束させる。
+UPDATE stations SET building_id = 'toyonaka_osm_225710189', name = 'ピロティ側入り口', latitude = 34.806029, longitude = 135.454468 WHERE id = 'toyonaka_zengaku_a';
 UPDATE stations SET latitude = 34.8224, longitude = 135.5246 WHERE id = 'suita_coop_honbumae';
 UPDATE stations SET latitude = 34.8208, longitude = 135.5230 WHERE id = 'suita_m3_212';
 
@@ -71,3 +72,12 @@ VALUES
   ('suita_coop_honbumae',  'normal', strftime('%s','now')),
   ('suita_m3_212',         'normal', strftime('%s','now')),
   ('suita_m3_212',         'cold',   strftime('%s','now'));
+
+-- 5. 不要になった建物の削除 ---------------------------------------------------
+-- 「全学教育推進機構 管理・講義A棟」(toyonaka_bldg_zengaku_a) は給水機を共通教育A棟へ
+-- 移したため不要。設置希望の投票データ（票・コメント・ターゲット）を先に掃除してから
+-- 建物行を削除する。冪等（既に無ければ no-op）。
+DELETE FROM installation_votes WHERE target_id IN (SELECT id FROM installation_targets WHERE building_id = 'toyonaka_bldg_zengaku_a');
+DELETE FROM installation_comments WHERE target_id IN (SELECT id FROM installation_targets WHERE building_id = 'toyonaka_bldg_zengaku_a');
+DELETE FROM installation_targets WHERE building_id = 'toyonaka_bldg_zengaku_a';
+DELETE FROM buildings WHERE id = 'toyonaka_bldg_zengaku_a';
