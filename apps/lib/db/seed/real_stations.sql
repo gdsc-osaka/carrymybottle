@@ -15,18 +15,18 @@ VALUES
 -- Verify against OSM / on the ground before relying on them.
 INSERT OR IGNORE INTO buildings (id, campus_id, name, sort_order, latitude, longitude, created_at, updated_at)
 VALUES
-  ('toyonaka_bldg_fukuri',    'toyonaka', '福利会館',                   10, 34.8036, 135.4554, strftime('%s','now'), strftime('%s','now')),
-  ('toyonaka_bldg_zengaku_a', 'toyonaka', '全学教育推進機構 管理・講義A棟', 20, 34.8067, 135.4537, strftime('%s','now'), strftime('%s','now')),
-  ('suita_bldg_coop_honbumae','suita',    '生協コンビニ本部前店',        10, 34.8224, 135.5246, strftime('%s','now'), strftime('%s','now')),
-  ('suita_bldg_m3',           'suita',    'M3棟',                       20, 34.8208, 135.5230, strftime('%s','now'), strftime('%s','now'));
+  ('toyonaka_bldg_fukuri',    'toyonaka', '福利会館',                   10, 34.804468, 135.452892, strftime('%s','now'), strftime('%s','now')),
+  ('toyonaka_bldg_zengaku_a', 'toyonaka', '全学教育推進機構 管理・講義A棟', 20, 34.805906, 135.454308, strftime('%s','now'), strftime('%s','now')),
+  ('suita_bldg_coop_honbumae','suita',    '生協コンビニ本部前店',        10, 34.819203, 135.524713, strftime('%s','now'), strftime('%s','now')),
+  ('suita_bldg_m3',           'suita',    'M3棟',                       20, 34.822129, 135.521282, strftime('%s','now'), strftime('%s','now'));
 
 -- 2b. Backfill coordinates for buildings inserted before the latitude/longitude
 -- columns existed (INSERT OR IGNORE above is a no-op for existing ids). Safe to
 -- re-run: the UPDATE simply re-sets the same values.
-UPDATE buildings SET latitude = 34.8036, longitude = 135.4554 WHERE id = 'toyonaka_bldg_fukuri';
-UPDATE buildings SET latitude = 34.8067, longitude = 135.4537 WHERE id = 'toyonaka_bldg_zengaku_a';
-UPDATE buildings SET latitude = 34.8224, longitude = 135.5246 WHERE id = 'suita_bldg_coop_honbumae';
-UPDATE buildings SET latitude = 34.8208, longitude = 135.5230 WHERE id = 'suita_bldg_m3';
+UPDATE buildings SET latitude = 34.804468, longitude = 135.452892 WHERE id = 'toyonaka_bldg_fukuri';
+UPDATE buildings SET latitude = 34.805906, longitude = 135.454308 WHERE id = 'toyonaka_bldg_zengaku_a';
+UPDATE buildings SET latitude = 34.819203, longitude = 135.524713 WHERE id = 'suita_bldg_coop_honbumae';
+UPDATE buildings SET latitude = 34.822129, longitude = 135.521282 WHERE id = 'suita_bldg_m3';
 
 -- 3. Stations -----------------------------------------------------------------
 -- latitude / longitude are approximate and MUST be verified against OSM / on the

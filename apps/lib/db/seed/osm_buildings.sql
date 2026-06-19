@@ -174,7 +174,6 @@ VALUES
   ('toyonaka_osm_225710186', 'toyonaka', '総合学術博物館', 0, 34.807422, 135.449044, strftime('%s','now'), strftime('%s','now')),
   ('toyonaka_osm_157098221', 'toyonaka', '総合図書館', 0, 34.804954, 135.45507, strftime('%s','now'), strftime('%s','now')),
   ('toyonaka_osm_463870354', 'toyonaka', '多目的倉庫', 0, 34.8069, 135.455699, strftime('%s','now'), strftime('%s','now')),
-  ('toyonaka_osm_311504482', 'toyonaka', '体育館', 0, 34.807009, 135.455258, strftime('%s','now'), strftime('%s','now')),
   ('toyonaka_osm_229130610', 'toyonaka', '待兼山会館', 0, 34.805111, 135.452112, strftime('%s','now'), strftime('%s','now')),
   ('toyonaka_osm_463870348', 'toyonaka', '大講義棟', 0, 34.805716, 135.455191, strftime('%s','now'), strftime('%s','now')),
   ('toyonaka_osm_225710182', 'toyonaka', '大阪大学会館', 0, 34.806669, 135.452583, strftime('%s','now'), strftime('%s','now')),
@@ -182,6 +181,7 @@ VALUES
   ('toyonaka_osm_157119834', 'toyonaka', '大阪大学生協', 0, 34.804461, 135.452863, strftime('%s','now'), strftime('%s','now')),
   ('toyonaka_osm_n3193702961', 'toyonaka', '大阪大学生協 図書館下食堂', 0, 34.804991, 135.455353, strftime('%s','now'), strftime('%s','now')),
   ('toyonaka_osm_157119839', 'toyonaka', '大阪大学豊中キャンパスグラウンド', 0, 34.806366, 135.456475, strftime('%s','now'), strftime('%s','now')),
+  ('toyonaka_osm_311504482', 'toyonaka', '第一体育館', 0, 34.807009, 135.455258, strftime('%s','now'), strftime('%s','now')),
   ('toyonaka_osm_463870352', 'toyonaka', '第二体育館', 0, 34.80723, 135.455779, strftime('%s','now'), strftime('%s','now')),
   ('toyonaka_osm_229237337', 'toyonaka', '中庭会議室', 0, 34.804744, 135.454427, strftime('%s','now'), strftime('%s','now')),
   ('toyonaka_osm_157302297', 'toyonaka', '日本学棟', 0, 34.804859, 135.453402, strftime('%s','now'), strftime('%s','now')),
@@ -360,7 +360,6 @@ UPDATE buildings SET name = '実験棟', latitude = 34.806334, longitude = 135.4
 UPDATE buildings SET name = '総合学術博物館', latitude = 34.807422, longitude = 135.449044 WHERE id = 'toyonaka_osm_225710186';
 UPDATE buildings SET name = '総合図書館', latitude = 34.804954, longitude = 135.45507 WHERE id = 'toyonaka_osm_157098221';
 UPDATE buildings SET name = '多目的倉庫', latitude = 34.8069, longitude = 135.455699 WHERE id = 'toyonaka_osm_463870354';
-UPDATE buildings SET name = '体育館', latitude = 34.807009, longitude = 135.455258 WHERE id = 'toyonaka_osm_311504482';
 UPDATE buildings SET name = '待兼山会館', latitude = 34.805111, longitude = 135.452112 WHERE id = 'toyonaka_osm_229130610';
 UPDATE buildings SET name = '大講義棟', latitude = 34.805716, longitude = 135.455191 WHERE id = 'toyonaka_osm_463870348';
 UPDATE buildings SET name = '大阪大学会館', latitude = 34.806669, longitude = 135.452583 WHERE id = 'toyonaka_osm_225710182';
@@ -368,6 +367,7 @@ UPDATE buildings SET name = '大阪大学国際交流会館', latitude = 34.8052
 UPDATE buildings SET name = '大阪大学生協', latitude = 34.804461, longitude = 135.452863 WHERE id = 'toyonaka_osm_157119834';
 UPDATE buildings SET name = '大阪大学生協 図書館下食堂', latitude = 34.804991, longitude = 135.455353 WHERE id = 'toyonaka_osm_n3193702961';
 UPDATE buildings SET name = '大阪大学豊中キャンパスグラウンド', latitude = 34.806366, longitude = 135.456475 WHERE id = 'toyonaka_osm_157119839';
+UPDATE buildings SET name = '第一体育館', latitude = 34.807009, longitude = 135.455258 WHERE id = 'toyonaka_osm_311504482';
 UPDATE buildings SET name = '第二体育館', latitude = 34.80723, longitude = 135.455779 WHERE id = 'toyonaka_osm_463870352';
 UPDATE buildings SET name = '中庭会議室', latitude = 34.804744, longitude = 135.454427 WHERE id = 'toyonaka_osm_229237337';
 UPDATE buildings SET name = '日本学棟', latitude = 34.804859, longitude = 135.453402 WHERE id = 'toyonaka_osm_157302297';
