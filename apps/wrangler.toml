@@ -17,11 +17,9 @@ APP_ENV = "development"
 APP_BASE_URL = "http://localhost:3000"
 EMERGENCY_CONTACT_TO = "carry.my.bottle@gmail.com"
 EMERGENCY_CONTACT_FROM = "noreply@gdgoc-osaka.jp"
-# 給水機画像の公開配信ベースURL（#190）。バケットの公開アクセス（dev は r2.dev
-# マネージドURL）を有効化したあと、その URL を設定する。末尾スラッシュなし。
-# 例: https://pub-xxxxxxxx.r2.dev
-# TODO: terraform apply 後に r2.dev 公開URLを有効化し、ここに設定する。
-IMAGE_PUBLIC_BASE_URL = ""
+# 給水機画像の公開配信ベースURL（#190）。dev は r2.dev マネージドURL（公開アクセス
+# 有効化済み: wrangler r2 bucket dev-url enable）。末尾スラッシュなし。
+IMAGE_PUBLIC_BASE_URL = "https://pub-03077de7c2104407a48657101cf6b2c8.r2.dev"
 
 [[d1_databases]]
 binding = "DB"
