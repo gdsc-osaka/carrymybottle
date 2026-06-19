@@ -43,6 +43,27 @@ export function StationForm({
 }: Props) {
   const isEdit = !!station;
 
+  // QR / 短縮リンクの遷移先として url.gdgs.jp に設定すべき正規URL。
+  // 計測には ?source=qr が必須なので、コピペ用に組み立てて表示する。
+  // origin は配信元（公開サイト）と同一なので window から取得する。編集ダイアログは
+  // クリック後にクライアントでマウントされるため、遅延初期化で SSR を避ける。
+  const [origin] = useState(() =>
+    typeof window !== 'undefined' ? window.location.origin : ''
+  );
+  const qrTargetUrl =
+    station && origin ? `${origin}/stations/${station.id}?source=qr` : '';
+  const [qrUrlCopied, setQrUrlCopied] = useState(false);
+  const handleCopyQrUrl = useCallback(async () => {
+    if (!qrTargetUrl) return;
+    try {
+      await navigator.clipboard.writeText(qrTargetUrl);
+      setQrUrlCopied(true);
+      setTimeout(() => setQrUrlCopied(false), 2000);
+    } catch {
+      // クリップボード API が使えない環境では何もしない（手動コピー可能）。
+    }
+  }, [qrTargetUrl]);
+
   const existingImageUrl = stationImageUrl(imageBaseUrl, station?.imageKey);
   const [removeImage, setRemoveImage] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -317,6 +338,40 @@ export function StationForm({
               </div>
             </div>
           </div>
+
+          {isEdit && station && (
+            <div className="space-y-2 rounded-lg border border-teal-200 bg-teal-50/50 p-3">
+              <Label className="text-sm font-semibold text-teal-800">
+                QR / 短縮リンク用URL
+              </Label>
+              <p className="text-xs leading-relaxed text-slate-600">
+                url.gdgs.jp にてこのURLを用いて短縮リンクを生成してください。
+                <code className="mx-0.5 rounded bg-slate-100 px-1 py-0.5">
+                  ?source=qr
+                </code>
+                が付いた状態でアクセスされることで、分析（QRスキャン数・閲覧数）に計上されます。
+              </p>
+              <div className="flex items-center gap-2">
+                <Input
+                  readOnly
+                  value={qrTargetUrl}
+                  aria-label="QR / 短縮リンク用URL"
+                  className="font-mono text-xs"
+                  onFocus={(e) => e.currentTarget.select()}
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={handleCopyQrUrl}
+                  disabled={!qrTargetUrl}
+                  className="shrink-0"
+                >
+                  {qrUrlCopied ? 'コピーしました' : 'コピー'}
+                </Button>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="shortLinkId">短縮リンクID (url.gdgs.jp)</Label>
