@@ -86,17 +86,17 @@ export function StationPin({ station, onClick }: Props) {
       {/* Badge（塗り＝水温、リング＝ステータス） */}
       <span
         className={cn(
-          'flex size-8 items-center justify-center rounded-full text-white shadow-md ring-2 transition-transform group-hover:scale-110',
+          'flex size-7 items-center justify-center rounded-full text-white shadow-md ring-2 transition-transform group-hover:scale-110',
           STATUS_RING[station.status]
         )}
         style={{ background: temperature.background }}
       >
-        <Droplet className="size-4 fill-current" aria-hidden="true" />
+        <Droplet className="size-3.5 fill-current" aria-hidden="true" />
       </span>
       {/* Pointer tail (tip touches the coordinate via marker anchor 'bottom') */}
       <span
         className={cn(
-          '-mt-0.5 size-2 rotate-45 rounded-[1px] shadow-md ring-2',
+          '-mt-0.5 size-1.5 rotate-45 rounded-[1px] shadow-md ring-2',
           STATUS_RING[station.status]
         )}
         style={{ background: temperature.background }}
