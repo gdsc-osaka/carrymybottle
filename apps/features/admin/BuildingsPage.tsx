@@ -2,6 +2,17 @@
 
 import { useMemo, useState } from 'react';
 import { Search } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -27,6 +38,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { BuildingForm } from './BuildingForm';
+import { deleteBuildingAction } from './actions';
 import type { Building, Campus } from '@/lib/db/types';
 
 type CoordFilter = 'all' | 'set' | 'unset';
@@ -67,9 +79,28 @@ export function BuildingsPage({ buildings, campuses }: Props) {
     });
   }, [buildings, query, campusFilter, coordFilter]);
 
+  // 削除は「依存あり」など想定内の失敗を理由つきで表示したいので、結果の
+  // { success:false, error } を拾う専用ハンドラで扱う（throw も保険で捕捉）。
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
   function openEdit(building: Building) {
     setEditBuilding(building);
     setOpen(true);
+  }
+
+  async function handleDelete(id: string) {
+    if (deletingId) return;
+    setError(null);
+    setDeletingId(id);
+    try {
+      const result = await deleteBuildingAction(id);
+      if (!result.success) setError(result.error);
+    } catch {
+      setError('削除に失敗しました。時間をおいて再試行してください。');
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   return (
@@ -132,6 +163,15 @@ export function BuildingsPage({ buildings, campuses }: Props) {
         {filteredBuildings.length} 件を表示（全 {buildings.length} 件）
       </p>
 
+      {error && (
+        <p
+          role="alert"
+          className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700"
+        >
+          {error}
+        </p>
+      )}
+
       <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
         <Table>
           <TableHeader>
@@ -190,7 +230,7 @@ export function BuildingsPage({ buildings, campuses }: Props) {
                     )}
                   </TableCell>
                   <TableCell>
-                    <div className="flex justify-end">
+                    <div className="flex justify-end gap-2">
                       <Button
                         size="sm"
                         variant="outline"
@@ -198,6 +238,36 @@ export function BuildingsPage({ buildings, campuses }: Props) {
                       >
                         編集
                       </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button size="sm" variant="destructive">
+                            削除
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>
+                              本当に削除しますか？
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              「{building.name}
+                              」を完全に削除します。この操作は取り消せません。給水機や設置希望から参照されている建物は削除できません。
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+                            <AlertDialogAction
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              disabled={deletingId === building.id}
+                              onClick={() => handleDelete(building.id)}
+                            >
+                              {deletingId === building.id
+                                ? '削除中...'
+                                : '削除する'}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </TableCell>
                 </TableRow>
