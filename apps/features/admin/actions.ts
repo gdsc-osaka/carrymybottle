@@ -102,6 +102,20 @@ function extractImageFile(formData: FormData): File | null {
   return null;
 }
 
+// クライアントが付与する画像寸法（px）。詳細ページの aspect-ratio 枠に使う。
+// 不正・未送信は null（フォールバック）。
+function extractImageDimensions(formData: FormData): {
+  width: number | null;
+  height: number | null;
+} {
+  const w = Number(formData.get('imageWidth'));
+  const h = Number(formData.get('imageHeight'));
+  return {
+    width: Number.isInteger(w) && w > 0 ? w : null,
+    height: Number.isInteger(h) && h > 0 ? h : null,
+  };
+}
+
 // #88 給水機追加
 export async function createStationAction(
   formData: FormData
@@ -119,13 +133,18 @@ export async function createStationAction(
   const id = `station_${crypto.randomUUID().replace(/-/g, '').slice(0, 8)}`;
   const now = new Date();
 
-  // 画像は任意。選択時のみ検証し、R2 へアップロードしてキーを保存する。
+  // 画像は任意。選択時のみ検証し、R2 へアップロードしてキーと寸法を保存する。
   const imageFile = extractImageFile(formData);
   let imageKey: string | null = null;
+  let imageWidth: number | null = null;
+  let imageHeight: number | null = null;
   if (imageFile) {
     const imageError = validateStationImage(imageFile);
     if (imageError) return { success: false, error: imageError };
     imageKey = await uploadStationImage(env.STATION_IMAGES, id, imageFile);
+    const dimensions = extractImageDimensions(formData);
+    imageWidth = dimensions.width;
+    imageHeight = dimensions.height;
   }
 
   // D1 は対話的トランザクション(BEGIN/COMMIT)を持たないため、複数文の
@@ -145,6 +164,8 @@ export async function createStationAction(
         shortLinkId: input.shortLinkId,
         shortLinkUrl: input.shortLinkUrl || null,
         imageKey,
+        imageWidth,
+        imageHeight,
         createdAt: now,
         updatedAt: now,
       }),
@@ -194,19 +215,33 @@ export async function updateStationAction(
   const removeImage = formData.get('removeImage') === 'true';
   const imageFile = extractImageFile(formData);
 
-  let imageKey: string | null = currentImageKey;
+  // 画像に変更があるときだけ image 系カラム（キー＋寸法）を更新する。据え置き時は
+  // undefined のままにして現状の値を保持する。
+  let imageFields:
+    | {
+        imageKey: string | null;
+        imageWidth: number | null;
+        imageHeight: number | null;
+      }
+    | undefined;
   let imageKeyToDelete: string | null = null;
   if (removeImage) {
-    imageKey = null;
+    imageFields = { imageKey: null, imageWidth: null, imageHeight: null };
     imageKeyToDelete = currentImageKey;
   } else if (imageFile) {
     const imageError = validateStationImage(imageFile);
     if (imageError) return { success: false, error: imageError };
-    imageKey = await uploadStationImage(
+    const newImageKey = await uploadStationImage(
       env.STATION_IMAGES,
       stationId,
       imageFile
     );
+    const dimensions = extractImageDimensions(formData);
+    imageFields = {
+      imageKey: newImageKey,
+      imageWidth: dimensions.width,
+      imageHeight: dimensions.height,
+    };
     imageKeyToDelete = currentImageKey;
   }
 
@@ -226,7 +261,7 @@ export async function updateStationAction(
         isPublic: input.isPublic,
         shortLinkId: input.shortLinkId,
         shortLinkUrl: input.shortLinkUrl || null,
-        imageKey,
+        ...imageFields,
         updatedAt: now,
       })
       .where(eq(stations.id, stationId)),
@@ -243,7 +278,7 @@ export async function updateStationAction(
   ]);
 
   // DB 更新成功後に旧オブジェクトを削除（孤児を残さない）。失敗は致命的でない。
-  if (imageKeyToDelete && imageKeyToDelete !== imageKey) {
+  if (imageKeyToDelete && imageKeyToDelete !== imageFields?.imageKey) {
     await deleteStationImage(env.STATION_IMAGES, imageKeyToDelete).catch(
       () => {}
     );

@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { stationImageUrl } from '@/lib/storage/station-images';
-import { convertImageToWebp } from '@/lib/storage/convert-image-to-webp';
+import { processImageForUpload } from '@/lib/storage/convert-image-to-webp';
 import {
   Select,
   SelectContent,
@@ -110,10 +110,16 @@ export function StationForm({
       temperatures.forEach((t) => formData.append('temperatures', t));
 
       // JPEG / PNG はアップロード前にクライアント側で WebP へ変換・縮小する。
-      // 変換対象外・失敗時は元ファイルのまま送られる（フォールバック）。
+      // 併せて最終的な寸法を取得し、詳細ページの CLS 防止に使う。変換対象外・
+      // 失敗時は元ファイルのまま送られる（フォールバック）。
       const rawImage = formData.get('image');
       if (rawImage instanceof File && rawImage.size > 0) {
-        formData.set('image', await convertImageToWebp(rawImage));
+        const processed = await processImageForUpload(rawImage);
+        formData.set('image', processed.file);
+        if (processed.width && processed.height) {
+          formData.set('imageWidth', String(processed.width));
+          formData.set('imageHeight', String(processed.height));
+        }
       }
 
       const result = isEdit

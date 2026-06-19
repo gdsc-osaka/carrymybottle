@@ -16,6 +16,7 @@ import {
   STATION_TEMPERATURE_ORDER,
 } from '@/lib/constants/stations';
 import { stationImageUrl } from '@/lib/storage/station-images';
+import { StationImage } from './StationImage';
 import { getPublicStationDetail } from './queries';
 
 interface StationDetailPageProps {
@@ -109,15 +110,14 @@ export async function StationDetailPage({
           {/* 詳細カード（ランディングの給水機カードに合わせたデザイン）。 */}
           <div className="rounded-[1.5rem] border border-[#0f897f]/15 bg-white p-6 shadow-sm lg:p-8">
             {imageUrl ? (
-              // 配信は公開バケット直リンク。Cloudflare 固有の最適化に依存しないため
-              // 通常の <img> を使う（AGENTS.md / Next.js 16 Cloudflare 制約）。
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              // 寸法が分かる場合は aspect-ratio 枠 + スケルトンでロード時の
+              // レイアウトシフトを防ぐ（StationImage 内で処理）。
+              <StationImage
                 src={imageUrl}
                 alt={`${station.name}の写真`}
-                // 縦幅は固定せず、画像本来の縦横比のまま全体を表示する（上下の
-                // トリミングを避ける）。横幅はカードに合わせ、高さは自動。
-                className="mb-5 h-auto w-full rounded-2xl border border-[#0f897f]/10 lg:mb-6"
+                width={station.imageWidth}
+                height={station.imageHeight}
+                className="mb-5 lg:mb-6"
               />
             ) : null}
 
