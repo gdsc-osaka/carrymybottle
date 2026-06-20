@@ -368,13 +368,15 @@ function Hero() {
           {stats.map((stat) => (
             <div
               key={stat.label}
-              className="flex flex-col items-center gap-1.5 px-3"
+              className="flex flex-col items-center gap-1 px-2 sm:gap-1.5 sm:px-3"
             >
-              <div className="flex items-center gap-2.5 text-4xl font-bold text-[#1f6b64]">
-                <stat.icon className="h-7 w-7 text-[#3a9d93]" />
-                {stat.value}
+              {/* スマホでは「アイコン↑数字」を縦積みにして列幅を超えないようにし、
+                  画面が広がったら横並びへ。これで狭い端末でもラベルが折り返さない。 */}
+              <div className="flex flex-col items-center gap-0.5 font-bold text-[#1f6b64] sm:flex-row sm:gap-2.5">
+                <stat.icon className="h-5 w-5 text-[#3a9d93] sm:h-7 sm:w-7" />
+                <span className="text-3xl sm:text-4xl">{stat.value}</span>
               </div>
-              <span className="text-lg font-medium text-[#5a6b6a]">
+              <span className="text-xs font-medium whitespace-nowrap text-[#5a6b6a] sm:text-lg">
                 {stat.label}
               </span>
             </div>
