@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useReducedMotion } from 'motion/react';
+import { cancelFrame, frame, useReducedMotion } from 'motion/react';
 import Lenis from 'lenis';
 
 /**
@@ -27,12 +27,14 @@ export function SmoothScroll() {
       touchMultiplier: 1.6,
     });
 
-    let frame = 0;
-    const raf = (time: number) => {
-      lenis.raf(time);
-      frame = requestAnimationFrame(raf);
+    // Lenis を framer motion のフレームループで駆動する。独立した
+    // requestAnimationFrame で回すと、Lenis が scroll を更新するフレームと
+    // framer の useScroll が値を読むフレームが 1 フレームずれ、パララックスが
+    // カクついて見える。同じループに乗せることで描画と完全同期させる。
+    const update = (data: { timestamp: number }) => {
+      lenis.raf(data.timestamp);
     };
-    frame = requestAnimationFrame(raf);
+    frame.update(update, true);
 
     // ハッシュリンク（#about など）クリック時は Lenis 経由で滑らかに移動する。
     const onClick = (e: MouseEvent) => {
@@ -48,7 +50,7 @@ export function SmoothScroll() {
     document.addEventListener('click', onClick);
 
     return () => {
-      cancelAnimationFrame(frame);
+      cancelFrame(update);
       document.removeEventListener('click', onClick);
       lenis.destroy();
     };

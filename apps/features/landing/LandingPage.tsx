@@ -155,7 +155,9 @@ function ParallaxImage({
         alt={alt}
         loading="lazy"
         decoding="async"
-        style={reduce ? undefined : { y }}
+        // y のみを毎フレーム更新。will-change で合成レイヤーに昇格させ、
+        // スクロール中の再描画をメインスレッドから GPU へ逃がしてカクつきを防ぐ。
+        style={reduce ? undefined : { y, willChange: 'transform' }}
         className={`h-[120%] w-full -translate-y-[8%] object-cover ${imgClassName ?? ''}`}
       />
     </div>
