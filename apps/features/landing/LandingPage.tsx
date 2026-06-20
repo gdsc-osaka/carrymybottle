@@ -14,6 +14,7 @@ import {
 } from 'motion/react';
 import { WaterRippleCanvas, type RipplePointer } from './WaterRippleCanvas';
 import { SmoothScroll } from './SmoothScroll';
+import { SavingsDiagram } from './SavingsDiagram';
 import { InquiryForm } from '@/features/inquiry/InquiryForm';
 import {
   ArrowRight,
@@ -679,62 +680,58 @@ function ImpactSection() {
         </div>
       </div>
 
-      {/* Value props — stacked full-width blocks (no side-by-side) */}
+      {/* Value props — stacked editorial blocks (no side-by-side) */}
       <div className="mx-auto max-w-6xl px-5 md:px-16">
-        {/* 地球のために — editorial statement */}
-        <div className="border-b border-[#0c2b29]/10 py-20 md:py-24">
-          <Reveal>
-            <div className="grid items-start gap-7 md:grid-cols-[auto_1fr] md:gap-14">
-              <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#006e2f]/8">
-                <Leaf className="h-8 w-8 fill-[#006e2f]/20 text-[#006e2f]" />
+        {/* 地球のために */}
+        <div className="grid gap-x-14 gap-y-7 border-b border-[#0c2b29]/10 py-20 md:grid-cols-12 md:py-28">
+          <Reveal className="md:col-span-4">
+            <Eyebrow>For the planet</Eyebrow>
+            <h3 className="mt-5 flex items-center gap-3 font-[family-name:var(--font-display)] text-3xl leading-[1.2] font-medium text-[#0c2b29] md:text-4xl">
+              <Leaf className="h-7 w-7 fill-[#006e2f]/15 text-[#006e2f]" />
+              地球のために
+            </h3>
+          </Reveal>
+          <Reveal className="md:col-span-8 md:pt-1" delay={0.1}>
+            <p className="max-w-2xl text-xl leading-relaxed text-[#3d4947] md:text-[1.7rem] md:leading-[1.7]">
+              マイボトルへの給水を通して、環境問題へアクションをしてみませんか？
+            </p>
+            <p className="mt-7 text-[1.05rem] text-[#5a6b6a]">
+              たった
+              <span className="mx-1 font-[family-name:var(--font-display)] text-2xl font-medium text-[#006e2f]">
+                −1
               </span>
-              <div>
-                <h3 className="font-[family-name:var(--font-display)] text-3xl leading-[1.2] font-medium text-[#006e2f] md:text-4xl">
-                  地球のために
-                </h3>
-                <p className="mt-5 max-w-2xl text-xl leading-relaxed text-[#3d4947] md:text-2xl">
-                  マイボトルへの給水を通して、環境問題へアクションをしてみませんか？
-                </p>
-                <p className="mt-6 text-[1.05rem] text-[#5a6b6a]">
-                  たった
-                  <span className="font-[family-name:var(--font-display)] text-2xl font-medium text-[#006e2f]">
-                    −1
-                  </span>
-                  本のペットボトルから、はじめられる。
-                </p>
-              </div>
-            </div>
+              本のペットボトルから、はじめられる。
+            </p>
           </Reveal>
         </div>
 
-        {/* お財布のために — savings figure as the hero of this block */}
-        <div className="py-20 md:py-24">
-          <Reveal className="max-w-2xl">
-            <div className="flex items-center gap-4">
-              <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#1f6fc4]/8">
-                <Wallet className="h-8 w-8 text-[#1f6fc4]" />
-              </span>
-              <h3 className="font-[family-name:var(--font-display)] text-3xl leading-[1.2] font-medium text-[#0058be] md:text-4xl">
+        {/* お財布のために — native savings diagram */}
+        <div className="py-20 md:py-28">
+          <div className="grid gap-x-14 gap-y-7 md:grid-cols-12">
+            <Reveal className="md:col-span-4">
+              <Eyebrow>For your wallet</Eyebrow>
+              <h3 className="mt-5 flex items-center gap-3 font-[family-name:var(--font-display)] text-3xl leading-[1.2] font-medium text-[#0c2b29] md:text-4xl">
+                <Wallet className="h-7 w-7 text-[#1f6fc4]" />
                 お財布のために
               </h3>
-            </div>
-            <p className="mt-6 text-xl leading-relaxed text-[#3d4947] md:text-2xl">
-              マイボトルは続けるほどおトク。買い続けるより、ずっと経済的です。
-            </p>
-          </Reveal>
+            </Reveal>
+            <Reveal className="md:col-span-8 md:pt-1" delay={0.1}>
+              <p className="max-w-2xl text-xl leading-relaxed text-[#3d4947] md:text-[1.7rem] md:leading-[1.7]">
+                マイボトルは続けるほどおトク。買い続けるより、ずっと経済的です。
+              </p>
+            </Reveal>
+          </div>
 
-          <Reveal y={50} className="mt-12">
-            <figure className="overflow-hidden rounded-[2rem] border border-[#0c2b29]/8 bg-white p-5 shadow-[0_40px_80px_-50px_rgba(12,43,41,0.45)] sm:p-10">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/images/savings-comparison.webp"
-                alt="ペットボトルを毎日購入した場合とマイボトルを使った場合の出費比較グラフ。マイボトルは約2ヶ月で元が取れ、4年間で約10万円の節約になる。"
-                width={1600}
-                height={971}
-                loading="lazy"
-                decoding="async"
-                className="mx-auto w-full max-w-3xl"
-              />
+          <Reveal y={40} className="mt-14">
+            <figure className="relative overflow-hidden rounded-[2.5rem] border border-[#0c2b29]/8 bg-gradient-to-b from-[#f8fcfb] to-[#eaf3f1] px-4 py-10 sm:px-12 sm:py-14">
+              {/* 図の奥行きを出す、ごく淡いティールのにじみ */}
+              <div className="pointer-events-none absolute -top-24 -right-16 h-64 w-64 rounded-full bg-[#6bd8cb]/20 blur-3xl" />
+              <div className="relative mx-auto max-w-3xl">
+                <SavingsDiagram />
+              </div>
+              <figcaption className="relative mt-6 text-center text-sm text-[#5a6b6a]">
+                毎日100円のペットボトルを買い続けた場合との比較（イメージ）
+              </figcaption>
             </figure>
           </Reveal>
         </div>
