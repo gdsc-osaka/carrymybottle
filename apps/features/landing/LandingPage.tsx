@@ -14,7 +14,6 @@ import {
 } from 'motion/react';
 import { WaterRippleCanvas, type RipplePointer } from './WaterRippleCanvas';
 import { SmoothScroll } from './SmoothScroll';
-import { SavingsChart } from './SavingsChart';
 import { InquiryForm } from '@/features/inquiry/InquiryForm';
 import {
   ArrowRight,
@@ -680,77 +679,63 @@ function ImpactSection() {
         </div>
       </div>
 
-      {/* Value props */}
-      <div className="mx-auto max-w-7xl px-5 py-24 md:px-16">
-        <div className="grid gap-8 lg:grid-cols-2">
-          {/* Planet */}
-          <Reveal y={50}>
-            <div className="flex h-full flex-col justify-between rounded-[2rem] bg-[#006e2f]/6 p-10">
+      {/* Value props — stacked full-width blocks (no side-by-side) */}
+      <div className="mx-auto max-w-6xl px-5 md:px-16">
+        {/* 地球のために — editorial statement */}
+        <div className="border-b border-[#0c2b29]/10 py-20 md:py-24">
+          <Reveal>
+            <div className="grid items-start gap-7 md:grid-cols-[auto_1fr] md:gap-14">
+              <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#006e2f]/8">
+                <Leaf className="h-8 w-8 fill-[#006e2f]/20 text-[#006e2f]" />
+              </span>
               <div>
-                <Leaf className="h-11 w-11 fill-[#006e2f]/15 text-[#006e2f]" />
-                <h3 className="mt-6 text-2xl font-bold text-[#006e2f]">
+                <h3 className="font-[family-name:var(--font-display)] text-3xl leading-[1.2] font-medium text-[#006e2f] md:text-4xl">
                   地球のために
                 </h3>
-                <p className="mt-4 max-w-md text-[1.05rem] leading-relaxed text-[#3d4947]">
+                <p className="mt-5 max-w-2xl text-xl leading-relaxed text-[#3d4947] md:text-2xl">
                   マイボトルへの給水を通して、環境問題へアクションをしてみませんか？
                 </p>
-              </div>
-              <div className="mt-10 flex items-end gap-3 border-t border-[#006e2f]/15 pt-6">
-                <span className="font-[family-name:var(--font-display)] text-5xl font-medium text-[#006e2f]">
-                  −1
-                </span>
-                <span className="mb-1.5 text-sm leading-snug text-[#3d4947]">
-                  本のペットボトルから、
-                  <br />
-                  はじめられる。
-                </span>
+                <p className="mt-6 text-[1.05rem] text-[#5a6b6a]">
+                  たった
+                  <span className="font-[family-name:var(--font-display)] text-2xl font-medium text-[#006e2f]">
+                    −1
+                  </span>
+                  本のペットボトルから、はじめられる。
+                </p>
               </div>
             </div>
           </Reveal>
+        </div>
 
-          {/* Wallet + savings chart */}
-          <Reveal y={50} delay={0.12}>
-            <div className="flex h-full flex-col rounded-[2rem] border border-[#0c2b29]/8 bg-white p-10 shadow-[0_30px_60px_-40px_rgba(12,43,41,0.4)]">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <Wallet className="h-11 w-11 text-[#1f6fc4]" />
-                  <h3 className="mt-6 text-2xl font-bold text-[#0058be]">
-                    お財布のために
-                  </h3>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs font-semibold tracking-wider text-[#5a6b6a] uppercase">
-                    4年間で
-                  </p>
-                  <p className="font-[family-name:var(--font-display)] text-4xl font-medium text-[#0058be] md:text-5xl">
-                    約<CountUp to={10} />万円
-                  </p>
-                  <p className="text-xs text-[#5a6b6a]">節約</p>
-                </div>
-              </div>
-
-              <div className="mt-8">
-                <SavingsChart />
-              </div>
-
-              <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
-                <span className="flex items-center gap-2 font-medium text-[#46595a]">
-                  <span className="h-2.5 w-2.5 rounded-full bg-[#c2683f]" />
-                  ペットボトル（毎日120円）
-                </span>
-                <span className="flex items-center gap-2 font-medium text-[#46595a]">
-                  <span className="h-2.5 w-2.5 rounded-full bg-[#0f897f]" />
-                  マイボトル
-                </span>
-              </div>
-              <p className="mt-4 text-sm leading-relaxed text-[#46595a]">
-                マイボトルを使うと、120円のペットボトルを毎日購入した時と比較して
-                <strong className="font-semibold text-[#0058be]">
-                  4年間で約10万円
-                </strong>
-                の節約に。
-              </p>
+        {/* お財布のために — savings figure as the hero of this block */}
+        <div className="py-20 md:py-24">
+          <Reveal className="max-w-2xl">
+            <div className="flex items-center gap-4">
+              <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#1f6fc4]/8">
+                <Wallet className="h-8 w-8 text-[#1f6fc4]" />
+              </span>
+              <h3 className="font-[family-name:var(--font-display)] text-3xl leading-[1.2] font-medium text-[#0058be] md:text-4xl">
+                お財布のために
+              </h3>
             </div>
+            <p className="mt-6 text-xl leading-relaxed text-[#3d4947] md:text-2xl">
+              マイボトルは続けるほどおトク。買い続けるより、ずっと経済的です。
+            </p>
+          </Reveal>
+
+          <Reveal y={50} className="mt-12">
+            <figure className="overflow-hidden rounded-[2rem] border border-[#0c2b29]/8 bg-white p-5 shadow-[0_40px_80px_-50px_rgba(12,43,41,0.45)] sm:p-10">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/savings-comparison.webp"
+                alt="ペットボトルを毎日購入した場合とマイボトルを使った場合の出費比較グラフ。マイボトルは約2ヶ月で元が取れ、4年間で約10万円の節約になる。"
+                width={1600}
+                height={971}
+                loading="lazy"
+                decoding="async"
+                className="mx-auto w-full max-w-3xl"
+              />
+            </figure>
           </Reveal>
         </div>
       </div>
